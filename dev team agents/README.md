@@ -1,73 +1,127 @@
-# DataLens 2.0 — Multi-Agent Development System
+# DataLens 2.0 — Multi-Agent Development Framework
+
+## Overview
+
+This folder contains the prompt files and coordination tools for the DataLens 2.0 multi-agent development system.
+
+**Model**: Hub-and-Spoke with shared communication board
+**Router**: Human (you) — copies task specs to agent chats and routes results back
+
+---
+
+## Agent Roster
+
+| Agent | File | Role |
+|-------|------|------|
+| 🎯 **Orchestrator** | [`orchestrator-agent.md`](./orchestrator-agent.md) | Sprint planning, task decomposition, progress tracking |
+| ⚙️ **Backend** | [`backend-agent.md`](./backend-agent.md) | Go API, services, repositories, domain logic |
+| 🎨 **Frontend** | [`frontend-agent.md`](./frontend-agent.md) | React + TypeScript UI, pages, components |
+| 🤖 **AI/ML** | [`ai-ml-agent.md`](./ai-ml-agent.md) | PII detection, LLM integration, AI gateway |
+| 🧪 **Test** | [`test-agent.md`](./test-agent.md) | Unit tests, integration tests, E2E tests |
+| 🚀 **DevOps** | [`devops-agent.md`](./devops-agent.md) | Docker, CI/CD, K8s, observability |
+
+## Communication
+
+| File | Purpose |
+|------|---------|
+| 📋 [`AGENT_COMMS.md`](./AGENT_COMMS.md) | Shared message board for inter-agent communication |
+
+---
 
 ## How It Works
 
-You operate a **hub-and-spoke** model across separate chats:
-
 ```
-  ┌──────────────────────────┐
-  │   ORCHESTRATOR CHAT      │  ← You start here each session
-  │   (orchestrator.md)      │
-  │                          │
-  │   Reads TASK_TRACKER.md  │
-  │   Produces task specs    │
-  │   Reviews agent outputs  │
-  └──────────┬───────────────┘
-             │ produces task specs
-             ▼
-  ┌──────────────────────────┐
-  │   YOU (Human Router)     │  ← You copy task specs into new chats
-  └──┬────────┬────────┬─────┘
-     │        │        │
-     ▼        ▼        ▼
-  ┌──────┐ ┌──────┐ ┌──────┐
-  │ Chat │ │ Chat │ │ Chat │   ← Sub-agent chats (one per task)
-  │  BE  │ │ AI/ML│ │ Test │
-  └──────┘ └──────┘ └──────┘
+                    ┌─────────────────┐
+                    │   YOU (Human)   │
+                    │   Router        │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+    ┌─────────────┐ ┌──────────────┐ ┌─────────────┐
+    │ Orchestrator │ │ AGENT_COMMS  │ │ TASK_TRACKER │
+    │ (Plans work) │ │ (Message     │ │ (Progress)   │
+    │              │ │  board)      │ │              │
+    └──────┬──────┘ └──────────────┘ └──────────────┘
+           │
+    Task Specs flow through YOU to:
+           │
+    ┌──────┼──────┬──────────┬──────────┐
+    ▼      ▼      ▼          ▼          ▼
+ Backend Frontend AI/ML    Test     DevOps
+ Agent   Agent   Agent    Agent    Agent
 ```
 
-## Step-by-Step Execution Flow
+### Step-by-Step Execution
 
-### Session Start
+1. **Start Orchestrator chat** → paste `orchestrator-agent.md` as system prompt
+2. Orchestrator reads `TASK_TRACKER.md` and produces **Task Specs**
+3. **You** copy each task spec into the appropriate agent's chat
+4. Each agent reads `AGENT_COMMS.md`, does the work, posts results back to `AGENT_COMMS.md`
+5. **You** copy agent results back to the Orchestrator
+6. Orchestrator updates `TASK_TRACKER.md` and plans the next batch
+7. Repeat!
 
-1. **Open a new chat** and paste the contents of `agents/orchestrator.md`
-2. Tell them: *"Pick up the next sprint. Read `TASK_TRACKER.md` and decompose the next unblocked items into task specs."*
-3. The orchestrator will produce numbered **Task Specification** documents
+### Inter-Agent Communication Flow
 
-### Running Tasks
+```
+Backend Agent                          Frontend Agent
+  │                                        │
+  │ Creates new API endpoint               │
+  │ Posts to AGENT_COMMS.md:               │
+  │ "INFO → Frontend: GET /api/v2/agents   │
+  │  is live, response: {id, name, ...}"   │
+  │                                        │
+  └──── YOU copy message ────────────────►│
+                                           │ Reads AGENT_COMMS.md
+                                           │ Builds UI against contract
+                                           │ Posts: "HANDOFF → Test: Page done"
+                                           │
+                        YOU copy ──────────┘
+                        │
+                        ▼
+                    Test Agent
+                    (writes E2E tests)
+```
 
-4. For each task spec the orchestrator produces:
-   - **Open a new chat**
-   - Paste the appropriate sub-agent prompt (`backend-agent.md`, `ai-ml-agent.md`, or `test-agent.md`)
-   - Then paste the task spec from the orchestrator
-   - Let the agent execute
-   - Copy the agent's **completion summary** back to the orchestrator chat
+---
 
-5. **Parallel tasks** (no dependencies between them) can run as separate chats simultaneously
+## Quick Start
 
-### Session End
+1. Open 2+ chat windows (Orchestrator + at least one agent)
+2. Paste the agent's `.md` file as the system prompt
+3. Start with: "Read TASK_TRACKER.md and plan the next batch of work"
+4. Route the task specs to the appropriate agent chats
+5. Ensure each agent checks `AGENT_COMMS.md` at the start of every task
 
-6. Return to the orchestrator chat with all results
-7. Tell it: *"Here are the results from this batch. Update TASK_TRACKER and plan the next batch."*
+---
 
-## When to Open the Orchestrator Chat
+## Documentation References
 
-- **Start of each work session** — to get the next batch of tasks
-- **After completing a batch** — to report results and get the next batch
-- **When you hit a blocker** — to re-plan or adjust priorities
-
-## File Index
-
-| File | Purpose | When to use |
-|------|---------|-------------|
-| `orchestrator.md` | System prompt for orchestrator agent | Start of each planning session |
-| `backend-agent.md` | System prompt for Go backend tasks | When running backend task specs |
-| `ai-ml-agent.md` | System prompt for AI/ML tasks | When running detection/AI tasks |
-| `test-agent.md` | System prompt for testing tasks | When running test task specs |
-
-## Tips
-
-- **Don't merge task specs** — one chat, one task. Keeps context focused.
-- **The orchestrator doesn't write code** — it writes specs. Sub-agents write code.
-- **Always verify compilation** — Every sub-agent chat should end with `go build ./...` passing.
-- **Visual review checkpoints** — When the orchestrator flags "READY FOR VISUAL REVIEW", spin up the app locally and start a review chat.
+All agents reference documentation from:
+```
+documentation/
+├── 00_README.md                    # Documentation index
+├── 02_Architecture_Overview.md     # System topology
+├── 03_DataLens_Agent_v2.md        # Agent component
+├── 04_DataLens_SaaS_Application.md # Control Centre
+├── 05_PII_Detection_Engine.md     # Detection pipeline
+├── 06_Data_Source_Scanners.md     # Connectors
+├── 07_DSR_Management.md          # DSR workflow
+├── 08_Consent_Management.md      # Consent engine
+├── 09_Database_Schema.md         # DB structure
+├── 10_API_Reference.md           # API specs
+├── 11_Frontend_Components.md     # UI patterns
+├── 12_Security_Compliance.md     # Auth & security
+├── 13_Deployment_Guide.md        # Deployment
+├── 14_Technology_Stack.md        # Tech decisions
+├── 15_Gap_Analysis.md            # Current gaps
+├── 16_Improvement_Recommendations.md
+├── 17_V2_Feature_Roadmap.md
+├── 18_Architecture_Enhancements.md
+├── 19_User_Feedback_Suggestions.md
+├── 20_Strategic_Architecture.md  # Design patterns
+├── 21_Domain_Model.md            # DDD entities
+├── 22_AI_Integration_Strategy.md # AI integration
+└── 23_AGILE_Development_Plan.md  # Sprint methodology
+```
