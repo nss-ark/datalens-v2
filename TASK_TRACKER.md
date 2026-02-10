@@ -1,0 +1,449 @@
+# DataLens 2.0 — Development Task Tracker
+
+> **Start Date**: February 2026  
+> **Target GA**: Q4 2026  
+> **Methodology**: 2-week sprints, quarterly releases
+
+---
+
+## Sprint 0: Foundation Setup (Weeks 1-2)
+
+### 0.1 Monorepo & Project Structure
+- [x] Create monorepo structure with Go workspace
+- [x] Set up `/cmd` (entrypoints), `/internal` (domain), `/pkg` (shared libs)
+- [x] Define module boundaries: `discovery`, `compliance`, `governance`, `evidence`, `identity`, `notification`
+- [x] Create shared types package (`/pkg/types`) with universal entities
+- [ ] Set up `/api` with OpenAPI/Swagger specs
+- [x] Create `Makefile` with standard targets (`build`, `test`, `lint`, `dev`, `migrate`)
+
+### 0.2 Database & Infrastructure
+- [x] Design PostgreSQL schema from Domain Model (Doc 21)
+- [x] Create migration system (golang-migrate or Atlas)
+- [x] Write initial migration: tenants, users, roles, permissions + all contexts
+- [x] Set up Redis configuration (caching, rate limiting, pub/sub)
+- [x] Set up NATS JetStream for event bus
+- [x] Create `docker-compose.dev.yml` for local development
+- [ ] Create seed scripts for development data
+
+### 0.3 CI/CD Pipeline
+- [ ] Configure GitHub Actions: lint → test → build
+- [ ] Set up `golangci-lint` with project rules
+- [ ] Configure test coverage reporting (target: 80%)
+- [x] Set up Docker image builds
+- [ ] Create staging deployment workflow
+
+### 0.4 Observability
+- [ ] Set up Prometheus metrics collection
+- [ ] Create Grafana dashboards (basic)
+- [x] Configure structured logging (slog)
+- [ ] Set up Jaeger for distributed tracing
+
+### 0.5 Developer Experience
+- [ ] Write `CONTRIBUTING.md` with coding standards
+- [x] Create `.env.example` with all config variables
+- [ ] Verify `make dev` → full stack running locally
+- [ ] Write onboarding guide for new developers
+
+---
+
+## Phase 1: Core Foundation (Q1 2026 — Sprints 1-6)
+
+### Sprint 1-2: Core Domain & API Gateway (Weeks 3-6)
+
+#### 1.1 Core Domain Entities
+- [ ] Implement `DataSource` entity + repository
+- [ ] Implement `DataInventory`, `DataEntity`, `DataField` entities
+- [ ] Implement `PIIClassification` entity + repository
+- [ ] Implement `Purpose` entity + repository
+- [ ] Implement `DataMapping` entity + repository
+- [ ] Write unit tests for all entities (validation, invariants)
+- [ ] Write integration tests for all repositories
+
+#### 1.2 Event Bus Integration
+- [ ] Create `EventBus` interface and NATS implementation
+- [ ] Define event types (see Doc 20, Event System)
+- [ ] Wire repositories to publish events on create/update/delete
+- [ ] Create event subscriber framework
+- [ ] Write audit log subscriber (first subscriber)
+- [ ] Test event delivery and replay
+
+#### 1.3 API Gateway
+- [ ] Create unified HTTP router (chi or gin)
+- [ ] Implement JWT authentication middleware
+- [ ] Implement tenant isolation middleware
+- [ ] Implement rate limiting middleware (Redis-backed)
+- [ ] Create standard error response format
+- [ ] Implement request/response logging
+- [ ] Write CRUD API endpoints for DataSource
+- [ ] Write CRUD API endpoints for Purpose
+- [ ] Generate OpenAPI docs
+
+#### 1.4 Multi-Tenant Auth
+- [ ] Implement user registration + login
+- [ ] Implement role-based access (ADMIN, DPO, ANALYST, VIEWER)
+- [ ] Implement permission checks per endpoint
+- [ ] Create API key system for agent authentication
+- [ ] Write auth integration tests
+
+### Sprint 3-4: PII Detection Engine (Weeks 7-10)
+
+#### 1.5 AI Gateway
+- [ ] Create `AIGateway` interface (see Doc 22)
+- [ ] Implement OpenAI provider
+- [ ] Implement Anthropic provider
+- [ ] Implement local LLM provider (Ollama)
+- [ ] Implement provider selection logic
+- [ ] Implement fallback chain (cloud → cloud → local → rules)
+- [ ] Add Redis caching for AI responses
+- [ ] Implement token budget & cost tracking
+- [ ] Write PII detection prompt templates
+- [ ] Write purpose suggestion prompt templates
+- [ ] Test with real LLM providers
+
+#### 1.6 Detection Strategies
+- [ ] Create `DetectionStrategy` interface
+- [ ] Implement `AIStrategy` (LLM-based contextual detection)
+- [ ] Implement `PatternStrategy` (regex patterns — port from v1)
+- [ ] Implement `HeuristicStrategy` (column name heuristics — port from v1)
+- [ ] Implement `IndustryStrategy` (sector-specific patterns)
+- [ ] Create `ComposablePIIDetector` that chains strategies
+- [ ] Implement confidence scoring and merging logic
+- [ ] Implement PII sanitizer (never send real PII to cloud AI)
+- [ ] Write comprehensive tests per strategy
+- [ ] Benchmark detection speed and accuracy
+
+#### 1.7 Feedback & Learning Loop
+- [ ] Create `DetectionFeedback` entity + repository
+- [ ] Implement verify/correct/reject workflow
+- [ ] Create rule extraction from feedback patterns
+- [ ] Implement cache invalidation on corrections
+- [ ] Track accuracy metrics per strategy
+
+### Sprint 5-6: Data Source Connectors & Scanning (Weeks 11-14)
+
+#### 1.8 Connector Framework
+- [ ] Create `DataSourceConnector` interface (see Doc 20)
+- [ ] Create `ConnectorCapabilities` system
+- [ ] Implement connection pooling manager
+- [ ] Create connector factory/registry
+
+#### 1.9 Database Connectors
+- [ ] Implement PostgreSQL connector (parallel column scanning)
+- [ ] Implement MySQL connector (parallel column scanning)
+- [ ] Implement MongoDB connector
+- [ ] Implement SQL Server connector (port from v1)
+- [ ] Write integration tests per connector (testcontainers)
+
+#### 1.10 File & Cloud Connectors
+- [ ] Implement file system connector (local + network drives)
+- [ ] Implement S3 connector (with streaming)
+- [ ] Implement Azure Blob connector
+- [ ] Support file types: PDF, DOCX, XLSX, CSV, JSON, images (OCR)
+- [ ] Write tests for each file type
+
+#### 1.11 Scan Orchestrator
+- [ ] Create scan job queue (NATS-backed)
+- [ ] Implement parallel table/column scanning
+- [ ] Implement incremental scanning (only changes since last scan)
+- [ ] Create real-time progress tracking (WebSocket)
+- [ ] Implement scan scheduling (cron-like)
+- [ ] Write scan performance benchmarks (target: 5x v1 speed)
+
+### Phase 1 Milestone: `v2.1-alpha`
+- [ ] All core entities working
+- [ ] PII detection with AI achieving >85% accuracy
+- [ ] 4+ database connectors working
+- [ ] File and S3 scanning working
+- [ ] Event bus operational
+- [ ] API gateway with auth
+- [ ] **Tag release v2.1-alpha**
+
+---
+
+## Phase 2: Compliance Features (Q2 2026 — Sprints 7-12)
+
+### Sprint 7-8: DSR Engine (Weeks 15-18)
+
+#### 2.1 DSR Workflow
+- [ ] Implement `DSR` entity with state machine (PENDING → IN_PROGRESS → COMPLETED)
+- [ ] Implement `DSRTask` decomposition per data source
+- [ ] Create SLA engine (auto-compute deadlines from regulation)
+- [ ] Implement task assignment and routing
+
+#### 2.2 DSR Execution
+- [ ] Implement access request execution (data export)
+- [ ] Implement erasure request execution (data deletion)
+- [ ] Implement correction request execution (data update)
+- [ ] Implement portability request (structured export)
+- [ ] Execute across multiple data sources in parallel
+
+#### 2.3 DSR Auto-Verification (User Feedback P0)
+- [ ] Implement post-execution re-query verification
+- [ ] Auto-close on verification success
+- [ ] Alert + retry on verification failure
+- [ ] Generate evidence package on completion
+
+#### 2.4 DSR Identity Verification
+- [ ] Create identity matching service
+- [ ] Implement document verification (Aadhaar/PAN matching)
+- [ ] AI-assisted verification for ambiguous cases
+- [ ] Manual override workflow
+
+### Sprint 9-10: Consent Manager (Weeks 19-22)
+
+#### 2.5 Consent Engine
+- [ ] Implement `Consent` entity with lifecycle
+- [ ] Create consent capture API (with proof recording)
+- [ ] Implement consent withdrawal flow
+- [ ] Implement consent expiry management with notifications
+- [ ] Create consent receipt generation
+- [ ] Implement consent enforcement (check before data processing)
+
+#### 2.6 Embeddable Consent Widget (CMS)
+- [ ] Implement `ConsentWidget` CRUD service
+- [ ] Implement widget API key generation and validation
+- [ ] Build public API: `POST /api/public/consent/sessions` (record decisions)
+- [ ] Build public API: `GET /api/public/consent/check` (check consent status)
+- [ ] Build public API: `POST /api/public/consent/withdraw` (withdraw consent)
+- [ ] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config)
+- [ ] Implement CORS validation against `allowed_origins`
+- [ ] Build vanilla JS consent snippet (~15 KB gzipped, framework-agnostic)
+- [ ] Support widget types: BANNER, PREFERENCE_CENTER, INLINE_FORM, PORTAL
+- [ ] Support layouts: BOTTOM_BAR, TOP_BAR, MODAL, SIDEBAR, FULL_PAGE
+- [ ] Implement widget theming (colors, fonts, logo, border radius)
+- [ ] Implement custom CSS injection for widgets
+- [ ] Support multi-language translations in widget config
+- [ ] Implement `block_until_consent` mode
+- [ ] Implement granular per-purpose toggle switches
+- [ ] Auto-generate embed code snippet for each widget
+- [ ] Implement widget version auto-increment on config change
+
+#### 2.7 Data Principal Portal
+- [ ] Build portal page served by Control Centre (standalone + iframe-embeddable)
+- [ ] Implement OTP-based identity verification (Email + Phone)
+- [ ] Build `DataPrincipalProfile` CRUD service
+- [ ] Link verified profile to `compliance.DataSubject`
+- [ ] Build consent dashboard (current status per purpose, toggle on/off)
+- [ ] Build consent history timeline (immutable, chronological, paginated)
+- [ ] Implement digital signature for consent history entries
+- [ ] Build portal public API: `POST /api/public/portal/verify`
+- [ ] Build portal public API: `GET /api/public/portal/profile`
+- [ ] Build portal public API: `GET /api/public/portal/consent-history`
+- [ ] Implement portal session management (short-lived JWT)
+
+#### 2.8 DPR (Data Principal Rights) Flows
+- [ ] Build DPR submission: `POST /api/public/portal/dpr`
+- [ ] Build DPR tracking: `GET /api/public/portal/dpr/{id}`
+- [ ] Build DPR download: `GET /api/public/portal/dpr/{id}/download` (ACCESS)
+- [ ] Link DPR request to internal `compliance.DSR` on creation
+- [ ] Implement DPR status flow: SUBMITTED → PENDING_VERIFY → VERIFIED → IN_PROGRESS → COMPLETED
+- [ ] Implement guardian consent for minors (DPDPA Section 9)
+  - [ ] Guardian name, email, relation fields
+  - [ ] Guardian OTP verification flow
+  - [ ] Block request until guardian verifies
+- [ ] Implement appeal flow (DPDPA Section 18)
+  - [ ] `POST /api/public/portal/dpr/{id}/appeal`
+  - [ ] Appeal links to original DPR
+  - [ ] Escalation to DPA authority flag
+- [ ] Implement SLA deadline tracking for DPR requests
+- [ ] Write E2E tests for consent + DPR flows
+
+
+### Sprint 11-12: Purpose Mapping & Governance (Weeks 23-26)
+
+#### 2.9 Purpose Mapping Automation (User Feedback P0)
+- [ ] Implement context analysis engine (table + column patterns)
+- [ ] Create sector template framework
+- [ ] Build 6 sector templates: Hospitality, Airlines, E-commerce, Healthcare, BFSI, HR
+- [ ] Implement AI-powered purpose suggestion
+- [ ] Create one-click confirm UI for suggestions
+- [ ] Implement batch second-round review for low-confidence
+- [ ] Target: 70% auto-fill rate
+
+#### 2.10 Governance Policy Engine
+- [ ] Implement `Policy` entity with rule evaluation
+- [ ] Create policy templates (retention, access, transfer)
+- [ ] Implement violation detection (scheduled job)
+- [ ] Create alert system for policy violations
+- [ ] Implement auto-remediation for simple cases
+
+#### 2.11 Data Lineage
+- [ ] Implement data flow tracking
+- [ ] Create data lineage visualization API
+- [ ] Track purpose across data flows
+- [ ] Cross-border transfer documentation
+
+### Phase 2 Milestone: `v2.2-beta`
+- [ ] DSR end-to-end with auto-verification
+- [ ] Consent portal deployed & white-labeled
+- [ ] Purpose mapping with 70% auto-fill
+- [ ] Governance policies enforced
+- [ ] **Tag release v2.2-beta**
+
+---
+
+## Phase 3: Enterprise Features (Q3 2026 — Sprints 13-18)
+
+### Sprint 13-14: Cloud Integrations (Weeks 27-30)
+
+#### 3.1 Microsoft 365 Connector
+- [ ] OneDrive file scanning
+- [ ] SharePoint document scanning
+- [ ] Outlook email scanning
+- [ ] Teams message scanning (if applicable)
+- [ ] OAuth2 authentication flow
+
+#### 3.2 Google Workspace Connector
+- [ ] Google Drive scanning
+- [ ] Gmail scanning
+- [ ] Google Calendar (PII in events)
+- [ ] OAuth2 authentication flow
+
+#### 3.3 Additional Connectors
+- [ ] Snowflake data warehouse connector
+- [ ] Enhanced Salesforce connector (full CRM)
+- [ ] SAP connector (basic)
+
+#### 3.4 Webhook & Integration System
+- [ ] Outbound webhook framework
+- [ ] Configurable event triggers
+- [ ] Retry logic with exponential backoff
+- [ ] Webhook management UI
+- [ ] Pre-built integrations (Slack, Teams, Jira)
+
+### Sprint 15-16: Breach Management (Weeks 31-34)
+
+#### 3.5 Breach Module
+- [ ] Implement `Breach` entity with lifecycle
+- [ ] Create breach detection (manual + automated triggers)
+- [ ] AI-powered impact assessment
+- [ ] CERT-In incident checklists (21 categories)
+- [ ] Implement response workflow (detect → contain → investigate → resolve)
+
+#### 3.6 Breach Notifications
+- [ ] Authority notification system (CERT-In, DPA)
+- [ ] Subject notification system (email/portal)
+- [ ] Notification templates per regulation
+- [ ] Evidence package for breach response
+- [ ] SLA tracking for notification deadlines
+
+### Sprint 17-18: Security Enhancements (Weeks 35-38)
+
+#### 3.7 Enterprise Authentication
+- [ ] SSO/SAML integration
+- [ ] Multi-factor authentication
+- [ ] Device fingerprinting for agents
+- [ ] Session management enhancements
+
+#### 3.8 Audit & Evidence
+- [ ] Implement hash-chained audit log (tamper-proof)
+- [ ] Digital signature for evidence records
+- [ ] Evidence package export (PDF, JSON)
+- [ ] Evidence retention and archival
+
+#### 3.9 Advanced Security
+- [ ] ML-based anomaly detection for access patterns
+- [ ] HashiCorp Vault integration for secrets
+- [ ] Penetration test remediation
+- [ ] Security audit documentation
+
+### Phase 3 Milestone: `v2.3-rc`
+- [ ] Cloud integrations live (M365, Google)
+- [ ] Breach management complete
+- [ ] Enterprise security (SSO, audit chain)
+- [ ] **Tag release v2.3-rc**
+
+---
+
+## Phase 4: Scale & Polish (Q4 2026 — Sprints 19-24)
+
+### Sprint 19-20: Performance (Weeks 39-42)
+
+#### 4.1 Scaling
+- [ ] Multi-pod Kubernetes deployment
+- [ ] Horizontal auto-scaling configuration
+- [ ] Database connection pooling optimization
+- [ ] Cache hit rate optimization (target: >80%)
+
+#### 4.2 Performance
+- [ ] Scan speed: 10x improvement over v1
+- [ ] API response time: p95 < 200ms
+- [ ] Load test: 100k+ records/sec throughput
+- [ ] Database query optimization pass
+- [ ] Implement database read replicas
+
+### Sprint 21-22: UX & Frontend (Weeks 43-46)
+
+#### 4.3 Bulk Operations
+- [ ] Multi-select framework
+- [ ] Bulk verify/reject PII classifications
+- [ ] Bulk purpose assignment
+- [ ] Saved views and filters
+- [ ] Keyboard shortcuts for power users
+
+#### 4.4 Mobile & UX
+- [ ] Mobile responsive design
+- [ ] Dark mode toggle
+- [ ] Onboarding flow for new users
+- [ ] Contextual help system
+- [ ] Notification center in UI
+
+#### 4.5 Analytics Dashboard
+- [ ] Compliance score dashboard
+- [ ] PII discovery trends
+- [ ] DSR completion metrics
+- [ ] Consent health metrics
+- [ ] Exportable reports (PDF, CSV)
+
+### Sprint 23-24: Release Prep (Weeks 47-50)
+
+#### 4.6 Migration & Docs
+- [ ] v1 → v2 data migration tools
+- [ ] API documentation (complete)
+- [ ] User guides and tutorials
+- [ ] Admin guide
+
+#### 4.7 Release Readiness
+- [ ] Full E2E test suite passing
+- [ ] Third-party security audit passed
+- [ ] Performance SLA validation
+- [ ] Disaster recovery (backup/restore) tested
+- [ ] Rollback procedure validated
+- [ ] **Tag release v2.0 GA** 🚀
+
+---
+
+## Compliance Adapter Backlog (Post-GA)
+
+### DPDPA Adapter (Ships with GA)
+- [ ] All DPDPA DSR types configured
+- [ ] DPDPA-specific timelines (30 days)
+- [ ] DPDPA notice requirements
+- [ ] CERT-In breach notification rules
+- [ ] Data fiduciary obligations
+
+### GDPR Adapter (Q1 2027)
+- [ ] GDPR DSR types (incl. objection, restriction)
+- [ ] GDPR timelines (30 days, extendable)
+- [ ] DPO role and obligations
+- [ ] DPIA (Data Protection Impact Assessment)
+- [ ] Cross-border transfer mechanisms (SCCs, BCR)
+
+### CCPA/CPRA Adapter (Q2 2027)
+- [ ] CCPA rights configuration
+- [ ] "Do Not Sell" implementation
+- [ ] Financial incentives tracking
+- [ ] CPRA-specific enhancements
+
+---
+
+## Legend
+
+| Symbol | Meaning |
+|--------|---------|
+| `[ ]` | Not started |
+| `[/]` | In progress |
+| `[x]` | Completed |
+| `[!]` | Blocked |
+
+> **Last Updated**: February 10, 2026

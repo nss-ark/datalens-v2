@@ -1,0 +1,90 @@
+# =============================================================================
+# DataLens 2.0 — DPDPA Regulation Configuration
+# =============================================================================
+# Digital Personal Data Protection Act, 2023 (India)
+# =============================================================================
+
+regulation:
+  code: DPDPA
+  name: Digital Personal Data Protection Act, 2023
+  country: IN
+  effective_date: 2024-01-01
+
+# --- Data Subject Rights ---
+rights:
+  - code: ACCESS
+    name: Right to Access
+    mandatory: true
+    deadline_days: 30
+  - code: CORRECTION
+    name: Right to Correction
+    mandatory: true
+    deadline_days: 30
+  - code: ERASURE
+    name: Right to Erasure
+    mandatory: true
+    deadline_days: 30
+  - code: NOMINATION
+    name: Right to Nominate
+    mandatory: true
+    deadline_days: 30
+  - code: GRIEVANCE
+    name: Right to Grievance Redressal
+    mandatory: true
+    deadline_days: 30
+
+# --- Consent Requirements ---
+consent:
+  requires_explicit: true
+  granular_required: true
+  min_age: 18
+  guardian_consent_required: true
+  withdrawal:
+    must_be_easy: true
+    max_processing_days: 7
+  notice:
+    must_be_clear: true
+    must_include_purpose: true
+    must_include_rights: true
+
+# --- Breach Notification ---
+breach:
+  cert_in:
+    notification_hours: 6
+    report_format: CERT-IN_FORMAT
+  subject_notification:
+    required: true
+    must_include:
+      - nature_of_breach
+      - data_types_affected
+      - mitigation_steps
+      - contact_information
+
+# --- Data Fiduciary Obligations ---
+fiduciary:
+  must_appoint_dpo: true
+  must_conduct_dpia: true
+  must_maintain_records: true
+  cross_border:
+    allowed_countries: []  # Governed by notification
+    restricted_countries: [] # Governed by notification
+
+# --- Penalties ---
+penalties:
+  max_non_compliance: 250_00_00_000  # ₹250 crore
+  max_children_violation: 200_00_00_000  # ₹200 crore
+
+# --- PII Categories (DPDPA specific) ---
+pii_categories:
+  standard:
+    - IDENTITY
+    - CONTACT
+    - FINANCIAL
+    - LOCATION
+    - GOVERNMENT_ID
+    - PROFESSIONAL
+  sensitive:
+    - HEALTH
+    - BIOMETRIC
+    - GENETIC
+    - MINOR
