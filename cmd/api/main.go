@@ -110,6 +110,7 @@ func main() {
 	piiRepo := repository.NewPIIClassificationRepo(dbPool)
 	feedbackRepo := repository.NewDetectionFeedbackRepo(dbPool)
 	scanRunRepo := repository.NewScanRunRepo(dbPool)
+	dsrRepo := repository.NewDSRRepo(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -128,6 +129,8 @@ func main() {
 	tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
 	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
 	feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
+	dsrSvc := service.NewDSRService(dsrRepo, dsRepo, eb, slog.Default())
+	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
 
 	// Connector Registry (Postgres + MySQL built-in)
 	connRegistry := connector.NewConnectorRegistry()
@@ -206,6 +209,7 @@ func main() {
 		entityRepo,
 		fieldRepo,
 		piiRepo,
+		scanRunRepo,
 		connRegistry,
 		detector,
 		eb,
@@ -250,6 +254,8 @@ func main() {
 	authHandler := handler.NewAuthHandler(authSvc, tenantSvc)
 	discoveryHandler := handler.NewDiscoveryHandler(discoverySvc, scanSvc, inventoryRepo, entityRepo, fieldRepo)
 	feedbackHandler := handler.NewFeedbackHandler(feedbackSvc)
+	dsrHandler := handler.NewDSRHandler(dsrSvc)
+	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 
 	// =========================================================================
 	// Rate Limiter
@@ -321,9 +327,10 @@ func main() {
 			})
 
 			// DSR
-			r.Route("/dsr", func(r chi.Router) {
-				// TODO: Wire DSR handlers (Sprint 2)
-			})
+			r.Mount("/dsr", dsrHandler.Routes())
+
+			// Dashboard
+			r.Mount("/dashboard", dashboardHandler.Routes())
 
 			// Consent
 			r.Route("/consent", func(r chi.Router) {

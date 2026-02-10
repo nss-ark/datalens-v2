@@ -16,7 +16,7 @@ type ScanService struct {
 	scanRunRepo   discovery.ScanRunRepository
 	dsRepo        discovery.DataSourceRepository
 	queue         queue.ScanQueue
-	discoverySvc  *DiscoveryService
+	discoverySvc  DiscoveryOrchestrator
 	logger        *slog.Logger
 	maxConcurrent int
 }
@@ -26,7 +26,7 @@ func NewScanService(
 	scanRepo discovery.ScanRunRepository,
 	dsRepo discovery.DataSourceRepository,
 	queue queue.ScanQueue,
-	discoverySvc *DiscoveryService,
+	discoverySvc DiscoveryOrchestrator,
 	logger *slog.Logger,
 ) *ScanService {
 	return &ScanService{

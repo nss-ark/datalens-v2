@@ -1,6 +1,6 @@
 # DataLens 2.0 — Development Task Tracker
 
-> **Start Date**: February 2026  
+> **Start Date**:10 February 2026  
 > **Target GA**: Q4 2026  
 > **Methodology**: 2-week sprints, quarterly releases
 
@@ -123,21 +123,24 @@
 - [x] Scaffold React + TypeScript + Vite application
 - [x] Implement Authentication flows (Login, Register)
 - [x] Implement App Shell (Sidebar, Header, Layout)
+- [x] DataSources list page (DataTable, Pagination, Add/Scan actions)
+- [x] PII Discovery / Review Queue page (feedback verify/correct/reject UI)
+- [x] Dashboard with real metrics — `StatCard`, `PIIChart`, scan polling
 
 ### Sprint 5-6: Data Source Connectors & Scanning (Weeks 11-14)
 
 #### 1.8 Connector Framework
 - [x] Create `DataSourceConnector` interface (see Doc 20) — `internal/domain/discovery`
-- [ ] Create `ConnectorCapabilities` system
+- [x] Create `ConnectorCapabilities` system — `internal/infrastructure/connector`
 - [ ] Implement connection pooling manager
-- [ ] Create connector factory/registry
+- [x] Create connector factory/registry — `internal/infrastructure/connector/registry.go`
 
 #### 1.9 Database Connectors
 - [x] Implement PostgreSQL connector (parallel column scanning) — `internal/infrastructure/connector/postgres.go`
-- [ ] Implement MySQL connector (parallel column scanning)
-- [ ] Implement MongoDB connector
+- [x] Implement MySQL connector (parallel column scanning) — `internal/infrastructure/connector/mysql.go`
+- [x] Implement MongoDB connector — `internal/infrastructure/connector/mongodb.go`
 - [ ] Implement SQL Server connector (port from v1)
-- [ ] Write integration tests per connector (testcontainers)
+- [x] Write integration tests per connector (testcontainers) — registry + MySQL tests
 
 #### 1.10 File & Cloud Connectors
 - [ ] Implement file system connector (local + network drives)
@@ -147,9 +150,11 @@
 - [ ] Write tests for each file type
 
 #### 1.11 Scan Orchestrator
-- [ ] Create scan job queue (NATS-backed)
+- [x] Create scan job queue (NATS-backed) — `internal/infrastructure/queue/scan_queue.go`
+- [x] Implement async scan worker — `internal/service/scan_service.go`
 - [ ] Implement parallel table/column scanning
-- [ ] Implement incremental scanning (only changes since last scan)
+- [x] Implement incremental scanning (only changes since last scan) — `DiscoveryInput.ChangedSince`
+- [x] Create progress tracking (polling) — `GET /data-sources/{id}/scan/status`
 - [ ] Create real-time progress tracking (WebSocket)
 - [ ] Implement scan scheduling (cron-like)
 - [ ] Write scan performance benchmarks (target: 5x v1 speed)
@@ -170,9 +175,9 @@
 ### Sprint 7-8: DSR Engine (Weeks 15-18)
 
 #### 2.1 DSR Workflow
-- [ ] Implement `DSR` entity with state machine (PENDING → IN_PROGRESS → COMPLETED)
-- [ ] Implement `DSRTask` decomposition per data source
-- [ ] Create SLA engine (auto-compute deadlines from regulation)
+- [x] Implement `DSR` entity with state machine (PENDING → IN_PROGRESS → COMPLETED) — `internal/domain/compliance`
+- [x] Implement `DSRTask` decomposition per data source
+- [x] Create SLA engine (auto-compute deadlines from regulation) — 30-day default
 - [ ] Implement task assignment and routing
 
 #### 2.2 DSR Execution

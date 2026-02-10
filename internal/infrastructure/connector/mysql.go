@@ -67,7 +67,7 @@ func (c *MySQLConnector) Connect(ctx context.Context, ds *discovery.DataSource) 
 }
 
 // DiscoverSchema queries information_schema to build the inventory.
-func (c *MySQLConnector) DiscoverSchema(ctx context.Context) (*discovery.DataInventory, []discovery.DataEntity, error) {
+func (c *MySQLConnector) DiscoverSchema(ctx context.Context, input discovery.DiscoveryInput) (*discovery.DataInventory, []discovery.DataEntity, error) {
 	if c.db == nil {
 		return nil, nil, fmt.Errorf("not connected")
 	}
@@ -79,7 +79,13 @@ func (c *MySQLConnector) DiscoverSchema(ctx context.Context) (*discovery.DataInv
 		WHERE TABLE_SCHEMA = DATABASE()
 		  AND TABLE_TYPE = 'BASE TABLE'`
 
-	rows, err := c.db.QueryContext(ctx, query)
+	var args []interface{}
+	if !input.ChangedSince.IsZero() {
+		query += " AND (UPDATE_TIME > ? OR CREATE_TIME > ?)"
+		args = append(args, input.ChangedSince, input.ChangedSince)
+	}
+
+	rows, err := c.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("query tables: %w", err)
 	}

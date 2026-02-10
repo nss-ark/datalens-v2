@@ -412,6 +412,17 @@ func (r *mockPIIClassificationRepo) GetPending(_ context.Context, tenantID types
 	return &types.PaginatedResult[discovery.PIIClassification]{Items: items, Total: 0}, nil
 }
 
+func (r *mockPIIClassificationRepo) GetClassifications(_ context.Context, tenantID types.ID, filter discovery.ClassificationFilter) (*types.PaginatedResult[discovery.PIIClassification], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []discovery.PIIClassification
+	return &types.PaginatedResult[discovery.PIIClassification]{Items: items, Total: 0}, nil
+}
+
+func (r *mockPIIClassificationRepo) GetCounts(_ context.Context, tenantID types.ID) (*discovery.PIICounts, error) {
+	return &discovery.PIICounts{Total: 0, ByCategory: make(map[string]int)}, nil
+}
+
 // =============================================================================
 // Mock Detection Feedback Repository
 // =============================================================================
@@ -642,5 +653,88 @@ func (r *mockDataFieldRepo) Delete(_ context.Context, id types.ID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.fields, id)
+	return nil
+}
+
+// =============================================================================
+// Mock Scan Run Repository
+// =============================================================================
+
+type mockScanRunRepo struct {
+	mu   sync.Mutex
+	runs map[types.ID]*discovery.ScanRun
+}
+
+func newMockScanRunRepo() *mockScanRunRepo {
+	return &mockScanRunRepo{
+		runs: make(map[types.ID]*discovery.ScanRun),
+	}
+}
+
+func (r *mockScanRunRepo) Create(_ context.Context, run *discovery.ScanRun) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if run.ID == (types.ID{}) {
+		run.ID = types.NewID()
+	}
+	r.runs[run.ID] = run
+	return nil
+}
+
+func (r *mockScanRunRepo) GetByID(_ context.Context, id types.ID) (*discovery.ScanRun, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	run, ok := r.runs[id]
+	if !ok {
+		return nil, fmt.Errorf("scan run not found")
+	}
+	return run, nil
+}
+
+func (r *mockScanRunRepo) GetByDataSource(_ context.Context, dataSourceID types.ID) ([]discovery.ScanRun, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []discovery.ScanRun
+	for _, run := range r.runs {
+		if run.DataSourceID == dataSourceID {
+			result = append(result, *run)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockScanRunRepo) GetActive(_ context.Context, tenantID types.ID) ([]discovery.ScanRun, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []discovery.ScanRun
+	for _, run := range r.runs {
+		if run.TenantID == tenantID && (run.Status == discovery.ScanStatusPending || run.Status == discovery.ScanStatusRunning) {
+			result = append(result, *run)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockScanRunRepo) GetRecent(_ context.Context, tenantID types.ID, limit int) ([]discovery.ScanRun, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []discovery.ScanRun
+	count := 0
+	for _, run := range r.runs {
+		if run.TenantID == tenantID {
+			result = append(result, *run)
+			count++
+			if count >= limit {
+				break
+			}
+		}
+	}
+	return result, nil
+}
+
+func (r *mockScanRunRepo) Update(_ context.Context, run *discovery.ScanRun) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.runs[run.ID] = run
 	return nil
 }

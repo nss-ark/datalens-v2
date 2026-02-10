@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Play, Database as DatabaseIcon, RefreshCw } from 'lucide-react';
+import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { DataTable, type Column } from '../components/DataTable/DataTable';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Modal } from '../components/common/Modal';
-import { useDataSources, useCreateDataSource, useScanDataSource } from '../hooks/useDataSources';
+import { ScanHistoryModal } from '../components/DataSources/ScanHistoryModal';
+import { useDataSources, useCreateDataSource, useScanDataSource, useScanStatus } from '../hooks/useDataSources';
 import { toast } from '../stores/toastStore';
 import type { DataSource, DataSourceType } from '../types/datasource';
 
@@ -26,25 +27,53 @@ const INITIAL_FORM = {
     host: '', port: 5432, database: '', credentials: '',
 };
 
+// Component for the Scan Action button with polling
+const ScanAction = ({ dataSource }: { dataSource: DataSource }) => {
+    const { mutate: scanMutate, isPending: isStarting } = useScanDataSource();
+
+    // Scan status polling is enabled for this data source
+    const { data: scanStatus } = useScanStatus(dataSource.id, true);
+
+    // Derived state
+    const isScanning = scanStatus?.status === 'RUNNING' || scanStatus?.status === 'QUEUED';
+
+    const handleScan = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        scanMutate(dataSource.id, {
+            onSuccess: () => toast.success('Scan started', 'The data source scan has been initiated.'),
+            onError: () => toast.error('Scan failed', 'Could not initiate scan. Please try again.'),
+        });
+    };
+
+    if (isStarting || isScanning) {
+        return (
+            <div className="flex items-center gap-2 text-sm text-indigo-600 font-medium bg-indigo-50 px-3 py-1.5 rounded-md">
+                <Loader2 size={14} className="animate-spin" />
+                {scanStatus?.progress_percentage ? `${scanStatus.progress_percentage}%` : 'Scanning...'}
+            </div>
+        );
+    }
+
+    return (
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleScan}
+            icon={<Play size={14} />}
+        >
+            Scan
+        </Button>
+    );
+};
+
 const DataSources = () => {
     const navigate = useNavigate();
     const { data: dataSources = [], isLoading, refetch } = useDataSources();
-    const { mutate: scanMutate } = useScanDataSource();
     const { mutate: createMutate, isPending: isCreating } = useCreateDataSource();
 
-    const [scanningId, setScanningId] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
+    const [historyId, setHistoryId] = useState<string | null>(null);
     const [form, setForm] = useState(INITIAL_FORM);
-
-    const handleScan = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setScanningId(id);
-        scanMutate(id, {
-            onSuccess: () => toast.success('Scan started', 'The data source scan has been initiated.'),
-            onError: () => toast.error('Scan failed', 'Could not initiate scan. Please try again.'),
-            onSettled: () => setScanningId(null),
-        });
-    };
 
     const handleCreate = (e: FormEvent) => {
         e.preventDefault();
@@ -132,17 +161,21 @@ const DataSources = () => {
         {
             key: 'actions',
             header: '',
-            width: '100px',
+            width: '180px',
             render: (row) => (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => handleScan(row.id, e)}
-                    isLoading={scanningId === row.id}
-                    icon={<Play size={14} />}
-                >
-                    Scan
-                </Button>
+                <div className="flex items-center gap-2 justify-end">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setHistoryId(row.id);
+                        }}
+                        icon={<History size={14} />}
+                        title="View History"
+                    />
+                    <ScanAction dataSource={row} />
+                </div>
             ),
         },
     ];
@@ -234,6 +267,12 @@ const DataSources = () => {
                     </div>
                 </form>
             </Modal>
+
+            {/* Scan History Modal */}
+            <ScanHistoryModal
+                dataSourceId={historyId}
+                onClose={() => setHistoryId(null)}
+            />
         </div>
     );
 };

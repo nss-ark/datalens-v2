@@ -9,13 +9,14 @@ import (
 	mw "github.com/complyark/datalens/internal/middleware"
 	"github.com/complyark/datalens/internal/service"
 	"github.com/complyark/datalens/pkg/httputil"
+	"github.com/complyark/datalens/pkg/types"
 )
 
 // DiscoveryHandler handles discovery-related REST endpoints
 // for data inventories, entities, and fields.
 type DiscoveryHandler struct {
-	service       *service.DiscoveryService
-	scanService   *service.ScanService // <--- Added dependency
+	service       service.DiscoveryOrchestrator
+	scanService   service.ScanOrchestrator // <--- Interface
 	inventoryRepo discovery.DataInventoryRepository
 	entityRepo    discovery.DataEntityRepository
 	fieldRepo     discovery.DataFieldRepository
@@ -23,8 +24,8 @@ type DiscoveryHandler struct {
 
 // NewDiscoveryHandler creates a new DiscoveryHandler.
 func NewDiscoveryHandler(
-	service *service.DiscoveryService,
-	scanService *service.ScanService, // <--- Added param
+	service service.DiscoveryOrchestrator,
+	scanService service.ScanOrchestrator, // <--- Interface
 	inventoryRepo discovery.DataInventoryRepository,
 	entityRepo discovery.DataEntityRepository,
 	fieldRepo discovery.DataFieldRepository,
@@ -46,6 +47,9 @@ func (h *DiscoveryHandler) Routes() chi.Router {
 	// Trigger Scan (Async)
 	r.Post("/data-sources/{sourceID}/scan", h.ScanDataSource)
 
+	// Test Connection
+	r.Post("/data-sources/{sourceID}/test", h.TestConnection)
+
 	// Scan Status & History
 	r.Get("/data-sources/{sourceID}/scan/status", h.GetScanStatus)
 	r.Get("/data-sources/{sourceID}/scan/history", h.GetScanHistory)
@@ -61,7 +65,71 @@ func (h *DiscoveryHandler) Routes() chi.Router {
 	r.Get("/entities/{entityID}/fields", h.ListFields)
 	r.Get("/fields/{fieldID}", h.GetField)
 
+	// Classifications (Review Queue)
+	r.Get("/classifications", h.GetClassifications)
+
 	return r
+}
+
+// GetClassifications returns a paginated list of PII classifications with filters.
+// GET /api/v2/discovery/classifications
+func (h *DiscoveryHandler) GetClassifications(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := mw.TenantIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "tenant context missing")
+		return
+	}
+
+	filter := discovery.ClassificationFilter{
+		Pagination: httputil.ParsePagination(r),
+	}
+
+	if dsIDStr := r.URL.Query().Get("data_source_id"); dsIDStr != "" {
+		id, err := httputil.ParseID(dsIDStr)
+		if err != nil {
+			httputil.ErrorFromDomain(w, err)
+			return
+		}
+		filter.DataSourceID = &id
+	}
+
+	if statusStr := r.URL.Query().Get("status"); statusStr != "" {
+		s := types.VerificationStatus(statusStr)
+		filter.Status = &s
+	}
+
+	if methodStr := r.URL.Query().Get("detection_method"); methodStr != "" {
+		m := types.DetectionMethod(methodStr)
+		filter.DetectionMethod = &m
+	}
+
+	result, err := h.service.GetClassifications(r.Context(), tenantID, filter)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, result)
+}
+
+// TestConnection tests connectivity to a data source.
+// POST /api/v2/data-sources/{sourceID}/test
+func (h *DiscoveryHandler) TestConnection(w http.ResponseWriter, r *http.Request) {
+	sourceID, err := httputil.ParseID(chi.URLParam(r, "sourceID"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	if err := h.service.TestConnection(r.Context(), sourceID); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Connection successful",
+	})
 }
 
 // ScanDataSource triggers a background scan of the data source.

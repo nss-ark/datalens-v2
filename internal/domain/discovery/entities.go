@@ -180,12 +180,28 @@ type DataSourceRepository interface {
 	Delete(ctx context.Context, id types.ID) error
 }
 
+// ClassificationFilter defines criteria for filtering PII classifications.
+type ClassificationFilter struct {
+	DataSourceID    *types.ID
+	Status          *types.VerificationStatus
+	DetectionMethod *types.DetectionMethod
+	Pagination      types.Pagination
+}
+
+// PIICounts holds aggregated PII statistics.
+type PIICounts struct {
+	Total      int            `json:"total"`
+	ByCategory map[string]int `json:"by_category"`
+}
+
 // PIIClassificationRepository defines persistence for PII findings.
 type PIIClassificationRepository interface {
 	Create(ctx context.Context, c *PIIClassification) error
 	GetByID(ctx context.Context, id types.ID) (*PIIClassification, error)
 	GetByDataSource(ctx context.Context, dataSourceID types.ID, pagination types.Pagination) (*types.PaginatedResult[PIIClassification], error)
 	GetPending(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[PIIClassification], error)
+	GetClassifications(ctx context.Context, tenantID types.ID, filter ClassificationFilter) (*types.PaginatedResult[PIIClassification], error)
+	GetCounts(ctx context.Context, tenantID types.ID) (*PIICounts, error)
 	Update(ctx context.Context, c *PIIClassification) error
 	BulkCreate(ctx context.Context, classifications []PIIClassification) error
 }
@@ -196,6 +212,7 @@ type ScanRunRepository interface {
 	GetByID(ctx context.Context, id types.ID) (*ScanRun, error)
 	GetByDataSource(ctx context.Context, dataSourceID types.ID) ([]ScanRun, error)
 	GetActive(ctx context.Context, tenantID types.ID) ([]ScanRun, error)
+	GetRecent(ctx context.Context, tenantID types.ID, limit int) ([]ScanRun, error)
 	Update(ctx context.Context, run *ScanRun) error
 }
 

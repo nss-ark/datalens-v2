@@ -281,6 +281,26 @@ Currently, `discovery_handler.go` only has `GET /data-sources/{sourceID}/invento
 
 ---
 
+### [2026-02-10 18:30 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: DSR Engine Foundation Implemented
+**Type**: HANDOFF
+
+**Changes**:
+- Created `dsr_requests` and `dsr_tasks` tables (mig `004_dsr.sql`).
+- Implemented `DSRService` with SLA calculation (default 30 days) and state machine.
+- Implemented `DSRHandler` with create/list/get/approve/reject endpoints.
+- Wired up events: `dsr.created`, `dsr.executing`, `dsr.rejected`.
+
+**Features Enabled**:
+- **DSR Management**: Can now create and track DSRs.
+- **Task Decomposition**: Approving a DSR automatically creates sub-tasks for all data sources (stub for now).
+
+**Action Required**:
+- **Frontend**: Can begin building DSR Management UI (Batch 4).
+- **Test**: Can test DSR lifecycle (Create -> Approve -> Check Tasks).
+
+---
+
 ### [2026-02-10 18:00 IST] [FROM: Backend] → [TO: ALL]
 **Subject**: Scan Orchestrator (Async Job Queue) Implemented
 **Type**: HANDOFF
@@ -302,6 +322,53 @@ Currently, `discovery_handler.go` only has `GET /data-sources/{sourceID}/invento
 **Action Required**:
 - **Frontend**: Update Scan button to handle `202 Accepted` and poll `/scan/status` for progress.
 - **DevOps**: Ensure NATS JetStream is enabled (it is in `docker-compose.dev.yml`).
+
+---
+
+### [2026-02-10 21:50 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: Missing API Endpoints Implemented (Classifications, Test, Dashboard)
+**Type**: HANDOFF
+
+**Changes**:
+- Implemented `GET /api/v2/discovery/classifications` (filterable, paginated).
+- Implemented `POST /api/v2/data-sources/{id}/test` (using Connector Registry).
+- Implemented `GET /api/v2/dashboard/stats` (aggregated tenant metrics).
+- Created `DashboardService` and `DashboardHandler`.
+- Wired all new components in `main.go`.
+
+**Features Enabled**:
+- **PII Review**: Full backend support for listing and filtering PII classifications.
+- **Connection Testing**: "Test Connection" button can now verify credentials against the actual database.
+- **Dashboard**: Real metrics for Total Data Sources, Total Scans, PII Counts, and Recent Scans.
+
+**Action Required**:
+- **Frontend**: Can now implement PII Review Queue, Test Connection button, and Dashboard widgets.
+- **Test**: Verify these new endpoints.
+
+---
+
+### [2026-02-10 22:30 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: MongoDB Connector & Incremental Scanning Implemented
+**Type**: HANDOFF
+
+**Changes**:
+- Added `go.mongodb.org/mongo-driver` dependency.
+- Implemented `MongoDBConnector` in `internal/infrastructure/connector/mongodb.go` (schema discovery via collection listing, field inference via sampling).
+- Updated `Connector` interface to support `DiscoveryInput` with `ChangedSince`.
+- Updated `DiscoveryService` to perform incremental scans if a previous successful scan exists.
+- Updated `MySQLConnector` to filter by `UPDATE_TIME` during incremental scans.
+- Registered `MongoDBConnector` in `ConnectorRegistry`.
+- Updated `DiscoveryHandler` to expose `TestConnection` endpoint (previously implemented in Batch 3 Task #1, verified now).
+
+**Features Enabled**:
+- **MongoDB Support**: Can now connect to, scan, and sample MongoDB databases.
+- **Incremental Scanning**: MySQL scans now only fetch tables changed since the last scan (optimization).
+- **Schema Inference**: MongoDB schema is inferred by sampling documents (flat schema for now, supports nested dot-notation access).
+
+**Action Required**:
+- **DevOps**: Ensure MongoDB is available in the environment (added to `docker-compose.dev.yml`).
+- **Frontend**: Add "MONGODB" as a Data Source type option.
+- **Test**: Validate MongoDB scanning and incremental behavior for MySQL.
 
 ---
 
@@ -368,6 +435,134 @@ _Document new API contracts here as they're created:_
 ```
 **Status**: Implemented
 
+### Create DSR
+**Created by**: Backend Agent
+**Date**: 2026-02-10
+**Method**: POST
+**Path**: `/api/v2/dsr`
+**Auth**: JWT Bearer token required
+**Request Body**:
+```json
+{
+  "request_type": "ACCESS | ERASURE | CORRECTION | PORTABILITY",
+  "subject_name": "John Doe",
+  "subject_email": "john@example.com",
+  "subject_identifiers": { "phone": "+1234567890" },
+  "priority": "HIGH | MEDIUM | LOW"
+}
+```
+**Response Body** (201):
+```json
+{
+  "id": "uuid",
+  "status": "PENDING",
+  "sla_deadline": "2026-03-12T10:00:00Z",
+  "created_at": "..."
+}
+```
+
+### List DSRs
+**Created by**: Backend Agent
+**Date**: 2026-02-10
+**Method**: GET
+**Path**: `/api/v2/dsr?page=1&page_size=20&status=PENDING`
+**Auth**: JWT Bearer token required
+**Response Body** (200): Paginated list of DSR objects.
+
+### Get DSR Details
+**Created by**: Backend Agent
+**Date**: 2026-02-10
+**Method**: GET
+**Path**: `/api/v2/dsr/{id}`
+**Auth**: JWT Bearer token required
+**Response Body** (200):
+```json
+{
+  "id": "uuid",
+  "status": "APPROVED",
+  "tasks": [
+    { "id": "uuid", "data_source_id": "uuid", "status": "PENDING", ... }
+  ]
+}
+```
+
+### Approve DSR
+**Created by**: Backend Agent
+**Date**: 2026-02-10
+**Method**: PUT
+**Path**: `/api/v2/dsr/{id}/approve`
+**Auth**: JWT Bearer token required
+**Response Body** (200): Updated DSR object.
+**Side Effect**: Triggers task decomposition (creates DSRTasks).
+
+### Get Classifications
+**Created by**: Backend Agent
+**Date**: 2026-02-10
+**Method**: GET
+**Path**: `/api/v2/discovery/classifications?page=1&page_size=20&status=PENDING&data_source_id=...`
+**Auth**: JWT Bearer token required
+**Response Body** (200):
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "entity_name": "users",
+      "field_name": "email",
+      "category": "CONTACT",
+      "type": "EMAIL",
+      "sensitivity": "HIGH",
+      "confidence": 0.95,
+      "status": "PENDING",
+      "created_at": "..."
+    }
+  ],
+  "total": 100,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 5
+}
+```
+
+### Test Data Source Connection
+**Created by**: Backend Agent
+**Date**: 2026-02-10
+**Method**: POST
+**Path**: `/api/v2/data-sources/{id}/test`
+**Auth**: JWT Bearer token required
+**Response Body** (200):
+```json
+{
+  "success": true,
+  "message": "Connection successful"
+}
+```
+**Error Response** (400/500):
+```json
+{
+  "error": "connection failed: authentication failed..."
+}
+```
+
+### Get Dashboard Stats
+**Created by**: Backend Agent
+**Date**: 2026-02-10
+**Method**: GET
+**Path**: `/api/v2/dashboard/stats`
+**Auth**: JWT Bearer token required
+**Response Body** (200):
+```json
+{
+  "total_data_sources": 5,
+  "total_pii_fields": 150,
+  "total_scans": 20,
+  "risk_score": 0,
+  "pii_by_category": { "CONTACT": 50, "FINANCIAL": 20 },
+  "recent_scans": [ { "id": "...", "status": "COMPLETED", ... } ],
+  "pending_reviews": 10
+}
+```
+
 ### Active Interface Contracts
 
 _Document Go interfaces that cross agent boundaries:_
@@ -389,27 +584,35 @@ _Document Go interfaces that cross agent boundaries:_
 ### Current Sprint Goals
 
 ~~**Sprint Batch 1** (Feb 10, 2026) — ✅ COMPLETE~~
+~~**Sprint Batch 2** (Feb 10, 2026) — ✅ COMPLETE~~
+~~**Sprint Batch 3** (Feb 10, 2026) — ✅ COMPLETE~~
 
-**Sprint Batch 2** (Feb 10, 2026)
+**Sprint Batch 4** (Feb 10, 2026)
 
 | # | Task | Agent | Priority | Parallel? |
 |---|------|-------|----------|-----------|
-| 1 | Connect real API auth + build DataSources page | Frontend | P0 | ✅ |
-| 2 | Build PII Discovery page with feedback UI | Frontend | P0 | ⚠️ After #1 |
-| 3 | MySQL connector + ConnectorCapabilities + registry | Backend | P1 | ✅ |
-| 4 | Tests for all Batch 1 new code (feedback, cache, discovery, industry) | Test | P0 | ✅ |
-| 5 | Scan orchestrator — async NATS job queue + progress + scheduling | Backend | P1 | ⚠️ After #3 |
+| 1 | DSR Execution Engine — access/erasure/correction across data sources | Backend | P0 | ✅ |
+| 2 | DSR Management page with status tracking UI | Frontend | P0 | ⚠️ After #1 |
+| 3 | S3 connector + scan scheduling (cron) | Backend | P1 | ✅ |
+| 4 | Tests for Batch 3 + E2E scan→detect→feedback | Test | P0 | ✅ |
+| 5 | CI/CD pipeline (GitHub Actions, Dockerfiles) | DevOps | P1 | ✅ |
 
-**Batch Goals**: Connect frontend to live APIs, expand connector framework, async scanning, comprehensive test coverage.
+**Batch Goals**: Execute DSR operations across data sources, compliance UI, S3 scanning, CI/CD automation, E2E validation.
 
 ---
 
 ## Resolved Messages Archive
 
-### Batch 1 — All Resolved (Feb 10, 2026)
-- ~~Orchestrator kick-off~~ ✅
-- ~~Frontend scaffolding handoff~~ ✅ — Consumed in Batch 2 Task #1
-- ~~Backend feedback workflow handoff~~ ✅ — Consumed in Batch 2 Task #2 & #4
-- ~~Backend Redis caching handoff~~ ✅ — Consumed in Batch 2 Task #4
-- ~~Backend Discovery Service handoff~~ ✅ — Consumed in Batch 2 Task #4
-- ~~AI/ML Industry Strategy handoff~~ ✅ — Consumed in Batch 2 Task #4
+### Batch 1 — All Resolved
+- ~~All 6 handoffs~~ ✅
+
+### Batch 2 — All Resolved
+- ~~All 7 handoffs + 2 requests~~ ✅
+
+### Batch 3 — All Resolved (Feb 10, 2026)
+- ~~Backend: Missing endpoints (classifications, test-connection, dashboard)~~ ✅
+- ~~Frontend: Dashboard + scan polling~~ ✅
+- ~~Backend: MongoDB connector + incremental scanning~~ ✅
+- ~~Test: Batch 2 tests (registry 3/3, scan/MySQL impl ready)~~ ✅
+- ~~Backend: DSR Engine foundation~~ ✅ — Consumed in Batch 4 Task #1 & #2
+- ~~Frontend REQUEST: GET /api/v2/discovery/classifications~~ ✅ — Implemented in Batch 3 Task #1

@@ -68,8 +68,25 @@ services:
       timeout: 5s
       retries: 10
 
+  mongo:
+    image: mongo:7.0
+    container_name: datalens-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: datalens
+      MONGO_INITDB_ROOT_PASSWORD: datalens_dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   redis_data:
   nats_data:
   mysql_data:
+  mongo_data:

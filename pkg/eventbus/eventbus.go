@@ -63,6 +63,7 @@ const (
 	EventDSRCompleted = "dsr.completed"
 	EventDSRFailed    = "dsr.failed"
 	EventDSRVerified  = "dsr.verified"
+	EventDSRRejected  = "dsr.rejected"
 
 	// Consent Events
 	EventConsentGranted   = "consent.granted"

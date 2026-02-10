@@ -128,6 +128,39 @@ func (r *PostgresScanRunRepo) GetActive(ctx context.Context, tenantID types.ID) 
 	return runs, nil
 }
 
+// GetRecent retrieves a limited number of recent scan runs for a tenant
+func (r *PostgresScanRunRepo) GetRecent(ctx context.Context, tenantID types.ID, limit int) ([]discovery.ScanRun, error) {
+	query := `
+		SELECT 
+			id, data_source_id, tenant_id, type, status, progress, 
+			started_at, completed_at, error_message, 
+			entities_scanned, fields_scanned, pii_detected, duration_ms, bytes_processed
+		FROM scan_runs
+		WHERE tenant_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2`
+
+	rows, err := r.pool.Query(ctx, query, tenantID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list recent scans: %w", err)
+	}
+	defer rows.Close()
+
+	var runs []discovery.ScanRun
+	for rows.Next() {
+		run, err := scanRowToScanRun(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan run row: %w", err)
+		}
+		runs = append(runs, *run)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return runs, nil
+}
+
 // Update persists changes to an existing scan run
 func (r *PostgresScanRunRepo) Update(ctx context.Context, run *discovery.ScanRun) error {
 	query := `

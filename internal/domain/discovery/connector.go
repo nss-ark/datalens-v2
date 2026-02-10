@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"context"
+	"time"
 )
 
 // ConnectorCapabilities describes what a data source connector supports.
@@ -19,6 +20,14 @@ type ConnectorCapabilities struct {
 	MaxConcurrency          int  `json:"max_concurrency"`
 }
 
+// DiscoveryInput contains options for the discovery process.
+type DiscoveryInput struct {
+	// ChangedSince, if set, requests the connector to only return entities
+	// modified after this time. If the connector does not support incremental
+	// discovery, it may ignore this field and return all entities.
+	ChangedSince time.Time
+}
+
 // Connector defines the universal interface for data source connectors.
 // implementations reside in internal/infrastructure/connector.
 type Connector interface {
@@ -27,7 +36,7 @@ type Connector interface {
 
 	// DiscoverSchema returns the schema/structure of the data source.
 	// It returns the inventory stats and a list of entities (tables/files).
-	DiscoverSchema(ctx context.Context) (*DataInventory, []DataEntity, error)
+	DiscoverSchema(ctx context.Context, input DiscoveryInput) (*DataInventory, []DataEntity, error)
 
 	// GetFields returns the fields (columns) for a specific entity.
 	GetFields(ctx context.Context, entityID string) ([]DataField, error) // entityID is the name or ID from DataEntity

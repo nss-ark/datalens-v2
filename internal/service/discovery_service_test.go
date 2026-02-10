@@ -27,8 +27,8 @@ func (m *MockConnector) Connect(ctx context.Context, ds *discovery.DataSource) e
 	args := m.Called(ctx, ds)
 	return args.Error(0)
 }
-func (m *MockConnector) DiscoverSchema(ctx context.Context) (*discovery.DataInventory, []discovery.DataEntity, error) {
-	args := m.Called(ctx)
+func (m *MockConnector) DiscoverSchema(ctx context.Context, input discovery.DiscoveryInput) (*discovery.DataInventory, []discovery.DataEntity, error) {
+	args := m.Called(ctx, input)
 	if args.Get(0) == nil {
 		return nil, nil, args.Error(2)
 	}
@@ -99,7 +99,8 @@ func TestDiscoveryService_ScanDataSource_Success(t *testing.T) {
 	detector := detection.NewComposableDetector(mockStrategy)
 
 	// Setup Service
-	svc := NewDiscoveryService(dsRepo, invRepo, entityRepo, fieldRepo, piiRepo, registry, detector, eb, slog.Default())
+	scanRunRepo := newMockScanRunRepo()
+	svc := NewDiscoveryService(dsRepo, invRepo, entityRepo, fieldRepo, piiRepo, scanRunRepo, registry, detector, eb, slog.Default())
 
 	ctx := context.Background()
 	tenantID := types.NewID()
@@ -127,7 +128,7 @@ func TestDiscoveryService_ScanDataSource_Success(t *testing.T) {
 	entities := []discovery.DataEntity{
 		{Name: "users", Type: discovery.EntityTypeTable},
 	}
-	connectorMock.On("DiscoverSchema", ctx).Return(inv, entities, nil)
+	connectorMock.On("DiscoverSchema", ctx, mock.Anything).Return(inv, entities, nil)
 
 	// Mock GetFields
 	fields := []discovery.DataField{

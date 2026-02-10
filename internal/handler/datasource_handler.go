@@ -154,5 +154,10 @@ func (h *DataSourceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := h.svc.Delete(r.Context(), id); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
 	httputil.JSON(w, http.StatusNoContent, nil)
 }

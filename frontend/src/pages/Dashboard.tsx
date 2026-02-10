@@ -1,73 +1,136 @@
-import { Users, Database, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Database, ShieldCheck, AlertTriangle, Activity, ArrowRight, Plus } from 'lucide-react';
 import { Button } from '../components/common/Button';
-
-// Temporary StatCard component until fully implemented
-const StatCard = ({ title, value, icon: Icon, color }: any) => (
-    <div style={{
-        backgroundColor: 'white',
-        padding: '1.5rem',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border-color)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        boxShadow: 'var(--shadow-sm)'
-    }}>
-        <div style={{
-            padding: '0.75rem',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: `var(--${color}-50)`,
-            color: `var(--${color}-600)`
-        }}>
-            <Icon size={24} />
-        </div>
-        <div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{title}</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>{value}</div>
-        </div>
-    </div>
-);
+import { StatCard } from '../components/Dashboard/StatCard';
+import { PIIChart } from '../components/Dashboard/PIIChart';
+import { DataTable } from '../components/DataTable/DataTable';
+import { StatusBadge } from '../components/common/StatusBadge';
+import { dashboardService } from '../services/dashboard';
+import type { ScanSummary } from '../types/dashboard';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
+    const { data: stats, isLoading } = useQuery({
+        queryKey: ['dashboardStats'],
+        queryFn: dashboardService.getStats,
+        refetchInterval: 30000, // Refresh every 30s
+    });
+
+    const recentScansColumns = [
+        {
+            key: 'data_source_name',
+            header: 'Data Source',
+            render: (row: ScanSummary) => (
+                <div className="font-medium text-gray-900">{row.data_source_name || 'Unknown Source'}</div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (row: ScanSummary) => <StatusBadge label={row.status} />,
+        },
+        {
+            key: 'tables_scanned',
+            header: 'Tables',
+            render: (row: ScanSummary) => <span>{row.tables_scanned}</span>,
+        },
+        {
+            key: 'pii_found',
+            header: 'PII Found',
+            render: (row: ScanSummary) => (
+                <span className={row.pii_found > 0 ? 'text-amber-600 font-medium' : 'text-gray-500'}>
+                    {row.pii_found}
+                </span>
+            ),
+        },
+        {
+            key: 'started_at',
+            header: 'Time',
+            render: (row: ScanSummary) => (
+                <span className="text-gray-500 text-sm">
+                    {new Date(row.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+            ),
+        },
+    ];
+
     return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 style={{ fontSize: '1.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-                        Good afternoon, User
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Here's what's happening with your data compliance today.
-                    </p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+                    <p className="text-gray-500 mt-1">Overview of your data compliance posture</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <Button variant="outline">Download Report</Button>
-                    <Button>Add New Data Source</Button>
+                <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => navigate('/discovery')}>
+                        Review PII
+                    </Button>
+                    <Button icon={<Plus size={16} />} onClick={() => navigate('/datasources')}>
+                        Add Data Source
+                    </Button>
                 </div>
             </div>
 
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '1.5rem',
-                marginBottom: '2rem'
-            }}>
-                <StatCard title="Total Data Sources" value="12" icon={Database} color="primary" />
-                <StatCard title="Total PII Found" value="1,248" icon={ShieldCheck} color="success" />
-                <StatCard title="Pending Review" value="45" icon={AlertTriangle} color="warning" />
-                <StatCard title="Active Users" value="8" icon={Users} color="info" />
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard
+                    title="Total Data Sources"
+                    value={stats?.total_data_sources ?? 0}
+                    icon={Database}
+                    color="primary"
+                    loading={isLoading}
+                />
+                <StatCard
+                    title="Total Scans Run"
+                    value={stats?.total_scans ?? 0}
+                    icon={Activity}
+                    color="info"
+                    loading={isLoading}
+                />
+                <StatCard
+                    title="PII Fields Found"
+                    value={stats?.total_pii_fields ?? 0}
+                    icon={ShieldCheck}
+                    color="danger"
+                    loading={isLoading}
+                />
+                <StatCard
+                    title="Pending Reviews"
+                    value={stats?.pending_reviews ?? 0}
+                    icon={AlertTriangle}
+                    color="warning"
+                    loading={isLoading}
+                />
             </div>
 
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border-color)',
-                padding: '1.5rem',
-                minHeight: '300px'
-            }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Compliance Trends</h2>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: 'var(--text-tertiary)' }}>
-                    Chart placeholder
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Recent Scans */}
+                <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-lg font-semibold text-gray-900">Recent Scans</h2>
+                        <Button variant="ghost" size="sm" rightIcon={<ArrowRight size={16} />} onClick={() => navigate('/datasources')}>
+                            View All
+                        </Button>
+                    </div>
+                    <DataTable
+                        columns={recentScansColumns}
+                        data={stats?.recent_scans ?? []}
+                        isLoading={isLoading}
+                        keyExtractor={(row) => row.id}
+                        emptyTitle="No recent scans"
+                        emptyDescription="Start a scan from the Data Sources page"
+                        loadingRows={3}
+                    />
+                </div>
+
+                {/* PII Distribution */}
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-lg font-semibold text-gray-900">PII by Category</h2>
+                    </div>
+                    <PIIChart data={stats?.pii_stats.pii_by_category ?? {}} loading={isLoading} />
                 </div>
             </div>
         </div>

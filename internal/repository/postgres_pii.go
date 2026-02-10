@@ -169,6 +169,130 @@ func (r *PIIClassificationRepo) GetPending(ctx context.Context, tenantID types.I
 	}, nil
 }
 
+func (r *PIIClassificationRepo) GetClassifications(ctx context.Context, tenantID types.ID, filter discovery.ClassificationFilter) (*types.PaginatedResult[discovery.PIIClassification], error) {
+	// Build base query
+	baseQuery := `
+		FROM pii_classifications pc
+		JOIN data_sources ds ON ds.id = pc.data_source_id
+		WHERE ds.tenant_id = $1`
+
+	args := []interface{}{tenantID}
+	argIdx := 2
+
+	// Helper to add condition
+	addCondition := func(condition string, val interface{}) {
+		baseQuery += fmt.Sprintf(" AND %s = $%d", condition, argIdx)
+		args = append(args, val)
+		argIdx++
+	}
+
+	if filter.DataSourceID != nil {
+		addCondition("pc.data_source_id", *filter.DataSourceID)
+	}
+	if filter.Status != nil {
+		addCondition("pc.status", *filter.Status)
+	}
+	if filter.DetectionMethod != nil {
+		addCondition("pc.detection_method", *filter.DetectionMethod)
+	}
+
+	// Count total
+	countQuery := "SELECT COUNT(*) " + baseQuery
+	var total int
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, fmt.Errorf("count classifications: %w", err)
+	}
+
+	// Fetch items
+	offset := (filter.Pagination.Page - 1) * filter.Pagination.PageSize
+	query := `
+		SELECT pc.id, pc.field_id, pc.data_source_id, pc.entity_name, pc.field_name, pc.category,
+			   pc.type, pc.sensitivity, pc.confidence, pc.detection_method, pc.status,
+			   pc.verified_by, pc.verified_at, pc.reasoning, pc.created_at, pc.updated_at ` +
+		baseQuery +
+		fmt.Sprintf(" ORDER BY pc.created_at DESC LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+
+	args = append(args, filter.Pagination.PageSize, offset)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list classifications: %w", err)
+	}
+	defer rows.Close()
+
+	var items []discovery.PIIClassification
+	for rows.Next() {
+		var c discovery.PIIClassification
+		if err := rows.Scan(
+			&c.ID, &c.FieldID, &c.DataSourceID, &c.EntityName, &c.FieldName, &c.Category, &c.Type,
+			&c.Sensitivity, &c.Confidence, &c.DetectionMethod, &c.Status, &c.VerifiedBy, &c.VerifiedAt,
+			&c.Reasoning, &c.CreatedAt, &c.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan classification: %w", err)
+		}
+		items = append(items, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	totalPages := total / filter.Pagination.PageSize
+	if total%filter.Pagination.PageSize > 0 {
+		totalPages++
+	}
+
+	return &types.PaginatedResult[discovery.PIIClassification]{
+		Items:      items,
+		Total:      total,
+		Page:       filter.Pagination.Page,
+		PageSize:   filter.Pagination.PageSize,
+		TotalPages: totalPages,
+	}, nil
+}
+
+func (r *PIIClassificationRepo) GetCounts(ctx context.Context, tenantID types.ID) (*discovery.PIICounts, error) {
+	// 1. Total PII for Tenant
+	// Join with data_sources to filter by tenant_id
+	totalQuery := `
+		SELECT COUNT(*) 
+		FROM pii_classifications pc
+		JOIN data_sources ds ON ds.id = pc.data_source_id
+		WHERE ds.tenant_id = $1`
+
+	counts := &discovery.PIICounts{
+		ByCategory: make(map[string]int),
+	}
+
+	if err := r.pool.QueryRow(ctx, totalQuery, tenantID).Scan(&counts.Total); err != nil {
+		return nil, fmt.Errorf("count total pii: %w", err)
+	}
+
+	// 2. Group by Category
+	categoryQuery := `
+		SELECT pc.category, COUNT(*)
+		FROM pii_classifications pc
+		JOIN data_sources ds ON ds.id = pc.data_source_id
+		WHERE ds.tenant_id = $1
+		GROUP BY pc.category`
+
+	rows, err := r.pool.Query(ctx, categoryQuery, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("count pii by category: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var category string
+		var count int
+		if err := rows.Scan(&category, &count); err != nil {
+			return nil, fmt.Errorf("scan category count: %w", err)
+		}
+		counts.ByCategory[category] = count
+	}
+
+	return counts, nil
+}
+
 func (r *PIIClassificationRepo) Update(ctx context.Context, c *discovery.PIIClassification) error {
 	query := `
 		UPDATE pii_classifications

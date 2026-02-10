@@ -72,7 +72,7 @@ func (c *PostgresConnector) Connect(ctx context.Context, ds *discovery.DataSourc
 }
 
 // DiscoverSchema queries information_schema to build the inventory.
-func (c *PostgresConnector) DiscoverSchema(ctx context.Context) (*discovery.DataInventory, []discovery.DataEntity, error) {
+func (c *PostgresConnector) DiscoverSchema(ctx context.Context, input discovery.DiscoveryInput) (*discovery.DataInventory, []discovery.DataEntity, error) {
 	if c.conn == nil {
 		return nil, nil, fmt.Errorf("not connected")
 	}

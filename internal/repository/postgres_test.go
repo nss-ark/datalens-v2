@@ -949,3 +949,80 @@ func TestFeedbackRepo_CRUD(t *testing.T) {
 	assert.Equal(t, 1, stats.Corrected)
 	assert.Equal(t, 0.5, stats.Accuracy) // 1 verified / 2 total
 }
+
+func TestScanRunRepo_CRUD(t *testing.T) {
+	pool := setupTestDB(t)
+	defer pool.Close()
+
+	repo := NewScanRunRepo(pool)
+	dsRepo := NewDataSourceRepo(pool)
+	ctx := context.Background()
+
+	tenantID := types.NewID()
+	dsID := types.NewID()
+
+	// 1. Setup DataSource (FK requirement)
+	ds := &discovery.DataSource{
+		TenantEntity: types.TenantEntity{
+			BaseEntity: types.BaseEntity{ID: dsID},
+			TenantID:   tenantID,
+		},
+		Name: "Scan Target DB",
+		Type: types.DataSourcePostgreSQL,
+	}
+	require.NoError(t, dsRepo.Create(ctx, ds))
+
+	// 2. Create ScanRun
+	runID := types.NewID()
+	run := &discovery.ScanRun{
+		BaseEntity: types.BaseEntity{
+			ID: runID,
+		},
+		DataSourceID: dsID,
+		TenantID:     tenantID,
+		Type:         discovery.ScanTypeFull,
+		Status:       discovery.ScanStatusPending,
+		Progress:     0,
+	}
+	err := repo.Create(ctx, run)
+	require.NoError(t, err)
+
+	// 3. GetByID
+	fetched, err := repo.GetByID(ctx, runID)
+	require.NoError(t, err)
+	assert.Equal(t, discovery.ScanStatusPending, fetched.Status)
+	assert.Equal(t, dsID, fetched.DataSourceID)
+
+	// 4. Update
+	now := time.Now()
+	fetched.Status = discovery.ScanStatusRunning
+	fetched.StartedAt = &now
+	fetched.Progress = 50
+	err = repo.Update(ctx, fetched)
+	require.NoError(t, err)
+
+	updated, err := repo.GetByID(ctx, runID)
+	require.NoError(t, err)
+	assert.Equal(t, discovery.ScanStatusRunning, updated.Status)
+	assert.Equal(t, 50, updated.Progress)
+
+	// 5. GetActive
+	active, err := repo.GetActive(ctx, tenantID)
+	require.NoError(t, err)
+	assert.Len(t, active, 1)
+	assert.Equal(t, runID, active[0].ID)
+
+	// 6. Complete and Check Active
+	fetched.Status = discovery.ScanStatusCompleted
+	err = repo.Update(ctx, fetched)
+	require.NoError(t, err)
+
+	active, err = repo.GetActive(ctx, tenantID)
+	require.NoError(t, err)
+	assert.Len(t, active, 0) // Should be empty
+
+	// 7. GetByDataSource
+	history, err := repo.GetByDataSource(ctx, dsID)
+	require.NoError(t, err)
+	assert.Len(t, history, 1)
+}

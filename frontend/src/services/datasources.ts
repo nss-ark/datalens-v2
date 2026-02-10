@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { DataSource, CreateDataSourceInput, UpdateDataSourceInput } from '../types/datasource';
+import type { DataSource, CreateDataSourceInput, UpdateDataSourceInput, ScanProgress, ScanHistoryItem } from '../types/datasource';
 import type { ID } from '../types/common';
 
 export const dataSourceService = {
@@ -29,6 +29,16 @@ export const dataSourceService = {
 
     async scan(id: ID): Promise<void> {
         await api.post(`/data-sources/${id}/scan`);
+    },
+
+    async getScanStatus(id: ID): Promise<ScanProgress> {
+        const res = await api.get<ScanProgress>(`/data-sources/${id}/scan/status`);
+        return res.data;
+    },
+
+    async getScanHistory(id: ID): Promise<ScanHistoryItem[]> {
+        const res = await api.get<ScanHistoryItem[]>(`/data-sources/${id}/scan/history`);
+        return res.data;
     },
 
     async testConnection(id: ID): Promise<void> {

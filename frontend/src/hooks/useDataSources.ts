@@ -65,3 +65,26 @@ export function useScanDataSource() {
         },
     });
 }
+
+export function useScanStatus(id: ID, enabled: boolean = false) {
+    return useQuery({
+        queryKey: ['scanStatus', id],
+        queryFn: () => dataSourceService.getScanStatus(id),
+        enabled: !!id && enabled,
+        refetchInterval: (query) => {
+            const status = query.state.data?.status;
+            if (status === 'COMPLETED' || status === 'FAILED') {
+                return false;
+            }
+            return 3000; // Poll every 3 seconds
+        },
+    });
+}
+
+export function useScanHistory(id: ID) {
+    return useQuery({
+        queryKey: ['scanHistory', id],
+        queryFn: () => dataSourceService.getScanHistory(id),
+        enabled: !!id,
+    });
+}

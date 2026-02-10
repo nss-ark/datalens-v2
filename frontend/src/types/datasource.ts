@@ -17,6 +17,28 @@ export interface DataSource extends BaseEntity {
     error_message?: string | null;
 }
 
+export type ScanStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+
+export interface ScanProgress {
+    status: ScanStatus;
+    progress_percentage: number;
+    tables_processed: number;
+    total_tables: number;
+    pii_found: number;
+    current_table?: string;
+}
+
+export interface ScanHistoryItem {
+    id: string;
+    data_source_id: string;
+    status: ScanStatus;
+    tables_scanned: number;
+    pii_found: number;
+    started_at: string;
+    completed_at: string | null;
+    error_message?: string;
+}
+
 export interface CreateDataSourceInput {
     name: string;
     type: DataSourceType;

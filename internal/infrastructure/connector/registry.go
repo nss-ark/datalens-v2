@@ -32,6 +32,9 @@ func NewConnectorRegistry() *ConnectorRegistry {
 	r.Register(types.DataSourceMySQL, func() discovery.Connector {
 		return NewMySQLConnector()
 	})
+	r.Register(types.DataSourceMongoDB, func() discovery.Connector {
+		return NewMongoDBConnector()
+	})
 
 	return r
 }

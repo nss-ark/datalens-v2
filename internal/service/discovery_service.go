@@ -35,7 +35,7 @@ func NewDiscoveryService(
 	entityRepo discovery.DataEntityRepository,
 	fieldRepo discovery.DataFieldRepository,
 	piiRepo discovery.PIIClassificationRepository,
-	// scanRunRepo discovery.ScanRunRepository, // TODO: Add to main.go wiring
+	scanRunRepo discovery.ScanRunRepository,
 	registry *connector.ConnectorRegistry,
 	detector *detection.ComposableDetector,
 	eb eventbus.EventBus,
@@ -47,11 +47,11 @@ func NewDiscoveryService(
 		entityRepo:    entityRepo,
 		fieldRepo:     fieldRepo,
 		piiRepo:       piiRepo,
-		// scanRunRepo:   scanRunRepo,
-		registry: registry,
-		detector: detector,
-		eventBus: eb,
-		logger:   logger.With("service", "discovery"),
+		scanRunRepo:   scanRunRepo,
+		registry:      registry,
+		detector:      detector,
+		eventBus:      eb,
+		logger:        logger.With("service", "discovery"),
 	}
 }
 
@@ -81,8 +81,41 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 	}
 	defer conn.Close()
 
-	// 4. Discover Schema (Inventory + Entities)
-	inventory, entities, err := conn.DiscoverSchema(ctx)
+	// 4. Determine Scan Mode (Full vs Incremental)
+	var discoveryInput discovery.DiscoveryInput
+
+	// Check for previous successful scan
+	// We need a method to get the last successful scan for this DS.
+	// Since GetByDataSource returns all, we might want a specific method or filter here.
+	// For now, let's assume we fetch recent scans and find the last success.
+	// Improving ScanRunRepo to have GetLastSuccessful(ctx, dsID) would be better, but let's work with what we have.
+	scanRuns, err := s.scanRunRepo.GetByDataSource(ctx, ds.ID)
+	if err == nil {
+		// Find latest COMPLETED scan
+		var lastSuccess *discovery.ScanRun
+		for i := range scanRuns {
+			run := &scanRuns[i]
+			if run.Status == discovery.ScanStatusCompleted && run.CompletedAt != nil {
+				if lastSuccess == nil || run.CompletedAt.After(*lastSuccess.CompletedAt) {
+					lastSuccess = run
+				}
+			}
+		}
+
+		if lastSuccess != nil {
+			discoveryInput.ChangedSince = *lastSuccess.CompletedAt
+			s.logger.InfoContext(ctx, "performing incremental scan",
+				"data_source_id", ds.ID,
+				"changed_since", discoveryInput.ChangedSince)
+		} else {
+			s.logger.InfoContext(ctx, "performing full scan (no previous success)", "data_source_id", ds.ID)
+		}
+	} else {
+		s.logger.WarnContext(ctx, "failed to fetch scan history", "error", err)
+	}
+
+	// 5. Discover Schema (Inventory + Entities)
+	inventory, entities, err := conn.DiscoverSchema(ctx, discoveryInput)
 	if err != nil {
 		s.logError(ctx, ds.ID, "schema discovery failed", err)
 		return fmt.Errorf("discover schema: %w", err)
@@ -230,4 +263,37 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 
 func (s *DiscoveryService) logError(ctx context.Context, dsID types.ID, msg string, err error) {
 	s.logger.ErrorContext(ctx, msg, "data_source_id", dsID, "error", err)
+}
+
+// GetClassifications returns a paginated list of PII classifications with filters.
+func (s *DiscoveryService) GetClassifications(ctx context.Context, tenantID types.ID, filter discovery.ClassificationFilter) (*types.PaginatedResult[discovery.PIIClassification], error) {
+	return s.piiRepo.GetClassifications(ctx, tenantID, filter)
+}
+
+// TestConnection tests connectivity to a data source.
+// It resolves the connector and calls its Connect/Close methods.
+func (s *DiscoveryService) TestConnection(ctx context.Context, dataSourceID types.ID) error {
+	// 1. Fetch Data Source
+	ds, err := s.dsRepo.GetByID(ctx, dataSourceID)
+	if err != nil {
+		return fmt.Errorf("fetch data source: %w", err)
+	}
+
+	// 2. Resolve Connector
+	conn, err := s.registry.GetConnector(ds.Type)
+	if err != nil {
+		return fmt.Errorf("resolve connector: %w", err)
+	}
+
+	// 3. Test Connection
+	if err := conn.Connect(ctx, ds); err != nil {
+		return fmt.Errorf("connection failed: %w", err)
+	}
+
+	// Close immediately as we just wanted to test connectivity
+	if err := conn.Close(); err != nil {
+		s.logger.WarnContext(ctx, "failed to close connection during test", "data_source_id", ds.ID, "error", err)
+	}
+
+	return nil
 }
