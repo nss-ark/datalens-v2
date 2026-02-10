@@ -14,32 +14,19 @@ import (
 	"github.com/complyark/datalens/pkg/types"
 )
 
-// Context keys for authenticated request data.
-type contextKey string
-
-const (
-	ContextKeyUserID   contextKey = "user_id"
-	ContextKeyTenantID contextKey = "tenant_id"
-	ContextKeyEmail    contextKey = "email"
-	ContextKeyName     contextKey = "name"
-	ContextKeyRoles    contextKey = "roles"
-)
-
 // UserIDFromContext extracts the user ID from the request context.
 func UserIDFromContext(ctx context.Context) (types.ID, bool) {
-	id, ok := ctx.Value(ContextKeyUserID).(types.ID)
-	return id, ok
+	return types.UserIDFromContext(ctx)
 }
 
 // TenantIDFromContext extracts the tenant ID from the request context.
 func TenantIDFromContext(ctx context.Context) (types.ID, bool) {
-	id, ok := ctx.Value(ContextKeyTenantID).(types.ID)
-	return id, ok
+	return types.TenantIDFromContext(ctx)
 }
 
 // RolesFromContext extracts the user's roles from the request context.
 func RolesFromContext(ctx context.Context) []identity.Role {
-	roles, _ := ctx.Value(ContextKeyRoles).([]identity.Role)
+	roles, _ := ctx.Value(types.ContextKeyRoles).([]identity.Role)
 	return roles
 }
 
@@ -57,7 +44,7 @@ func Auth(authSvc *service.AuthService, apiKeySvc *service.APIKeyService) func(h
 				}
 
 				ctx := r.Context()
-				ctx = context.WithValue(ctx, ContextKeyTenantID, tenantID)
+				ctx = context.WithValue(ctx, types.ContextKeyTenantID, tenantID)
 				// No UserID for API key auth — agents are not users
 
 				// Convert permissions into a synthetic role for RequirePermission
@@ -65,7 +52,7 @@ func Auth(authSvc *service.AuthService, apiKeySvc *service.APIKeyService) func(h
 					Name:        "API_KEY_AGENT",
 					Permissions: perms,
 				}
-				ctx = context.WithValue(ctx, ContextKeyRoles, []identity.Role{agentRole})
+				ctx = context.WithValue(ctx, types.ContextKeyRoles, []identity.Role{agentRole})
 
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -86,10 +73,10 @@ func Auth(authSvc *service.AuthService, apiKeySvc *service.APIKeyService) func(h
 
 			// Set authenticated user data on context
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, ContextKeyUserID, claims.UserID)
-			ctx = context.WithValue(ctx, ContextKeyTenantID, claims.TenantID)
-			ctx = context.WithValue(ctx, ContextKeyEmail, claims.Email)
-			ctx = context.WithValue(ctx, ContextKeyName, claims.Name)
+			ctx = context.WithValue(ctx, types.ContextKeyUserID, claims.UserID)
+			ctx = context.WithValue(ctx, types.ContextKeyTenantID, claims.TenantID)
+			ctx = context.WithValue(ctx, types.ContextKeyEmail, claims.Email)
+			ctx = context.WithValue(ctx, types.ContextKeyName, claims.Name)
 
 			// Load user roles for RBAC (best-effort; missing roles = no permissions)
 			roles, err := authSvc.GetUserRoles(ctx, claims.UserID)
@@ -97,7 +84,7 @@ func Auth(authSvc *service.AuthService, apiKeySvc *service.APIKeyService) func(h
 				slog.Warn("failed to load user roles", "user_id", claims.UserID, "error", err)
 				roles = nil
 			}
-			ctx = context.WithValue(ctx, ContextKeyRoles, roles)
+			ctx = context.WithValue(ctx, types.ContextKeyRoles, roles)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

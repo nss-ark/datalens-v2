@@ -23,24 +23,31 @@ export interface TokenPair {
     expires_at: string;
 }
 
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    error?: any;
+    meta?: any;
+}
+
 export const authService = {
     async login(data: LoginRequest): Promise<TokenPair> {
-        const res = await api.post<TokenPair>('/auth/login', data);
-        return res.data;
+        const res = await api.post<ApiResponse<TokenPair>>('/auth/login', data);
+        return res.data.data;
     },
 
     async register(data: RegisterRequest): Promise<unknown> {
-        const res = await api.post('/auth/register', data);
-        return res.data;
+        const res = await api.post<ApiResponse<unknown>>('/auth/register', data);
+        return res.data.data;
     },
 
     async refreshToken(refreshToken: string): Promise<TokenPair> {
-        const res = await api.post<TokenPair>('/auth/refresh', { refresh_token: refreshToken });
-        return res.data;
+        const res = await api.post<ApiResponse<TokenPair>>('/auth/refresh', { refresh_token: refreshToken });
+        return res.data.data;
     },
 
     async getMe(): Promise<User> {
-        const res = await api.get<User>('/users/me');
-        return res.data;
+        const res = await api.get<ApiResponse<User>>('/users/me');
+        return res.data.data;
     },
 };

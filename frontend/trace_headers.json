@@ -1,0 +1,13 @@
+{
+  "loginStatus": 200,
+  "usersMeHeaders": {
+    "sec-ch-ua-platform": "\"Windows\"",
+    "referer": "http://localhost:3000/login",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36",
+    "accept": "application/json, text/plain, */*",
+    "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"HeadlessChrome\";v=\"145\", \"Chromium\";v=\"145\"",
+    "accept-language": "en-US",
+    "sec-ch-ua-mobile": "?0"
+  },
+  "finalUrl": "http://localhost:3000/login"
+}
