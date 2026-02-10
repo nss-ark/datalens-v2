@@ -17,6 +17,7 @@ import (
 // AuthService handles user authentication and JWT token management.
 type AuthService struct {
 	userRepo   identity.UserRepository
+	roleRepo   identity.RoleRepository
 	secretKey  []byte
 	accessTTL  time.Duration
 	refreshTTL time.Duration
@@ -26,12 +27,14 @@ type AuthService struct {
 // NewAuthService creates a new AuthService.
 func NewAuthService(
 	userRepo identity.UserRepository,
+	roleRepo identity.RoleRepository,
 	secretKey string,
 	accessTTL, refreshTTL time.Duration,
 	logger *slog.Logger,
 ) *AuthService {
 	return &AuthService{
 		userRepo:   userRepo,
+		roleRepo:   roleRepo,
 		secretKey:  []byte(secretKey),
 		accessTTL:  accessTTL,
 		refreshTTL: refreshTTL,
@@ -178,6 +181,45 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 // GetCurrentUser retrieves the user from a validated token's claims.
 func (s *AuthService) GetCurrentUser(ctx context.Context, userID types.ID) (*identity.User, error) {
 	return s.userRepo.GetByID(ctx, userID)
+}
+
+// GetUserRoles loads all roles assigned to a user by their RoleIDs.
+func (s *AuthService) GetUserRoles(ctx context.Context, userID types.ID) ([]identity.Role, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get user for roles: %w", err)
+	}
+
+	roles := make([]identity.Role, 0, len(user.RoleIDs))
+	for _, rid := range user.RoleIDs {
+		role, err := s.roleRepo.GetByID(ctx, rid)
+		if err != nil {
+			s.logger.WarnContext(ctx, "role not found for user", "role_id", rid, "user_id", userID)
+			continue
+		}
+		roles = append(roles, *role)
+	}
+	return roles, nil
+}
+
+// HasPermission checks if any of the given roles grant access to the resource+action.
+func HasPermission(roles []identity.Role, resource, action string) bool {
+	for _, role := range roles {
+		// ADMIN role has full access to everything
+		if role.Name == identity.RoleAdmin {
+			return true
+		}
+		for _, perm := range role.Permissions {
+			if perm.Resource == resource || perm.Resource == "*" {
+				for _, a := range perm.Actions {
+					if a == action || a == "*" {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (s *AuthService) generateTokenPair(user *identity.User) (*TokenPair, error) {

@@ -198,6 +198,32 @@ type ScanRunRepository interface {
 	Update(ctx context.Context, run *ScanRun) error
 }
 
+// DataInventoryRepository defines persistence for data inventories.
+type DataInventoryRepository interface {
+	Create(ctx context.Context, inv *DataInventory) error
+	GetByID(ctx context.Context, id types.ID) (*DataInventory, error)
+	GetByDataSource(ctx context.Context, dataSourceID types.ID) (*DataInventory, error)
+	Update(ctx context.Context, inv *DataInventory) error
+}
+
+// DataEntityRepository defines persistence for data entities.
+type DataEntityRepository interface {
+	Create(ctx context.Context, entity *DataEntity) error
+	GetByID(ctx context.Context, id types.ID) (*DataEntity, error)
+	GetByInventory(ctx context.Context, inventoryID types.ID) ([]DataEntity, error)
+	Update(ctx context.Context, entity *DataEntity) error
+	Delete(ctx context.Context, id types.ID) error
+}
+
+// DataFieldRepository defines persistence for data fields.
+type DataFieldRepository interface {
+	Create(ctx context.Context, field *DataField) error
+	GetByID(ctx context.Context, id types.ID) (*DataField, error)
+	GetByEntity(ctx context.Context, entityID types.ID) ([]DataField, error)
+	Update(ctx context.Context, field *DataField) error
+	Delete(ctx context.Context, id types.ID) error
+}
+
 // =============================================================================
 // Connector Interface
 // =============================================================================

@@ -13,7 +13,7 @@
 - [x] Set up `/cmd` (entrypoints), `/internal` (domain), `/pkg` (shared libs)
 - [x] Define module boundaries: `discovery`, `compliance`, `governance`, `evidence`, `identity`, `notification`
 - [x] Create shared types package (`/pkg/types`) with universal entities
-- [ ] Set up `/api` with OpenAPI/Swagger specs
+- [x] Set up `/api` with OpenAPI/Swagger specs
 - [x] Create `Makefile` with standard targets (`build`, `test`, `lint`, `dev`, `migrate`)
 
 ### 0.2 Database & Infrastructure
@@ -23,7 +23,7 @@
 - [x] Set up Redis configuration (caching, rate limiting, pub/sub)
 - [x] Set up NATS JetStream for event bus
 - [x] Create `docker-compose.dev.yml` for local development
-- [ ] Create seed scripts for development data
+- [x] Create seed scripts for development data
 
 ### 0.3 CI/CD Pipeline
 - [ ] Configure GitHub Actions: lint → test → build
@@ -41,7 +41,7 @@
 ### 0.5 Developer Experience
 - [ ] Write `CONTRIBUTING.md` with coding standards
 - [x] Create `.env.example` with all config variables
-- [ ] Verify `make dev` → full stack running locally
+- [x] Verify `make dev` → full stack running locally
 - [ ] Write onboarding guide for new developers
 
 ---
@@ -51,39 +51,39 @@
 ### Sprint 1-2: Core Domain & API Gateway (Weeks 3-6)
 
 #### 1.1 Core Domain Entities
-- [ ] Implement `DataSource` entity + repository
-- [ ] Implement `DataInventory`, `DataEntity`, `DataField` entities
-- [ ] Implement `PIIClassification` entity + repository
-- [ ] Implement `Purpose` entity + repository
-- [ ] Implement `DataMapping` entity + repository
-- [ ] Write unit tests for all entities (validation, invariants)
-- [ ] Write integration tests for all repositories
+- [x] Implement `DataSource` entity + repository
+- [x] Implement `DataInventory`, `DataEntity`, `DataField` entities
+- [x] Implement `PIIClassification` entity + repository
+- [x] Implement `Purpose` entity + repository
+- [x] Implement `DataMapping` entity + repository
+- [x] Write unit tests for all entities (validation, invariants)
+- [/] Write integration tests for all repositories
 
 #### 1.2 Event Bus Integration
-- [ ] Create `EventBus` interface and NATS implementation
-- [ ] Define event types (see Doc 20, Event System)
-- [ ] Wire repositories to publish events on create/update/delete
-- [ ] Create event subscriber framework
-- [ ] Write audit log subscriber (first subscriber)
+- [x] Create `EventBus` interface and NATS implementation
+- [x] Define event types (see Doc 20, Event System)
+- [x] Wire repositories to publish events on create/update/delete
+- [x] Create event subscriber framework
+- [x] Write audit log subscriber (first subscriber)
 - [ ] Test event delivery and replay
 
 #### 1.3 API Gateway
-- [ ] Create unified HTTP router (chi or gin)
-- [ ] Implement JWT authentication middleware
-- [ ] Implement tenant isolation middleware
-- [ ] Implement rate limiting middleware (Redis-backed)
-- [ ] Create standard error response format
-- [ ] Implement request/response logging
-- [ ] Write CRUD API endpoints for DataSource
-- [ ] Write CRUD API endpoints for Purpose
-- [ ] Generate OpenAPI docs
+- [x] Create unified HTTP router (chi or gin)
+- [x] Implement JWT authentication middleware
+- [x] Implement tenant isolation middleware
+- [x] Implement rate limiting middleware (Redis-backed)
+- [x] Create standard error response format
+- [x] Implement request/response logging
+- [x] Write CRUD API endpoints for DataSource
+- [x] Write CRUD API endpoints for Purpose
+- [x] Generate OpenAPI docs
 
 #### 1.4 Multi-Tenant Auth
-- [ ] Implement user registration + login
-- [ ] Implement role-based access (ADMIN, DPO, ANALYST, VIEWER)
-- [ ] Implement permission checks per endpoint
-- [ ] Create API key system for agent authentication
-- [ ] Write auth integration tests
+- [x] Implement user registration + login
+- [x] Implement role-based access (ADMIN, DPO, ANALYST, VIEWER)
+- [x] Implement permission checks per endpoint
+- [x] Create API key system for agent authentication
+- [/] Write auth integration tests
 
 ### Sprint 3-4: PII Detection Engine (Weeks 7-10)
 

@@ -1,0 +1,662 @@
+openapi: "3.0.3"
+info:
+  title: DataLens 2.0 API
+  version: 2.0.0-alpha
+  description: Privacy-first data discovery and governance platform.
+  contact:
+    name: ComplyArk Engineering
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://api.datalens.complyark.com
+    description: Production
+
+# ===========================================================================
+# Security Schemes
+# ===========================================================================
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    TokenPair:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        domain:
+          type: string
+        industry:
+          type: string
+        country:
+          type: string
+        plan:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        mfa_enabled:
+          type: boolean
+        last_login_at:
+          type: string
+          format: date-time
+
+    DataSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        host:
+          type: string
+        port:
+          type: integer
+        database_name:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Purpose:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        legal_basis:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    DataInventory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        data_source_id:
+          type: string
+          format: uuid
+        total_entities:
+          type: integer
+        total_fields:
+          type: integer
+        pii_fields_count:
+          type: integer
+        last_scanned_at:
+          type: string
+          format: date-time
+        schema_version:
+          type: string
+
+    DataEntity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        inventory_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        schema:
+          type: string
+        type:
+          type: string
+          enum: [TABLE, VIEW, COLLECTION, FOLDER, FILE]
+        row_count:
+          type: integer
+          nullable: true
+        pii_confidence:
+          type: number
+          format: float
+
+    DataField:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entity_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        data_type:
+          type: string
+        nullable:
+          type: boolean
+        is_primary_key:
+          type: boolean
+        is_foreign_key:
+          type: boolean
+
+    APIKeyInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Permission:
+      type: object
+      properties:
+        resource:
+          type: string
+        actions:
+          type: array
+          items:
+            type: string
+
+# ===========================================================================
+# Paths
+# ===========================================================================
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+
+  /api/v2/ping:
+    get:
+      tags: [System]
+      summary: Ping
+      security: []
+      responses:
+        "200":
+          description: Pong
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pong:
+                    type: boolean
+
+  # -------------------------------------------------------------------------
+  # Auth
+  # -------------------------------------------------------------------------
+  /api/v2/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new tenant + admin user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_name, domain, email, name, password]
+              properties:
+                tenant_name:
+                  type: string
+                domain:
+                  type: string
+                industry:
+                  type: string
+                country:
+                  type: string
+                email:
+                  type: string
+                name:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        "201":
+          description: Tenant and admin created
+        "400":
+          description: Validation error
+        "409":
+          description: Domain conflict
+
+  /api/v2/auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate and get tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain, email, password]
+              properties:
+                domain:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          description: Invalid credentials
+
+  /api/v2/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          description: Invalid refresh token
+
+  # -------------------------------------------------------------------------
+  # Users
+  # -------------------------------------------------------------------------
+  /api/v2/users/me:
+    get:
+      tags: [Users]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+
+  # -------------------------------------------------------------------------
+  # Data Sources
+  # -------------------------------------------------------------------------
+  /api/v2/data-sources:
+    get:
+      tags: [Data Sources]
+      summary: List data sources for current tenant
+      responses:
+        "200":
+          description: List of data sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataSource"
+    post:
+      tags: [Data Sources]
+      summary: Create a data source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                description:
+                  type: string
+                host:
+                  type: string
+                port:
+                  type: integer
+                database:
+                  type: string
+                credentials:
+                  type: string
+      responses:
+        "201":
+          description: Data source created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSource"
+
+  /api/v2/data-sources/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Data Sources]
+      summary: Get data source by ID
+      responses:
+        "200":
+          description: Data source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSource"
+        "404":
+          description: Not found
+    put:
+      tags: [Data Sources]
+      summary: Update data source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                host:
+                  type: string
+                port:
+                  type: integer
+                database:
+                  type: string
+                credentials:
+                  type: string
+      responses:
+        "200":
+          description: Updated data source
+    delete:
+      tags: [Data Sources]
+      summary: Delete data source (soft delete)
+      responses:
+        "204":
+          description: Deleted
+
+  # -------------------------------------------------------------------------
+  # Purposes
+  # -------------------------------------------------------------------------
+  /api/v2/purposes:
+    get:
+      tags: [Purposes]
+      summary: List purposes for current tenant
+      responses:
+        "200":
+          description: List of purposes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Purpose"
+    post:
+      tags: [Purposes]
+      summary: Create a purpose
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, legal_basis]
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+                legal_basis:
+                  type: string
+
+      responses:
+        "201":
+          description: Purpose created
+
+  /api/v2/purposes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Purposes]
+      summary: Get purpose by ID
+      responses:
+        "200":
+          description: Purpose
+    put:
+      tags: [Purposes]
+      summary: Update purpose
+      responses:
+        "200":
+          description: Updated
+    delete:
+      tags: [Purposes]
+      summary: Delete purpose
+      responses:
+        "204":
+          description: Deleted
+
+  # -------------------------------------------------------------------------
+  # Discovery
+  # -------------------------------------------------------------------------
+  /api/v2/discovery/data-sources/{sourceID}/inventory:
+    parameters:
+      - name: sourceID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Discovery]
+      summary: Get inventory for a data source
+      responses:
+        "200":
+          description: Data inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataInventory"
+        "404":
+          description: Not found
+
+  /api/v2/discovery/inventories/{inventoryID}/entities:
+    parameters:
+      - name: inventoryID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Discovery]
+      summary: List entities in an inventory
+      responses:
+        "200":
+          description: List of data entities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataEntity"
+
+  /api/v2/discovery/entities/{entityID}:
+    parameters:
+      - name: entityID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Discovery]
+      summary: Get a data entity by ID
+      responses:
+        "200":
+          description: Data entity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEntity"
+
+  /api/v2/discovery/entities/{entityID}/fields:
+    parameters:
+      - name: entityID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Discovery]
+      summary: List fields for an entity
+      responses:
+        "200":
+          description: List of data fields
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataField"
+
+  /api/v2/discovery/fields/{fieldID}:
+    parameters:
+      - name: fieldID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Discovery]
+      summary: Get a data field by ID
+      responses:
+        "200":
+          description: Data field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataField"

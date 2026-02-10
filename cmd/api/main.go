@@ -81,6 +81,9 @@ func main() {
 	tenantRepo := repository.NewTenantRepo(dbPool)
 	userRepo := repository.NewUserRepo(dbPool)
 	roleRepo := repository.NewRoleRepo(dbPool)
+	inventoryRepo := repository.NewDataInventoryRepo(dbPool)
+	entityRepo := repository.NewDataEntityRepo(dbPool)
+	fieldRepo := repository.NewDataFieldRepo(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -90,12 +93,14 @@ func main() {
 	purposeSvc := service.NewPurposeService(purposeRepo, eb, slog.Default())
 	authSvc := service.NewAuthService(
 		userRepo,
+		roleRepo,
 		cfg.JWT.Secret,
 		cfg.JWT.AccessTokenExpiry,
 		cfg.JWT.RefreshTokenExpiry,
 		slog.Default(),
 	)
 	tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
+	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
 
 	// =========================================================================
 	// Initialize Event Subscribers
@@ -115,6 +120,7 @@ func main() {
 	dsHandler := handler.NewDataSourceHandler(dsSvc)
 	purposeHandler := handler.NewPurposeHandler(purposeSvc)
 	authHandler := handler.NewAuthHandler(authSvc, tenantSvc)
+	discoveryHandler := handler.NewDiscoveryHandler(inventoryRepo, entityRepo, fieldRepo)
 
 	// =========================================================================
 	// Rate Limiter
@@ -137,7 +143,7 @@ func main() {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"}, // Restrict in production
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Tenant-ID"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Tenant-ID", "X-API-Key"},
 		ExposedHeaders:   []string{"Link", "X-Request-ID"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -161,7 +167,7 @@ func main() {
 
 		// Protected routes (auth + tenant isolation + rate limiting)
 		r.Group(func(r chi.Router) {
-			r.Use(mw.Auth(authSvc))
+			r.Use(mw.Auth(authSvc, apiKeySvc))
 			r.Use(mw.TenantIsolation())
 			r.Use(rateLimiter.Middleware())
 
@@ -173,6 +179,9 @@ func main() {
 
 			// Auth (protected: /me)
 			r.Mount("/users", authHandler.ProtectedRoutes())
+
+			// Discovery (inventories, entities, fields)
+			r.Mount("/discovery", discoveryHandler.Routes())
 
 			// PII Classifications
 			r.Route("/classifications", func(r chi.Router) {

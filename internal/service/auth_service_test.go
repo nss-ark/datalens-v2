@@ -14,8 +14,9 @@ import (
 
 func newTestAuthService() (*AuthService, *mockUserRepo) {
 	repo := newMockUserRepo()
+	roleRepo := newMockRoleRepo()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	svc := NewAuthService(repo, "test-secret-key-32chars!!", 15*time.Minute, 7*24*time.Hour, logger)
+	svc := NewAuthService(repo, roleRepo, "test-secret-key-32chars!!", 15*time.Minute, 7*24*time.Hour, logger)
 	return svc, repo
 }
 

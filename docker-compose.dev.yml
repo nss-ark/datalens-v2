@@ -17,7 +17,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U datalens"]
+      test: [ "CMD-SHELL", "pg_isready -U datalens" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -39,13 +39,13 @@ services:
     image: nats:2-alpine
     container_name: datalens-nats
     ports:
-      - "4222:4222"   # Client
-      - "8222:8222"   # Monitoring
-    command: ["--jetstream", "--store_dir", "/data"]
+      - "4222:4222" # Client
+      - "8222:8222" # Monitoring
+    command: [ "--jetstream", "--store_dir", "/data" ]
     volumes:
       - nats_data:/data
     healthcheck:
-      test: ["CMD", "nats-server", "--signal", "ldm"]
+      test: [ "CMD", "sh", "-c", "wget -qO- http://localhost:8222/healthz || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 5
