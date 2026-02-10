@@ -25,8 +25,10 @@ type DataSource struct {
 	Description  string               `json:"description" db:"description"`
 	Host         string               `json:"-" db:"host"` // Encrypted at rest
 	Port         int                  `json:"-" db:"port"`
-	Database     string               `json:"-" db:"database"`
-	Credentials  string               `json:"-" db:"credentials"` // Encrypted
+	Database     string               `json:"database" db:"database"`                     // Database name for relational DBs, bucket for S3
+	Credentials  string               `json:"-" db:"credentials"`                         // Encrypted
+	Config       string               `json:"config" db:"config"`                         // JSON config specific to connector type
+	ScanSchedule *string              `json:"scan_schedule,omitempty" db:"scan_schedule"` // Cron expression for automated scans
 	Status       ConnectionStatus     `json:"status" db:"status"`
 	LastSyncAt   *time.Time           `json:"last_sync_at" db:"last_sync_at"`
 	ErrorMessage *string              `json:"error_message,omitempty" db:"error_message"`

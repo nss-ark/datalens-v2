@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/robfig/cron/v3"
 
 	"github.com/complyark/datalens/internal/middleware"
 	"github.com/complyark/datalens/internal/service"
@@ -31,6 +32,11 @@ func (h *DataSourceHandler) Routes() chi.Router {
 	r.Get("/{id}", h.GetByID)
 	r.Put("/{id}", h.Update)
 	r.Delete("/{id}", h.Delete)
+
+	// Scan scheduling
+	r.Put("/{id}/scan/schedule", h.SetSchedule)
+	r.Delete("/{id}/scan/schedule", h.ClearSchedule)
+
 	return r
 }
 
@@ -49,6 +55,7 @@ func (h *DataSourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Port        int    `json:"port"`
 		Database    string `json:"database"`
 		Credentials string `json:"credentials"`
+		Config      string `json:"config"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.ErrorFromDomain(w, err)
@@ -64,6 +71,7 @@ func (h *DataSourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Port:        req.Port,
 		Database:    req.Database,
 		Credentials: req.Credentials,
+		Config:      req.Config,
 	})
 	if err != nil {
 		httputil.ErrorFromDomain(w, err)
@@ -119,6 +127,7 @@ func (h *DataSourceHandler) Update(w http.ResponseWriter, r *http.Request) {
 		Port        *int   `json:"port"`
 		Database    string `json:"database"`
 		Credentials string `json:"credentials"`
+		Config      string `json:"config"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.ErrorFromDomain(w, err)
@@ -133,6 +142,7 @@ func (h *DataSourceHandler) Update(w http.ResponseWriter, r *http.Request) {
 		Port:        req.Port,
 		Database:    req.Database,
 		Credentials: req.Credentials,
+		Config:      req.Config,
 	})
 	if err != nil {
 		httputil.ErrorFromDomain(w, err)
@@ -154,7 +164,55 @@ func (h *DataSourceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.svc.Delete(r.Context(), id); err != nil {
+	httputil.JSON(w, http.StatusNoContent, nil)
+}
+
+// SetSchedule sets a cron expression for automatic scanning.
+func (h *DataSourceHandler) SetSchedule(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	var req struct {
+		Cron string `json:"cron"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	if req.Cron == "" {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_CRON", "cron expression is required")
+		return
+	}
+
+	// Validate cron expression
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+	if _, err := parser.Parse(req.Cron); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_CRON", "invalid cron expression: "+err.Error())
+		return
+	}
+
+	ds, err := h.svc.SetSchedule(r.Context(), id, req.Cron)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, ds)
+}
+
+// ClearSchedule removes the scan schedule from a data source.
+func (h *DataSourceHandler) ClearSchedule(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	if err := h.svc.ClearSchedule(r.Context(), id); err != nil {
 		httputil.ErrorFromDomain(w, err)
 		return
 	}

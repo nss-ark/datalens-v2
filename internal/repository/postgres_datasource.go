@@ -26,20 +26,20 @@ func NewDataSourceRepo(pool *pgxpool.Pool) *DataSourceRepo {
 func (r *DataSourceRepo) Create(ctx context.Context, ds *discovery.DataSource) error {
 	ds.ID = types.NewID()
 	query := `
-		INSERT INTO data_sources (id, tenant_id, name, type, description, host, port, database_name, credentials, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO data_sources (id, tenant_id, name, type, description, host, port, database_name, credentials, config, scan_schedule, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING created_at, updated_at`
 
 	return r.pool.QueryRow(ctx, query,
 		ds.ID, ds.TenantID, ds.Name, ds.Type, ds.Description,
-		ds.Host, ds.Port, ds.Database, ds.Credentials, ds.Status,
+		ds.Host, ds.Port, ds.Database, ds.Credentials, ds.Config, ds.ScanSchedule, ds.Status,
 	).Scan(&ds.CreatedAt, &ds.UpdatedAt)
 }
 
 func (r *DataSourceRepo) GetByID(ctx context.Context, id types.ID) (*discovery.DataSource, error) {
 	query := `
 		SELECT id, tenant_id, name, type, description, host, port, database_name, credentials,
-		       status, last_sync_at, error_message, created_at, updated_at
+		       config, scan_schedule, status, last_sync_at, error_message, created_at, updated_at
 		FROM data_sources
 		WHERE id = $1 AND deleted_at IS NULL`
 
@@ -47,7 +47,7 @@ func (r *DataSourceRepo) GetByID(ctx context.Context, id types.ID) (*discovery.D
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&ds.ID, &ds.TenantID, &ds.Name, &ds.Type, &ds.Description,
 		&ds.Host, &ds.Port, &ds.Database, &ds.Credentials,
-		&ds.Status, &ds.LastSyncAt, &ds.ErrorMessage, &ds.CreatedAt, &ds.UpdatedAt,
+		&ds.Config, &ds.ScanSchedule, &ds.Status, &ds.LastSyncAt, &ds.ErrorMessage, &ds.CreatedAt, &ds.UpdatedAt,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -61,7 +61,7 @@ func (r *DataSourceRepo) GetByID(ctx context.Context, id types.ID) (*discovery.D
 func (r *DataSourceRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]discovery.DataSource, error) {
 	query := `
 		SELECT id, tenant_id, name, type, description, host, port, database_name, credentials,
-		       status, last_sync_at, error_message, created_at, updated_at
+		       config, scan_schedule, status, last_sync_at, error_message, created_at, updated_at
 		FROM data_sources
 		WHERE tenant_id = $1 AND deleted_at IS NULL
 		ORDER BY created_at DESC`
@@ -78,7 +78,7 @@ func (r *DataSourceRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]
 		if err := rows.Scan(
 			&ds.ID, &ds.TenantID, &ds.Name, &ds.Type, &ds.Description,
 			&ds.Host, &ds.Port, &ds.Database, &ds.Credentials,
-			&ds.Status, &ds.LastSyncAt, &ds.ErrorMessage, &ds.CreatedAt, &ds.UpdatedAt,
+			&ds.Config, &ds.ScanSchedule, &ds.Status, &ds.LastSyncAt, &ds.ErrorMessage, &ds.CreatedAt, &ds.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan data source: %w", err)
 		}
@@ -91,14 +91,15 @@ func (r *DataSourceRepo) Update(ctx context.Context, ds *discovery.DataSource) e
 	query := `
 		UPDATE data_sources
 		SET name = $2, type = $3, description = $4, host = $5, port = $6,
-		    database_name = $7, credentials = $8, status = $9, last_sync_at = $10,
-		    error_message = $11, updated_at = NOW()
+		    database_name = $7, credentials = $8, config = $9, scan_schedule = $10,
+		    status = $11, last_sync_at = $12, error_message = $13, updated_at = NOW()
 		WHERE id = $1 AND deleted_at IS NULL
 		RETURNING updated_at`
 
 	err := r.pool.QueryRow(ctx, query,
 		ds.ID, ds.Name, ds.Type, ds.Description, ds.Host, ds.Port,
-		ds.Database, ds.Credentials, ds.Status, ds.LastSyncAt, ds.ErrorMessage,
+		ds.Database, ds.Credentials, ds.Config, ds.ScanSchedule,
+		ds.Status, ds.LastSyncAt, ds.ErrorMessage,
 	).Scan(&ds.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {

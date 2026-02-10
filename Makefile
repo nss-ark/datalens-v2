@@ -96,3 +96,18 @@ deps: ## Download and tidy dependencies
 
 generate: ## Run code generation
 	go generate ./...
+
+# --- Production Docker ---
+build-docker-prod: ## Build production Docker images locally
+	docker build -t datalens-api:local -f Dockerfile .
+	docker build -t datalens-frontend:local -f frontend/Dockerfile ./frontend
+
+docker-prod-up: ## Start production stack
+	docker compose -f docker-compose.prod.yml up -d
+
+docker-prod-down: ## Stop production stack
+	docker compose -f docker-compose.prod.yml down
+
+docker-prod-logs: ## View production stack logs
+	docker compose -f docker-compose.prod.yml logs -f
+

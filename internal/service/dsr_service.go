@@ -10,6 +10,7 @@ import (
 
 	"github.com/complyark/datalens/internal/domain/compliance"
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/internal/infrastructure/queue"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -18,6 +19,7 @@ import (
 type DSRService struct {
 	dsrRepo        compliance.DSRRepository
 	dataSourceRepo discovery.DataSourceRepository
+	dsrQueue       queue.DSRQueue
 	eventBus       eventbus.EventBus
 	logger         *slog.Logger
 }
@@ -26,12 +28,14 @@ type DSRService struct {
 func NewDSRService(
 	dsrRepo compliance.DSRRepository,
 	dataSourceRepo discovery.DataSourceRepository,
+	dsrQueue queue.DSRQueue,
 	eventBus eventbus.EventBus,
 	logger *slog.Logger,
 ) *DSRService {
 	return &DSRService{
 		dsrRepo:        dsrRepo,
 		dataSourceRepo: dataSourceRepo,
+		dsrQueue:       dsrQueue,
 		eventBus:       eventBus,
 		logger:         logger,
 	}
@@ -128,6 +132,12 @@ func (s *DSRService) ApproveDSR(ctx context.Context, id types.ID) (*compliance.D
 	s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventDSRExecuting, "dsr_service", dsr.TenantID, map[string]any{
 		"dsr_id": dsr.ID,
 	}))
+
+	// Queue for execution
+	if err := s.dsrQueue.Enqueue(ctx, dsr.ID.String()); err != nil {
+		s.logger.Error("failed to enqueue dsr for execution", "dsr_id", dsr.ID, "error", err)
+		// Don't fail approval, execution can be triggered manually
+	}
 
 	return dsr, nil
 }

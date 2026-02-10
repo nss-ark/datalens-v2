@@ -35,6 +35,10 @@ func NewConnectorRegistry() *ConnectorRegistry {
 	r.Register(types.DataSourceMongoDB, func() discovery.Connector {
 		return NewMongoDBConnector()
 	})
+	// TODO: Implement S3 connector
+	// r.Register(types.DataSourceS3, func() discovery.Connector {
+	// 	return NewS3Connector()
+	// })
 
 	return r
 }

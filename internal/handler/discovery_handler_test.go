@@ -116,3 +116,75 @@ func TestDiscoveryHandler_GetScanHistory(t *testing.T) {
 	// JSON Array check...
 	scanSvc.AssertExpectations(t)
 }
+
+// =============================================================================
+// Mock DiscoveryOrchestrator for GetClassifications
+// =============================================================================
+
+type MockDiscoveryOrchestrator struct {
+	mock.Mock
+}
+
+func (m *MockDiscoveryOrchestrator) ScanDataSource(ctx context.Context, dataSourceID types.ID) error {
+	args := m.Called(ctx, dataSourceID)
+	return args.Error(0)
+}
+
+func (m *MockDiscoveryOrchestrator) TestConnection(ctx context.Context, dataSourceID types.ID) error {
+	args := m.Called(ctx, dataSourceID)
+	return args.Error(0)
+}
+
+func (m *MockDiscoveryOrchestrator) GetClassifications(ctx context.Context, tenantID types.ID, filter discovery.ClassificationFilter) (*types.PaginatedResult[discovery.PIIClassification], error) {
+	args := m.Called(ctx, tenantID, filter)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*types.PaginatedResult[discovery.PIIClassification]), args.Error(1)
+}
+
+func TestDiscoveryHandler_GetClassifications(t *testing.T) {
+	// Setup
+	discSvc := new(MockDiscoveryOrchestrator)
+	handler := NewDiscoveryHandler(discSvc, nil, nil, nil, nil)
+
+	r := chi.NewRouter()
+	r.Get("/classifications", handler.GetClassifications)
+
+	tenantID := types.NewID()
+
+	expectedResult := &types.PaginatedResult[discovery.PIIClassification]{
+		Items: []discovery.PIIClassification{
+			{Type: "EMAIL", Confidence: 0.95},
+			{Type: "PHONE", Confidence: 0.87},
+		},
+		Total:      2,
+		Page:       1,
+		PageSize:   20,
+		TotalPages: 1,
+	}
+
+	// Mock: accept any filter since we're just testing the endpoint wiring
+	discSvc.On("GetClassifications", mock.Anything, tenantID, mock.Anything).Return(expectedResult, nil)
+
+	// Request with query params
+	req := httptest.NewRequest("GET", "/classifications?status=PENDING&page=1&page_size=20", nil)
+	ctx := context.WithValue(req.Context(), types.ContextKeyTenantID, tenantID)
+	req = req.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// Verify
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp types.PaginatedResult[discovery.PIIClassification]
+	err := json.NewDecoder(w.Body).Decode(&resp)
+	require.NoError(t, err)
+
+	assert.Len(t, resp.Items, 2)
+	assert.Equal(t, 2, resp.Total)
+	assert.Equal(t, types.PIIType("EMAIL"), resp.Items[0].Type)
+
+	discSvc.AssertExpectations(t)
+}

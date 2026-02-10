@@ -1,5 +1,7 @@
 # DataLens 2.0
 
+[![CI](https://github.com/complyark/datalens/actions/workflows/ci.yml/badge.svg)](https://github.com/complyark/datalens/actions/workflows/ci.yml)
+
 > The world's most automated, reliable, and evidence-ready privacy compliance platform.
 
 ## Quick Start
@@ -80,6 +82,58 @@ Datalens v2.0/
 ## Documentation
 
 See [documentation/00_README.md](./documentation/00_README.md) for the complete documentation index (24 documents).
+
+---
+
+## Deployment
+
+### Production Deployment
+
+DataLens uses Docker containers for production deployment.
+
+**Docker Images** (published to GitHub Container Registry):
+- `ghcr.io/complyark/datalens-api:latest` — Backend API server
+- `ghcr.io/complyark/datalens-frontend:latest` — Frontend static files (nginx)
+
+**Quick Start:**
+
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with production values
+
+# 2. Start production stack
+docker compose -f docker-compose.prod.yml up -d
+
+# 3. Run migrations
+docker exec datalens-api-prod ./migrate up
+
+# 4. Access application
+# Frontend: http://localhost:3000
+# API: http://localhost:8080
+```
+
+**Building Locally:**
+
+```bash
+# Build Docker images
+make build-docker-prod
+
+# Start with local images
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**Required Environment Variables:**
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DB_PASSWORD` | PostgreSQL password | `secure_password` |
+| `JWT_SECRET` | JWT signing secret | `random32bytestring` |
+| `AI_OPENAI_API_KEY` | OpenAI API key (optional) | `sk-...` |
+
+See [.env.example](./.env.example) for complete list.
+
+---
 
 ## License
 

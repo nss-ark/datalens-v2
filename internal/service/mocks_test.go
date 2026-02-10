@@ -416,7 +416,16 @@ func (r *mockPIIClassificationRepo) GetClassifications(_ context.Context, tenant
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var items []discovery.PIIClassification
-	return &types.PaginatedResult[discovery.PIIClassification]{Items: items, Total: 0}, nil
+	for _, c := range r.classifications {
+		if filter.DataSourceID != nil && c.DataSourceID != *filter.DataSourceID {
+			continue
+		}
+		if filter.Status != nil && c.Status != *filter.Status {
+			continue
+		}
+		items = append(items, *c)
+	}
+	return &types.PaginatedResult[discovery.PIIClassification]{Items: items, Total: len(items), Page: 1, PageSize: 20, TotalPages: 1}, nil
 }
 
 func (r *mockPIIClassificationRepo) GetCounts(_ context.Context, tenantID types.ID) (*discovery.PIICounts, error) {

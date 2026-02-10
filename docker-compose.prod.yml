@@ -1,0 +1,149 @@
+# =============================================================================
+# DataLens 2.0 — Production Deployment Stack
+# =============================================================================
+# Usage: docker compose -f docker-compose.prod.yml up -d
+# Notes: Requires .env file with production configuration
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: datalens-postgres-prod
+    environment:
+      POSTGRES_DB: ${DB_NAME:-datalens}
+      POSTGRES_USER: ${DB_USER:-datalens}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-datalens}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - datalens
+
+  redis:
+    image: redis:7-alpine
+    container_name: datalens-redis-prod
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - datalens
+
+  nats:
+    image: nats:2-alpine
+    container_name: datalens-nats-prod
+    ports:
+      - "${NATS_PORT:-4222}:4222"
+      - "8222:8222" # Monitoring
+    command: [ "--jetstream", "--store_dir", "/data" ]
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: [ "CMD", "sh", "-c", "wget -qO- http://localhost:8222/healthz || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - datalens
+
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-complyark}/datalens-api:${API_IMAGE_TAG:-latest}
+    container_name: datalens-api-prod
+    environment:
+      # App
+      APP_ENV: ${APP_ENV:-production}
+      APP_PORT: ${APP_PORT:-8080}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-info}
+
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-datalens}
+      DB_USER: ${DB_USER:-datalens}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_SSL_MODE: ${DB_SSL_MODE:-disable}
+
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
+      # NATS
+      NATS_URL: nats://nats:4222
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ACCESS_TOKEN_EXPIRY: ${JWT_ACCESS_TOKEN_EXPIRY:-15m}
+      JWT_REFRESH_TOKEN_EXPIRY: ${JWT_REFRESH_TOKEN_EXPIRY:-7d}
+
+      # AI
+      AI_DEFAULT_PROVIDER: ${AI_DEFAULT_PROVIDER:-local}
+      AI_OPENAI_API_KEY: ${AI_OPENAI_API_KEY:-}
+      AI_OPENAI_MODEL: ${AI_OPENAI_MODEL:-gpt-4o-mini}
+      AI_ANTHROPIC_API_KEY: ${AI_ANTHROPIC_API_KEY:-}
+      AI_ANTHROPIC_MODEL: ${AI_ANTHROPIC_MODEL:-claude-3-5-haiku-latest}
+      AI_LOCAL_LLM_ENDPOINT: ${AI_LOCAL_LLM_ENDPOINT:-http://host.docker.internal:11434}
+      AI_LOCAL_LLM_MODEL: ${AI_LOCAL_LLM_MODEL:-llama3.2}
+      AI_CACHE_TTL: ${AI_CACHE_TTL:-24h}
+      AI_DAILY_TOKEN_BUDGET: ${AI_DAILY_TOKEN_BUDGET:-1000000}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - datalens
+
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-complyark}/datalens-frontend:${FRONTEND_IMAGE_TAG:-latest}
+    container_name: datalens-frontend-prod
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - api
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - datalens
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  nats_data:
+    driver: local
+
+networks:
+  datalens:
+    driver: bridge

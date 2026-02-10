@@ -36,6 +36,7 @@ type CreateDataSourceInput struct {
 	Port        int
 	Database    string
 	Credentials string
+	Config      string
 }
 
 // Create validates and persists a new data source, then publishes an event.
@@ -55,6 +56,7 @@ func (s *DataSourceService) Create(ctx context.Context, in CreateDataSourceInput
 		Port:        in.Port,
 		Database:    in.Database,
 		Credentials: in.Credentials,
+		Config:      in.Config,
 		Status:      discovery.ConnectionStatusDisconnected,
 	}
 	ds.TenantID = in.TenantID
@@ -91,6 +93,7 @@ type UpdateDataSourceInput struct {
 	Port        *int
 	Database    string
 	Credentials string
+	Config      string
 }
 
 // Update modifies an existing data source.
@@ -118,6 +121,9 @@ func (s *DataSourceService) Update(ctx context.Context, in UpdateDataSourceInput
 	if in.Credentials != "" {
 		ds.Credentials = in.Credentials
 	}
+	if in.Config != "" {
+		ds.Config = in.Config
+	}
 
 	if err := s.repo.Update(ctx, ds); err != nil {
 		return nil, err
@@ -129,6 +135,40 @@ func (s *DataSourceService) Update(ctx context.Context, in UpdateDataSourceInput
 	))
 
 	return ds, nil
+}
+
+// SetSchedule sets a cron expression for automated scanning.
+func (s *DataSourceService) SetSchedule(ctx context.Context, id types.ID, cronExpr string) (*discovery.DataSource, error) {
+	ds, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	ds.ScanSchedule = &cronExpr
+
+	if err := s.repo.Update(ctx, ds); err != nil {
+		return nil, err
+	}
+
+	s.logger.InfoContext(ctx, "scan schedule set", "id", id, "cron", cronExpr)
+	return ds, nil
+}
+
+// ClearSchedule removes the scan schedule from a data source.
+func (s *DataSourceService) ClearSchedule(ctx context.Context, id types.ID) error {
+	ds, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	ds.ScanSchedule = nil
+
+	if err := s.repo.Update(ctx, ds); err != nil {
+		return err
+	}
+
+	s.logger.InfoContext(ctx, "scan schedule cleared", "id", id)
+	return nil
 }
 
 // Delete soft-deletes a data source.

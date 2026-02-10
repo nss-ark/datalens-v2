@@ -15,12 +15,16 @@ import (
 
 // DSRHandler handles DSR HTTP requests.
 type DSRHandler struct {
-	service *service.DSRService
+	service  *service.DSRService
+	executor *service.DSRExecutor
 }
 
 // NewDSRHandler creates a new DSRHandler.
-func NewDSRHandler(service *service.DSRService) *DSRHandler {
-	return &DSRHandler{service: service}
+func NewDSRHandler(service *service.DSRService, executor *service.DSRExecutor) *DSRHandler {
+	return &DSRHandler{
+		service:  service,
+		executor: executor,
+	}
 }
 
 // Routes returns a chi.Router with DSR routes.
@@ -31,6 +35,8 @@ func (h *DSRHandler) Routes() chi.Router {
 	r.Get("/{id}", h.GetByID)
 	r.Put("/{id}/approve", h.Approve)
 	r.Put("/{id}/reject", h.Reject)
+	r.Get("/{id}/result", h.GetResult)
+	r.Post("/{id}/execute", h.ExecuteManual)
 	return r
 }
 
@@ -144,4 +150,38 @@ func (h *DSRHandler) Reject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, dsr)
+}
+
+// GetResult handles GET /api/v2/dsr/{id}/result.
+func (h *DSRHandler) GetResult(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	result, err := h.executor.GetExecutionResult(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, result)
+}
+
+// ExecuteManual handles POST /api/v2/dsr/{id}/execute.
+func (h *DSRHandler) ExecuteManual(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	// Execute synchronously (admin override)
+	if err := h.executor.ExecuteDSR(r.Context(), id); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"status": "executed"})
 }

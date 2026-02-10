@@ -29,6 +29,7 @@ import (
 	"github.com/complyark/datalens/pkg/database"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/logging"
+	"github.com/complyark/datalens/pkg/types"
 
 	"github.com/complyark/datalens/internal/infrastructure/connector"
 	"github.com/complyark/datalens/internal/infrastructure/queue"
@@ -129,7 +130,7 @@ func main() {
 	tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
 	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
 	feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
-	dsrSvc := service.NewDSRService(dsrRepo, dsRepo, eb, slog.Default())
+	var dsrSvc *service.DSRService // Will be initialized after DSR queue is created
 	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
 
 	// Connector Registry (Postgres + MySQL built-in)
@@ -234,6 +235,40 @@ func main() {
 		}
 	}()
 
+	// 8b. Scan Scheduler
+	schedulerSvc := service.NewSchedulerService(dsRepo, scanSvc, slog.Default())
+	if err := schedulerSvc.Start(context.Background()); err != nil {
+		log.Error("Failed to start scan scheduler", "error", err)
+	}
+	log.Info("Scan scheduler started")
+
+	// 9. DSR Execution Queue & Service
+	// Initialize DSR Queue (NATS)
+	dsrQueue, err := queue.NewNATSDSRQueue(natsConn, slog.Default())
+	if err != nil {
+		log.Error("Failed to initialize DSR queue", "error", err)
+		os.Exit(1)
+	}
+
+	// Update DSR Service with queue
+	dsrSvc = service.NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, slog.Default())
+
+	// Initialize DSR Executor
+	dsrExecutor := service.NewDSRExecutor(dsrRepo, dsRepo, piiRepo, connRegistry, eb, slog.Default())
+
+	// Start DSR Worker
+	go func() {
+		if err := dsrQueue.Subscribe(context.Background(), func(ctx context.Context, dsrID string) error {
+			id, parseErr := types.ParseID(dsrID)
+			if parseErr != nil {
+				return fmt.Errorf("parse dsr id: %w", parseErr)
+			}
+			return dsrExecutor.ExecuteDSR(ctx, id)
+		}); err != nil {
+			log.Error("DSR worker failed", "error", err)
+		}
+	}()
+
 	// =========================================================================
 	// Initialize Event Subscribers
 	// =========================================================================
@@ -254,8 +289,8 @@ func main() {
 	authHandler := handler.NewAuthHandler(authSvc, tenantSvc)
 	discoveryHandler := handler.NewDiscoveryHandler(discoverySvc, scanSvc, inventoryRepo, entityRepo, fieldRepo)
 	feedbackHandler := handler.NewFeedbackHandler(feedbackSvc)
-	dsrHandler := handler.NewDSRHandler(dsrSvc)
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
+	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
 
 	// =========================================================================
 	// Rate Limiter
