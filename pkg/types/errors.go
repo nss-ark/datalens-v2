@@ -37,6 +37,13 @@ var (
 
 	// ErrUnavailable indicates a service is temporarily unavailable.
 	ErrUnavailable = errors.New("service unavailable")
+
+	// ErrQuotaExceeded indicates a usage limit has been exceeded.
+	ErrQuotaExceeded = errors.New("quota exceeded")
+)
+
+const (
+	ErrCodeQuotaExceeded = "QUOTA_EXCEEDED"
 )
 
 // =============================================================================
@@ -106,6 +113,33 @@ func NewForbiddenError(message string) *DomainError {
 		Message: message,
 		Code:    "FORBIDDEN",
 	}
+}
+
+// NewQuotaExceededError creates a quota exceeded error.
+func NewQuotaExceededError(message string) *DomainError {
+	return &DomainError{
+		Err:     ErrQuotaExceeded,
+		Message: message,
+		Code:    ErrCodeQuotaExceeded,
+	}
+}
+
+// NewDomainError creates a generic domain error.
+func NewDomainError(code, message string) *DomainError {
+	return &DomainError{
+		Err:     errors.New(code),
+		Message: message,
+		Code:    code,
+	}
+}
+
+// IsNotFoundError checks if an error is a NotFound error.
+func IsNotFoundError(err error) bool {
+	var e *DomainError
+	if errors.As(err, &e) {
+		return e.Err == ErrNotFound
+	}
+	return errors.Is(err, ErrNotFound)
 }
 
 // =============================================================================

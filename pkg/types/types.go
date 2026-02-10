@@ -252,3 +252,8 @@ type TenantEntity struct {
 	BaseEntity
 	TenantID ID `json:"tenant_id" db:"tenant_id"`
 }
+
+// Ptr returns a pointer to the given value.
+func Ptr[T any](v T) *T {
+	return &v
+}

@@ -195,6 +195,7 @@ type ScanRunRepository interface {
 	Create(ctx context.Context, run *ScanRun) error
 	GetByID(ctx context.Context, id types.ID) (*ScanRun, error)
 	GetByDataSource(ctx context.Context, dataSourceID types.ID) ([]ScanRun, error)
+	GetActive(ctx context.Context, tenantID types.ID) ([]ScanRun, error)
 	Update(ctx context.Context, run *ScanRun) error
 }
 
@@ -227,32 +228,3 @@ type DataFieldRepository interface {
 // =============================================================================
 // Connector Interface
 // =============================================================================
-
-// ConnectorCapabilities describes what a data source connector supports.
-type ConnectorCapabilities struct {
-	CanDiscover         bool `json:"can_discover"`
-	CanSample           bool `json:"can_sample"`
-	CanDelete           bool `json:"can_delete"`
-	CanUpdate           bool `json:"can_update"`
-	CanExport           bool `json:"can_export"`
-	SupportsStreaming   bool `json:"supports_streaming"`
-	SupportsIncremental bool `json:"supports_incremental"`
-}
-
-// Connector defines the universal interface for data source connectors.
-type Connector interface {
-	// Connect establishes a connection to the data source.
-	Connect(ctx context.Context, ds *DataSource) error
-
-	// DiscoverSchema returns the schema/structure of the data source.
-	DiscoverSchema(ctx context.Context) (*DataInventory, []DataEntity, error)
-
-	// SampleData retrieves sample values from a specific entity/field.
-	SampleData(ctx context.Context, entity, field string, limit int) ([]string, error)
-
-	// Capabilities returns what operations this connector supports.
-	Capabilities() ConnectorCapabilities
-
-	// Close releases the connection.
-	Close() error
-}

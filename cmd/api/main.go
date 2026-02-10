@@ -29,6 +29,11 @@ import (
 	"github.com/complyark/datalens/pkg/database"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/logging"
+
+	"github.com/complyark/datalens/internal/infrastructure/connector"
+	"github.com/complyark/datalens/internal/infrastructure/queue"
+	"github.com/complyark/datalens/internal/service/ai"
+	"github.com/complyark/datalens/internal/service/detection"
 )
 
 func main() {
@@ -64,13 +69,31 @@ func main() {
 	defer dbPool.Close()
 	log.Info("Database connected")
 
-	// NATS event bus
-	eb, err := eventbus.NewNATSEventBus(cfg.NATS.URL, slog.Default())
+	// NATS Connection
+	natsConn, err := eventbus.Connect(cfg.NATS.URL, slog.Default())
 	if err != nil {
 		log.Error("Failed to connect to NATS", "error", err)
 		os.Exit(1)
 	}
+	defer natsConn.Close()
+
+	// Event Bus
+	eb, err := eventbus.NewNATSEventBus(natsConn, slog.Default())
+	if err != nil {
+		log.Error("Failed to initialize event bus", "error", err)
+		os.Exit(1)
+	}
 	defer eb.Close()
+
+	// Redis client
+	rdb, err := database.NewRedis(cfg.Redis)
+	if err != nil {
+		log.Error("Failed to connect to Redis", "error", err)
+		// We don't exit here; caching is optional/resilient
+	} else {
+		defer rdb.Close()
+		log.Info("Redis connected")
+	}
 
 	// =========================================================================
 	// Initialize Repositories
@@ -84,6 +107,9 @@ func main() {
 	inventoryRepo := repository.NewDataInventoryRepo(dbPool)
 	entityRepo := repository.NewDataEntityRepo(dbPool)
 	fieldRepo := repository.NewDataFieldRepo(dbPool)
+	piiRepo := repository.NewPIIClassificationRepo(dbPool)
+	feedbackRepo := repository.NewDetectionFeedbackRepo(dbPool)
+	scanRunRepo := repository.NewScanRunRepo(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -101,6 +127,108 @@ func main() {
 	)
 	tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
 	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
+	feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
+
+	// Connector Registry (Postgres + MySQL built-in)
+	connRegistry := connector.NewConnectorRegistry()
+	log.Info("Connector registry initialized", "supported_types", connRegistry.SupportedTypes())
+
+	// --- AI Gateway Wiring ---
+	// 1. Build Provider Configs
+	var aiProviders []ai.ProviderConfig
+
+	// OpenAI
+	if cfg.AI.OpenAI.APIKey != "" {
+		aiProviders = append(aiProviders, ai.ProviderConfig{
+			Name:              "openai",
+			Type:              ai.ProviderTypeOpenAICompatible,
+			APIKey:            cfg.AI.OpenAI.APIKey,
+			Endpoint:          "https://api.openai.com/v1",
+			DefaultModel:      cfg.AI.OpenAI.Model,
+			RequestsPerMinute: 500,
+			TokensPerMinute:   100000,
+		})
+	}
+
+	// Anthropic
+	if cfg.AI.Anthropic.APIKey != "" {
+		aiProviders = append(aiProviders, ai.ProviderConfig{
+			Name:              "anthropic",
+			Type:              ai.ProviderTypeAnthropic,
+			APIKey:            cfg.AI.Anthropic.APIKey,
+			DefaultModel:      cfg.AI.Anthropic.Model,
+			RequestsPerMinute: 500,
+			TokensPerMinute:   100000,
+		})
+	}
+
+	// Local LLM (Ollama)
+	aiProviders = append(aiProviders, ai.ProviderConfig{
+		Name:              "local",
+		Type:              ai.ProviderTypeOpenAICompatible,
+		Endpoint:          cfg.AI.LocalLLM.Endpoint + "/v1",
+		DefaultModel:      cfg.AI.LocalLLM.Model,
+		RequestsPerMinute: 1000,
+		TokensPerMinute:   1000000,
+	})
+
+	// 2. Build Registry
+	aiRegistry, err := ai.BuildRegistryFromConfig(aiProviders)
+	if err != nil {
+		log.Error("Failed to build AI registry", "error", err)
+		os.Exit(1)
+	}
+
+	// 3. Build Selector
+	fallbackChain := []string{cfg.AI.DefaultProvider, "openai", "anthropic", "local"}
+	aiSelector := ai.NewSelector(aiRegistry, fallbackChain, slog.Default())
+
+	// 4. Build Core Gateway
+	var aiGateway ai.Gateway = ai.NewDefaultGateway(aiSelector, slog.Default())
+
+	// 5. Wrap with Caching & Budgeting (if Redis is available)
+	if rdb != nil {
+		aiGateway = ai.NewCachedGateway(aiGateway, rdb, slog.Default(), cfg.AI)
+		log.Info("AI Gateway: Caching and Budgeting enabled")
+	} else {
+		log.Warn("AI Gateway: Caching disabled (Redis unavailable)")
+	}
+
+	// 6. Build Detector (Strategy Composer)
+	// We use the "Default" detector which includes Pattern + Heuristic.
+	// We add AI strategy if gateway is available.
+	detector := detection.NewDefaultDetector(aiGateway) // aiGateway is ai.Gateway interface (CachedGateway implements it)
+
+	// 7. Discovery Service
+	discoverySvc := service.NewDiscoveryService(
+		dsRepo,
+		inventoryRepo,
+		entityRepo,
+		fieldRepo,
+		piiRepo,
+		connRegistry,
+		detector,
+		eb,
+		slog.Default(),
+	)
+
+	// 8. Scan Orchestrator
+	// Initialize Scan Queue (NATS)
+	scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
+	if err != nil {
+		log.Error("Failed to initialize scan queue", "error", err)
+		os.Exit(1)
+	}
+
+	// Initialize Scan Service
+	scanSvc := service.NewScanService(scanRunRepo, dsRepo, scanQueue, discoverySvc, slog.Default())
+
+	// Start Scan Worker
+	go func() {
+		if err := scanSvc.StartWorker(context.Background()); err != nil {
+			log.Error("Scan worker failed", "error", err)
+		}
+	}()
 
 	// =========================================================================
 	// Initialize Event Subscribers
@@ -120,7 +248,8 @@ func main() {
 	dsHandler := handler.NewDataSourceHandler(dsSvc)
 	purposeHandler := handler.NewPurposeHandler(purposeSvc)
 	authHandler := handler.NewAuthHandler(authSvc, tenantSvc)
-	discoveryHandler := handler.NewDiscoveryHandler(inventoryRepo, entityRepo, fieldRepo)
+	discoveryHandler := handler.NewDiscoveryHandler(discoverySvc, scanSvc, inventoryRepo, entityRepo, fieldRepo)
+	feedbackHandler := handler.NewFeedbackHandler(feedbackSvc)
 
 	// =========================================================================
 	// Rate Limiter
@@ -182,6 +311,9 @@ func main() {
 
 			// Discovery (inventories, entities, fields)
 			r.Mount("/discovery", discoveryHandler.Routes())
+
+			// Detection Feedback (verify/correct/reject PII classifications)
+			r.Mount("/discovery/feedback", feedbackHandler.Routes())
 
 			// PII Classifications
 			r.Route("/classifications", func(r chi.Router) {

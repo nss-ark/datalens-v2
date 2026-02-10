@@ -47,6 +47,7 @@ const (
 	// PII Events
 	EventPIIDiscovered = "pii.discovered"
 	EventPIIVerified   = "pii.verified"
+	EventPIICorrected  = "pii.corrected"
 	EventPIIRejected   = "pii.rejected"
 	EventPIIClassified = "pii.classified"
 

@@ -279,3 +279,88 @@ func TestAuthIntegration_APIKeyLifecycle(t *testing.T) {
 	_, _, err = apiKeySvc.ValidateKey(ctx, keyResult.RawKey)
 	assert.Error(t, err, "revoked key should fail validation")
 }
+
+// =============================================================================
+// Concurrent Access
+// =============================================================================
+
+func TestAuthIntegration_ConcurrentAccess(t *testing.T) {
+	authSvc, tenantSvc := newIntegrationAuthService(t)
+	ctx := context.Background()
+
+	domain := uniqueDomain("concurrent")
+	result, err := tenantSvc.Onboard(ctx, service.OnboardInput{
+		TenantName: "ConcurrentCo",
+		Domain:     domain,
+		AdminEmail: "admin@" + domain,
+		AdminName:  "Admin",
+		AdminPass:  "SecureP@ss123",
+	})
+	require.NoError(t, err)
+
+	// Fire 10 concurrent logins — all should succeed and return distinct tokens
+	const n = 10
+	type loginResult struct {
+		tokens *service.TokenPair
+		err    error
+	}
+	ch := make(chan loginResult, n)
+
+	for i := 0; i < n; i++ {
+		go func() {
+			tokens, err := authSvc.Login(ctx, service.LoginInput{
+				TenantID: result.Tenant.ID,
+				Email:    "admin@" + domain,
+				Password: "SecureP@ss123",
+			})
+			ch <- loginResult{tokens: tokens, err: err}
+		}()
+	}
+
+	successCount := 0
+	for i := 0; i < n; i++ {
+		lr := <-ch
+		require.NoError(t, lr.err, "concurrent login %d should succeed", i)
+		assert.NotEmpty(t, lr.tokens.AccessToken)
+		successCount++
+	}
+	assert.Equal(t, n, successCount, "all concurrent logins should succeed")
+}
+
+// =============================================================================
+// Password Complexity
+// =============================================================================
+
+func TestAuthIntegration_PasswordComplexity(t *testing.T) {
+	_, tenantSvc := newIntegrationAuthService(t)
+	ctx := context.Background()
+
+	tests := []struct {
+		name     string
+		password string
+		wantErr  bool
+	}{
+		{"too short", "Ab1!", false},
+		{"exactly 8 chars", "Abcdef12", false},
+		{"strong password", "MyS3cureP@ssword!", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			domain := uniqueDomain("pwtest")
+			_, err := tenantSvc.Onboard(ctx, service.OnboardInput{
+				TenantName: "PwTestCo",
+				Domain:     domain,
+				AdminEmail: "admin@" + domain,
+				AdminName:  "Admin",
+				AdminPass:  tc.password,
+			})
+			if tc.name == "too short" {
+				require.Error(t, err, "password '%s' should be rejected", tc.password)
+				assert.Contains(t, err.Error(), "password")
+			} else {
+				require.NoError(t, err, "password '%s' should be accepted", tc.password)
+			}
+		})
+	}
+}

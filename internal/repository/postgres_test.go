@@ -71,7 +71,7 @@ func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	_, filename, _, _ := runtime.Caller(0)
 	migrationsDir := filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
 
-	files := []string{"001_initial_schema.sql", "002_api_keys.sql"}
+	files := []string{"001_initial_schema.sql", "002_api_keys.sql", "003_detection_feedback.sql"}
 	for _, f := range files {
 		sql, err := os.ReadFile(filepath.Join(migrationsDir, f))
 		if err != nil {
@@ -666,4 +666,286 @@ func TestTenantIsolation_DataSources(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, list, 1)
 	assert.Equal(t, "DS-B", list[0].Name)
+}
+
+// =============================================================================
+// PIIClassificationRepo Tests
+// =============================================================================
+
+func TestPIIClassificationRepo_CRUD(t *testing.T) {
+	// Setup Repos
+	repo := repository.NewPIIClassificationRepo(testPool)
+	dsRepo := repository.NewDataSourceRepo(testPool)
+	tenantRepo := repository.NewTenantRepo(testPool)
+	userRepo := repository.NewUserRepo(testPool)
+
+	fieldRepo := repository.NewDataFieldRepo(testPool)
+	entityRepo := repository.NewDataEntityRepo(testPool)
+	invRepo := repository.NewDataInventoryRepo(testPool)
+	ctx := context.Background()
+
+	// Setup hierarchy: Tenant -> DS -> Inv -> Entity -> Field
+	tenant := &identity.Tenant{
+		Name:   "PIITestCo",
+		Domain: "piitest-" + types.NewID().String()[:8] + ".com",
+		Plan:   identity.PlanFree,
+		Status: identity.TenantActive,
+		Settings: identity.TenantSettings{
+			DefaultRegulation: "DPDPA",
+		},
+	}
+	require.NoError(t, tenantRepo.Create(ctx, tenant))
+
+	// Create User for VerifiedBy
+	admin := &identity.User{
+		TenantEntity: types.TenantEntity{
+			TenantID: tenant.ID,
+		},
+		Email:      "admin@" + tenant.Domain,
+		Name:       "Admin User",
+		Password:   "hash",
+		Status:     identity.UserActive,
+		MFAEnabled: false,
+	}
+	require.NoError(t, userRepo.Create(ctx, admin))
+
+	ds := &discovery.DataSource{
+		Name:     "PII Source",
+		Type:     types.DataSourcePostgreSQL,
+		Host:     "localhost",
+		Port:     5432,
+		Database: "testdb",
+		Status:   discovery.ConnectionStatusConnected,
+	}
+	ds.TenantID = tenant.ID
+	require.NoError(t, dsRepo.Create(ctx, ds))
+
+	inv := &discovery.DataInventory{
+		DataSourceID:  ds.ID,
+		SchemaVersion: "v1",
+	}
+	require.NoError(t, invRepo.Create(ctx, inv))
+
+	entity := &discovery.DataEntity{
+		InventoryID: inv.ID,
+		Name:        "users",
+		Schema:      "public",
+		Type:        discovery.EntityTypeTable,
+	}
+	require.NoError(t, entityRepo.Create(ctx, entity))
+
+	field := &discovery.DataField{
+		EntityID:     entity.ID,
+		Name:         "email",
+		DataType:     "VARCHAR",
+		Nullable:     false,
+		IsPrimaryKey: false,
+		IsForeignKey: false,
+	}
+	require.NoError(t, fieldRepo.Create(ctx, field))
+
+	// 1. Create Classification
+	c := &discovery.PIIClassification{
+		FieldID:         field.ID,
+		DataSourceID:    ds.ID,
+		EntityName:      "users",
+		FieldName:       "email",
+		Category:        types.PIICategoryContact,
+		Type:            types.PIITypeEmail,
+		Sensitivity:     types.SensitivityMedium,
+		Confidence:      0.95,
+		DetectionMethod: types.DetectionMethodAI,
+		Status:          types.VerificationPending,
+		Reasoning:       "Looks like an email",
+	}
+
+	err := repo.Create(ctx, c)
+	require.NoError(t, err)
+	assert.NotEqual(t, types.ID{}, c.ID)
+
+	// 2. GetByID
+	got, err := repo.GetByID(ctx, c.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "email", got.FieldName)
+	assert.Equal(t, types.PIICategoryContact, got.Category)
+	assert.Equal(t, types.VerificationPending, got.Status)
+
+	// 3. Update
+	got.Status = types.VerificationVerified
+	got.VerifiedBy = &admin.ID
+	now := time.Now().UTC()
+	got.VerifiedAt = &now
+	err = repo.Update(ctx, got)
+	require.NoError(t, err)
+
+	got2, _ := repo.GetByID(ctx, c.ID)
+	assert.Equal(t, types.VerificationVerified, got2.Status)
+	assert.Equal(t, &admin.ID, got2.VerifiedBy)
+
+	// 4. GetByDataSource (Pagination)
+	page, err := repo.GetByDataSource(ctx, ds.ID, types.Pagination{Page: 1, PageSize: 10})
+	require.NoError(t, err)
+	assert.Equal(t, 1, page.Total)
+	assert.Equal(t, c.ID, page.Items[0].ID)
+
+	// 5. Bulk Create
+	c2 := discovery.PIIClassification{
+		FieldID:         field.ID,
+		DataSourceID:    ds.ID,
+		EntityName:      "users",
+		FieldName:       "phone",
+		Category:        types.PIICategoryContact,
+		Type:            types.PIITypePhone,
+		Sensitivity:     types.SensitivityMedium,
+		Confidence:      0.88,
+		DetectionMethod: types.DetectionMethodRegex,
+		Status:          types.VerificationPending,
+		Reasoning:       "Regex match",
+	}
+	c3 := discovery.PIIClassification{
+		FieldID:         field.ID,
+		DataSourceID:    ds.ID,
+		EntityName:      "users",
+		FieldName:       "ip_address",
+		Category:        types.PIICategoryBehavioral,
+		Type:            types.PIITypeIPAddress,
+		Sensitivity:     types.SensitivityLow,
+		Confidence:      0.60,
+		DetectionMethod: types.DetectionMethodHeuristic,
+		Status:          types.VerificationPending,
+		Reasoning:       "Heuristic match",
+	}
+
+	err = repo.BulkCreate(ctx, []discovery.PIIClassification{c2, c3})
+	require.NoError(t, err)
+
+	// 6. GetPending
+	// c was verified, so only c2 and c3 are pending
+	pending, err := repo.GetPending(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10})
+	require.NoError(t, err)
+	assert.Equal(t, 2, pending.Total)
+}
+
+// =============================================================================
+// DetectionFeedbackRepo Tests
+// =============================================================================
+
+func TestFeedbackRepo_CRUD(t *testing.T) {
+	fbRepo := repository.NewDetectionFeedbackRepo(testPool)
+	piiRepo := repository.NewPIIClassificationRepo(testPool)
+	dsRepo := repository.NewDataSourceRepo(testPool)
+	tenantRepo := repository.NewTenantRepo(testPool)
+	userRepo := repository.NewUserRepo(testPool)
+	fieldRepo := repository.NewDataFieldRepo(testPool)
+	entityRepo := repository.NewDataEntityRepo(testPool)
+	invRepo := repository.NewDataInventoryRepo(testPool)
+	ctx := context.Background()
+
+	// 1. Setup Data Hierarchy
+	tenant := &identity.Tenant{
+		Name:     "FeedbackTestCo",
+		Domain:   "fbtest-" + types.NewID().String()[:8] + ".com",
+		Status:   identity.TenantActive,
+		Settings: identity.TenantSettings{DefaultRegulation: "DPDPA"},
+	}
+	require.NoError(t, tenantRepo.Create(ctx, tenant))
+
+	admin := &identity.User{
+		TenantEntity: types.TenantEntity{
+			TenantID: tenant.ID,
+		},
+		Email:    "admin@" + tenant.Domain,
+		Name:     "Admin",
+		Password: "hash",
+		Status:   identity.UserActive,
+	}
+	require.NoError(t, userRepo.Create(ctx, admin))
+
+	ds := &discovery.DataSource{
+		Name:   "Feedback DB",
+		Type:   types.DataSourcePostgreSQL,
+		Status: discovery.ConnectionStatusConnected,
+	}
+	ds.TenantID = tenant.ID
+	require.NoError(t, dsRepo.Create(ctx, ds))
+
+	inv := &discovery.DataInventory{DataSourceID: ds.ID}
+	require.NoError(t, invRepo.Create(ctx, inv))
+
+	entity := &discovery.DataEntity{InventoryID: inv.ID, Name: "users", Type: discovery.EntityTypeTable}
+	require.NoError(t, entityRepo.Create(ctx, entity))
+
+	field := &discovery.DataField{EntityID: entity.ID, Name: "email", DataType: "VARCHAR"}
+	require.NoError(t, fieldRepo.Create(ctx, field))
+
+	// 2. Create Classification (Parent of Feedback)
+	classification := &discovery.PIIClassification{
+		FieldID:         field.ID,
+		DataSourceID:    ds.ID,
+		EntityName:      "users",
+		FieldName:       "email",
+		Category:        types.PIICategoryContact,
+		Type:            types.PIITypeEmail,
+		Confidence:      0.9,
+		DetectionMethod: types.DetectionMethodAI,
+		Status:          types.VerificationPending,
+	}
+	require.NoError(t, piiRepo.Create(ctx, classification))
+
+	// 3. Create Feedback (Verify)
+	now := time.Now().UTC()
+	fb1 := &discovery.DetectionFeedback{
+		ClassificationID:   classification.ID,
+		TenantID:           tenant.ID,
+		FeedbackType:       discovery.FeedbackVerified,
+		OriginalCategory:   classification.Category,
+		OriginalType:       classification.Type,
+		OriginalConfidence: classification.Confidence,
+		OriginalMethod:     classification.DetectionMethod,
+		CorrectedBy:        admin.ID,
+		CorrectedAt:        now,
+		Notes:              "Looks good",
+		ColumnName:         "email",
+		TableName:          "users",
+	}
+	err := fbRepo.Create(ctx, fb1)
+	require.NoError(t, err)
+	assert.NotEqual(t, types.ID{}, fb1.ID)
+
+	// 4. GetByID
+	got, err := fbRepo.GetByID(ctx, fb1.ID)
+	require.NoError(t, err)
+	assert.Equal(t, discovery.FeedbackVerified, got.FeedbackType)
+	assert.Equal(t, "email", got.ColumnName)
+
+	// 5. Create Feedback 2 (Correction on same classification just for list test)
+	// In reality, one classification usually has one feedback, but let's test listing.
+	fb2 := &discovery.DetectionFeedback{
+		ClassificationID:  classification.ID,
+		TenantID:          tenant.ID,
+		FeedbackType:      discovery.FeedbackCorrected,
+		CorrectedBy:       admin.ID,
+		OriginalMethod:    types.DetectionMethodAI,
+		CorrectedCategory: &classification.Category, // same for test
+		Notes:             "Correction",
+	}
+	require.NoError(t, fbRepo.Create(ctx, fb2))
+
+	// 6. GetByClassification
+	list, err := fbRepo.GetByClassification(ctx, classification.ID)
+	require.NoError(t, err)
+	assert.Len(t, list, 2) // fb1 and fb2 (ordered by created_at desc)
+
+	// 7. GetByTenant
+	page, err := fbRepo.GetByTenant(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10})
+	require.NoError(t, err)
+	assert.Equal(t, 2, page.Total)
+
+	// 8. GetAccuracyStats
+	stats, err := fbRepo.GetAccuracyStats(ctx, tenant.ID, types.DetectionMethodAI)
+	require.NoError(t, err)
+	assert.Equal(t, 2, stats.Total) // fb1 (verified) + fb2 (corrected)
+	assert.Equal(t, 1, stats.Verified)
+	assert.Equal(t, 1, stats.Corrected)
+	assert.Equal(t, 0.5, stats.Accuracy) // 1 verified / 2 total
 }

@@ -145,9 +145,9 @@ func TestComposableDetector_StrategyOutcomes(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Should have outcomes for both strategies (pattern + heuristic)
-	if len(report.Strategies) != 2 {
-		t.Errorf("expected 2 strategy outcomes, got %d", len(report.Strategies))
+	// Should have outcomes for all strategies (pattern + heuristic + industry)
+	if len(report.Strategies) != 3 {
+		t.Errorf("expected 3 strategy outcomes, got %d", len(report.Strategies))
 	}
 
 	// Verify strategy outcomes are recorded

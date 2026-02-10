@@ -57,7 +57,7 @@
 - [x] Implement `Purpose` entity + repository
 - [x] Implement `DataMapping` entity + repository
 - [x] Write unit tests for all entities (validation, invariants)
-- [/] Write integration tests for all repositories
+- [x] Write integration tests for all repositories
 
 #### 1.2 Event Bus Integration
 - [x] Create `EventBus` interface and NATS implementation
@@ -83,7 +83,7 @@
 - [x] Implement role-based access (ADMIN, DPO, ANALYST, VIEWER)
 - [x] Implement permission checks per endpoint
 - [x] Create API key system for agent authentication
-- [/] Write auth integration tests
+- [x] Write auth integration tests
 
 ### Sprint 3-4: PII Detection Engine (Weeks 7-10)
 
@@ -94,8 +94,8 @@
 - [x] Implement Generic HTTP provider (Hugging Face, custom endpoints) — `generic_http.go`
 - [x] Implement provider registry + factory — `registry.go`
 - [x] Implement provider selection logic + fallback chain — `selector.go`
-- [ ] Add Redis caching for AI responses
-- [ ] Implement token budget & cost tracking
+- [x] Add Redis caching for AI responses
+- [x] Implement token budget & cost tracking
 - [x] Write PII detection prompt templates — `prompts.go`
 - [x] Write purpose suggestion prompt templates — `prompts.go`
 - [ ] Test with real LLM providers
@@ -105,30 +105,35 @@
 - [x] Implement `AIStrategy` (LLM-based contextual detection) — `ai_strategy.go`
 - [x] Implement `PatternStrategy` (regex patterns) — `pattern.go`
 - [x] Implement `HeuristicStrategy` (column name heuristics) — `heuristic.go`
-- [ ] Implement `IndustryStrategy` (sector-specific patterns)
+- [x] Implement `IndustryStrategy` (sector-specific patterns) — `industry_strategy.go`
 - [x] Create `ComposablePIIDetector` that chains strategies — `detector.go`
 - [x] Implement confidence scoring and merging logic — `detector.go`
 - [x] Implement PII sanitizer (never send real PII to cloud AI) — `sanitizer.go`
-- [/] Write comprehensive tests per strategy
+- [x] Write comprehensive tests per strategy
 - [ ] Benchmark detection speed and accuracy
 
 #### 1.7 Feedback & Learning Loop
 - [x] Create `DetectionFeedback` entity + repository — `feedback.go`
-- [ ] Implement verify/correct/reject workflow
+- [x] Implement verify/correct/reject workflow
 - [ ] Create rule extraction from feedback patterns
 - [ ] Implement cache invalidation on corrections
 - [ ] Track accuracy metrics per strategy
 
+#### Frontend Foundation (Parallel)
+- [x] Scaffold React + TypeScript + Vite application
+- [x] Implement Authentication flows (Login, Register)
+- [x] Implement App Shell (Sidebar, Header, Layout)
+
 ### Sprint 5-6: Data Source Connectors & Scanning (Weeks 11-14)
 
 #### 1.8 Connector Framework
-- [ ] Create `DataSourceConnector` interface (see Doc 20)
+- [x] Create `DataSourceConnector` interface (see Doc 20) — `internal/domain/discovery`
 - [ ] Create `ConnectorCapabilities` system
 - [ ] Implement connection pooling manager
 - [ ] Create connector factory/registry
 
 #### 1.9 Database Connectors
-- [ ] Implement PostgreSQL connector (parallel column scanning)
+- [x] Implement PostgreSQL connector (parallel column scanning) — `internal/infrastructure/connector/postgres.go`
 - [ ] Implement MySQL connector (parallel column scanning)
 - [ ] Implement MongoDB connector
 - [ ] Implement SQL Server connector (port from v1)

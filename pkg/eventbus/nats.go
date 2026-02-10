@@ -20,8 +20,8 @@ type NATSEventBus struct {
 	subs   []*nats.Subscription
 }
 
-// NewNATSEventBus creates a new NATS-backed event bus.
-func NewNATSEventBus(url string, logger *slog.Logger) (*NATSEventBus, error) {
+// Connect establishes a connection to the NATS server.
+func Connect(url string, logger *slog.Logger) (*nats.Conn, error) {
 	conn, err := nats.Connect(url,
 		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(10),
@@ -39,8 +39,12 @@ func NewNATSEventBus(url string, logger *slog.Logger) (*NATSEventBus, error) {
 		return nil, fmt.Errorf("connect to NATS: %w", err)
 	}
 
-	logger.Info("NATS event bus connected", "url", url)
+	logger.Info("NATS connected", "url", url)
+	return conn, nil
+}
 
+// NewNATSEventBus creates a new NATS-backed event bus using an existing connection.
+func NewNATSEventBus(conn *nats.Conn, logger *slog.Logger) (*NATSEventBus, error) {
 	return &NATSEventBus{
 		conn:   conn,
 		logger: logger.With("component", "eventbus"),

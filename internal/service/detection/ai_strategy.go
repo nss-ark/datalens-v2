@@ -168,6 +168,7 @@ func NewDefaultDetector(gateway ai.Gateway) *ComposableDetector {
 	strategies := []Strategy{
 		NewPatternStrategy(),
 		NewHeuristicStrategy(),
+		NewIndustryStrategy(),
 	}
 
 	if gateway != nil {
