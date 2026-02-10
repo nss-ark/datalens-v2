@@ -88,32 +88,32 @@
 ### Sprint 3-4: PII Detection Engine (Weeks 7-10)
 
 #### 1.5 AI Gateway
-- [ ] Create `AIGateway` interface (see Doc 22)
-- [ ] Implement OpenAI provider
-- [ ] Implement Anthropic provider
-- [ ] Implement local LLM provider (Ollama)
-- [ ] Implement provider selection logic
-- [ ] Implement fallback chain (cloud → cloud → local → rules)
+- [x] Create `AIGateway` interface (see Doc 22) — `gateway.go`
+- [x] Implement OpenAI-compatible provider (covers OpenAI, Ollama, vLLM, Groq, etc.) — `openai.go`
+- [x] Implement Anthropic provider — `anthropic.go`
+- [x] Implement Generic HTTP provider (Hugging Face, custom endpoints) — `generic_http.go`
+- [x] Implement provider registry + factory — `registry.go`
+- [x] Implement provider selection logic + fallback chain — `selector.go`
 - [ ] Add Redis caching for AI responses
 - [ ] Implement token budget & cost tracking
-- [ ] Write PII detection prompt templates
-- [ ] Write purpose suggestion prompt templates
+- [x] Write PII detection prompt templates — `prompts.go`
+- [x] Write purpose suggestion prompt templates — `prompts.go`
 - [ ] Test with real LLM providers
 
 #### 1.6 Detection Strategies
-- [ ] Create `DetectionStrategy` interface
-- [ ] Implement `AIStrategy` (LLM-based contextual detection)
-- [ ] Implement `PatternStrategy` (regex patterns — port from v1)
-- [ ] Implement `HeuristicStrategy` (column name heuristics — port from v1)
+- [x] Create `DetectionStrategy` interface — `strategy.go`
+- [x] Implement `AIStrategy` (LLM-based contextual detection) — `ai_strategy.go`
+- [x] Implement `PatternStrategy` (regex patterns) — `pattern.go`
+- [x] Implement `HeuristicStrategy` (column name heuristics) — `heuristic.go`
 - [ ] Implement `IndustryStrategy` (sector-specific patterns)
-- [ ] Create `ComposablePIIDetector` that chains strategies
-- [ ] Implement confidence scoring and merging logic
-- [ ] Implement PII sanitizer (never send real PII to cloud AI)
-- [ ] Write comprehensive tests per strategy
+- [x] Create `ComposablePIIDetector` that chains strategies — `detector.go`
+- [x] Implement confidence scoring and merging logic — `detector.go`
+- [x] Implement PII sanitizer (never send real PII to cloud AI) — `sanitizer.go`
+- [/] Write comprehensive tests per strategy
 - [ ] Benchmark detection speed and accuracy
 
 #### 1.7 Feedback & Learning Loop
-- [ ] Create `DetectionFeedback` entity + repository
+- [x] Create `DetectionFeedback` entity + repository — `feedback.go`
 - [ ] Implement verify/correct/reject workflow
 - [ ] Create rule extraction from feedback patterns
 - [ ] Implement cache invalidation on corrections

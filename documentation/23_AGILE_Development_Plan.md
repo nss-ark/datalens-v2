@@ -64,8 +64,8 @@ This document defines the AGILE development methodology, sprint structure, miles
 │  └──────────┬──────────┘                                                    │
 │             │                                                                │
 │  ┌──────────┴───────────────────────────────────────┐                       │
-│  │                                                   │                       │
-│  ▼                                                   ▼                       │
+│  │                                                  │                       │
+│  ▼                                                  ▼                       │
 │  ┌─────────────────────┐               ┌─────────────────────┐              │
 │  │   DISCOVERY SQUAD   │               │   COMPLIANCE SQUAD  │              │
 │  │                     │               │                     │              │
@@ -79,7 +79,7 @@ This document defines the AGILE development methodology, sprint structure, miles
 │  │  • AI Gateway       │               │  • Breach Module    │              │
 │  │  • Connectors       │               │  • Notifications    │              │
 │  └─────────────────────┘               └─────────────────────┘              │
-│                                                                              │
+│                                                                             │
 │  ┌─────────────────────┐               ┌─────────────────────┐              │
 │  │   PLATFORM SQUAD    │               │   QUALITY SQUAD     │              │
 │  │                     │               │                     │              │
