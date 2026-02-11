@@ -25,6 +25,9 @@ func NewDataSourceRepo(pool *pgxpool.Pool) *DataSourceRepo {
 
 func (r *DataSourceRepo) Create(ctx context.Context, ds *discovery.DataSource) error {
 	ds.ID = types.NewID()
+	if ds.Config == "" {
+		ds.Config = "{}"
+	}
 	query := `
 		INSERT INTO data_sources (id, tenant_id, name, type, description, host, port, database_name, credentials, config, scan_schedule, status)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -88,6 +91,9 @@ func (r *DataSourceRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]
 }
 
 func (r *DataSourceRepo) Update(ctx context.Context, ds *discovery.DataSource) error {
+	if ds.Config == "" {
+		ds.Config = "{}"
+	}
 	query := `
 		UPDATE data_sources
 		SET name = $2, type = $3, description = $4, host = $5, port = $6,

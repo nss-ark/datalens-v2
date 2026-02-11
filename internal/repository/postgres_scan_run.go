@@ -28,12 +28,12 @@ func (r *PostgresScanRunRepo) Create(ctx context.Context, run *discovery.ScanRun
 		INSERT INTO scan_runs (
 			id, data_source_id, tenant_id, type, status, progress, 
 			started_at, completed_at, error_message, 
-			entities_scanned, fields_scanned, pii_detected, duration_ms, bytes_processed,
+			stats,
 			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, 
 			$7, $8, $9, 
-			$10, $11, $12, $13, $14,
+			$10,
 			NOW(), NOW()
 		)`
 
@@ -49,7 +49,7 @@ func (r *PostgresScanRunRepo) Create(ctx context.Context, run *discovery.ScanRun
 	_, err := r.pool.Exec(ctx, query,
 		run.ID, run.DataSourceID, run.TenantID, run.Type, run.Status, run.Progress,
 		startedAt, completedAt, run.ErrorMessage,
-		run.Stats.EntitiesScanned, run.Stats.FieldsScanned, run.Stats.PIIDetected, run.Stats.Duration.Milliseconds(), run.Stats.BytesProcessed,
+		run.Stats,
 	)
 	if err != nil {
 		return fmt.Errorf("create scan run: %w", err)
@@ -64,7 +64,7 @@ func (r *PostgresScanRunRepo) GetByID(ctx context.Context, id types.ID) (*discov
 		SELECT 
 			id, data_source_id, tenant_id, type, status, progress, 
 			started_at, completed_at, error_message, 
-			entities_scanned, fields_scanned, pii_detected, duration_ms, bytes_processed
+			stats
 		FROM scan_runs
 		WHERE id = $1`
 
@@ -78,7 +78,7 @@ func (r *PostgresScanRunRepo) GetByDataSource(ctx context.Context, dataSourceID 
 		SELECT 
 			id, data_source_id, tenant_id, type, status, progress, 
 			started_at, completed_at, error_message, 
-			entities_scanned, fields_scanned, pii_detected, duration_ms, bytes_processed
+			stats
 		FROM scan_runs
 		WHERE data_source_id = $1
 		ORDER BY created_at DESC`
@@ -106,7 +106,7 @@ func (r *PostgresScanRunRepo) GetActive(ctx context.Context, tenantID types.ID) 
 		SELECT 
 			id, data_source_id, tenant_id, type, status, progress, 
 			started_at, completed_at, error_message, 
-			entities_scanned, fields_scanned, pii_detected, duration_ms, bytes_processed
+			stats
 		FROM scan_runs
 		WHERE tenant_id = $1 AND status IN ('PENDING', 'RUNNING')
 		ORDER BY created_at DESC`
@@ -134,7 +134,7 @@ func (r *PostgresScanRunRepo) GetRecent(ctx context.Context, tenantID types.ID, 
 		SELECT 
 			id, data_source_id, tenant_id, type, status, progress, 
 			started_at, completed_at, error_message, 
-			entities_scanned, fields_scanned, pii_detected, duration_ms, bytes_processed
+			stats
 		FROM scan_runs
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC
@@ -167,9 +167,9 @@ func (r *PostgresScanRunRepo) Update(ctx context.Context, run *discovery.ScanRun
 		UPDATE scan_runs
 		SET 
 			status = $1, progress = $2, started_at = $3, completed_at = $4, error_message = $5,
-			entities_scanned = $6, fields_scanned = $7, pii_detected = $8, duration_ms = $9, bytes_processed = $10,
+			stats = $6,
 			updated_at = NOW()
-		WHERE id = $11`
+		WHERE id = $7`
 
 	var startedAt, completedAt *time.Time
 	if run.StartedAt != nil {
@@ -181,7 +181,7 @@ func (r *PostgresScanRunRepo) Update(ctx context.Context, run *discovery.ScanRun
 
 	cmd, err := r.pool.Exec(ctx, query,
 		run.Status, run.Progress, startedAt, completedAt, run.ErrorMessage,
-		run.Stats.EntitiesScanned, run.Stats.FieldsScanned, run.Stats.PIIDetected, run.Stats.Duration.Milliseconds(), run.Stats.BytesProcessed,
+		run.Stats,
 		run.ID,
 	)
 	if err != nil {
@@ -198,13 +198,12 @@ func (r *PostgresScanRunRepo) Update(ctx context.Context, run *discovery.ScanRun
 // Helper to map row to ScanRun
 func scanRowToScanRun(row pgx.Row) (*discovery.ScanRun, error) {
 	var run discovery.ScanRun
-	var durationMs int64
 	var startedAt, completedAt *time.Time
 
 	err := row.Scan(
 		&run.ID, &run.DataSourceID, &run.TenantID, &run.Type, &run.Status, &run.Progress,
 		&startedAt, &completedAt, &run.ErrorMessage,
-		&run.Stats.EntitiesScanned, &run.Stats.FieldsScanned, &run.Stats.PIIDetected, &durationMs, &run.Stats.BytesProcessed,
+		&run.Stats,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -215,7 +214,6 @@ func scanRowToScanRun(row pgx.Row) (*discovery.ScanRun, error) {
 
 	run.StartedAt = startedAt
 	run.CompletedAt = completedAt
-	run.Stats.Duration = time.Duration(durationMs) * time.Millisecond
 
 	return &run, nil
 }

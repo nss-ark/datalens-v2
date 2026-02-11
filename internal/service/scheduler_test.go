@@ -78,14 +78,9 @@ func TestScheduler_IsDue(t *testing.T) {
 
 	// 3. Not due case
 	// Every hour (0 * * * *)
-	// Last run: 5 mins ago. Next run: 55 mins from now. -> Not Due.
+	// Last run: Now. Next run: Next hour boundary. -> Not Due.
 	cronHourly := "0 * * * *"
-	lastRunJustNow := time.Now().Add(-5 * time.Minute)
-	// We need to make sure we align with the hour boundary.
-	// If now is 10:05. Last run 10:00. Next is 11:00. Not due.
-	// If now is 10:05. Last run 09:00. Next is 10:00. Due.
-
-	// Let's rely on standard parsing.
+	lastRunJustNow := time.Now()
 	due, err = svc.IsDue(cronHourly, &lastRunJustNow)
 	require.NoError(t, err)
 	// Depending on current time, this is tricky.

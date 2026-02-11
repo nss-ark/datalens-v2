@@ -24,6 +24,10 @@ func NewDSRRepo(pool *pgxpool.Pool) *DSRRepo {
 
 // Create persists a new DSR.
 func (r *DSRRepo) Create(ctx context.Context, dsr *compliance.DSR) error {
+	if dsr.SubjectIdentifiers == nil {
+		dsr.SubjectIdentifiers = make(map[string]string)
+	}
+
 	query := `
 		INSERT INTO dsr_requests (
 			id, tenant_id, request_type, status,
@@ -189,6 +193,12 @@ func (r *DSRRepo) Update(ctx context.Context, dsr *compliance.DSR) error {
 
 // CreateTask persists a new DSRTask.
 func (r *DSRRepo) CreateTask(ctx context.Context, task *compliance.DSRTask) error {
+	// If result is empty/nil, it should be NULL in DB if type is JSONB.
+	// But compliance.DSRTask.Result is likely *string or similar.
+	// We'll assume if it's nil, pgx handles it as NULL, which is valid for nullable JSONB.
+	// BUT if it's a string, and empty, it must be NULL or "{}".
+	// Let's defer specifics to verifying the type first, but actually the error was likely due to
+	// uninitialized data in the test. Let's inspect the test first.
 	query := `
 		INSERT INTO dsr_tasks (
 			id, dsr_id, data_source_id, tenant_id,

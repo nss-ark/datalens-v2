@@ -707,19 +707,29 @@ _Document Go interfaces that cross agent boundaries:_
 | 4 | Tests for Batch 3 + E2E | Test | ✅ COMPLETE |
 | 5 | CI/CD pipeline | DevOps | ✅ COMPLETE |
 
-**Sprint Batch 5** (Feb 11, 2026) — 🟡 IN PROGRESS
+**Sprint Batch 7** (Feb 11, 2026) — 🟡 IN PROGRESS
 
 | # | Task | Agent | Status | Parallel? |
 |---|------|-------|--------|-----------|
-| 1 | Consent Engine Service + Repository (Widget CRUD, Session, History) | Backend | ✅ COMPLETE | ✅ Yes |
-| 2 | Consent Management Page (Widget list, builder, detail) | Frontend | 🚀 Ready to Start | ❌ Depends on #1 |
-| 3 | Tests for Batch 4 (DSR Executor, S3, Scheduler, Scan Service) | Test | ⏳ Waiting | ✅ Yes |
-| 4 | Fix S3 Registry + DSR Notes Field | Backend | 🟡 Partial (Notes added) | ✅ Yes (bundle with #1) |
-| 5 | CI Service Containers + golangci-lint | DevOps | ⏳ Waiting | ✅ Yes |
+| 1 | Purpose Mapping Automation (AI Suggestions) | Backend | ⏳ Waiting | ✅ Yes |
+| 2 | Governance Policy Engine (Entities + Rules) | Backend | ⏳ Waiting | ✅ Yes |
+| 3 | Data Lineage Tracking (Flows + Visualization) | Backend | ⏳ Waiting | ✅ Yes |
 
-⚠️ **PUBLIC API WARNING**: Task #1 introduces `/api/public/consent/*` routes that use widget API key auth (NOT JWT). Backend agent must mount these outside the auth middleware chain.
+**Batch 6 Archive** (Completed Feb 11):
+- Portal Backend (OTP, API) ✅
+- Portal Frontend (UI) ✅
+- Batch 5 Tests ✅
 
-**Next**: Batch 6 — Data Principal Portal (backend + frontend), DPR submission, OTP verification.
+**Next**: Batch 8 — Cloud Integrations & Enterprise Features.
+
+**Batch 5 Archive** (Completed Feb 11):
+- Consent Engine Backend ✅
+- Consent Management UI ✅
+- Batch 4 Tests ✅ (Pending final integration run)
+- S3 Fix ✅
+- CI Service Containers ✅
+
+**Next**: Batch 7 — Purpose Mapping & Governance (AI Suggestions).
 
 ---
 

@@ -1,5 +1,6 @@
 import { api } from './api';
 import type { User } from '../types/auth';
+import type { ApiError } from '../types/common';
 
 export interface LoginRequest {
     domain: string;
@@ -26,8 +27,8 @@ export interface TokenPair {
 export interface ApiResponse<T> {
     success: boolean;
     data: T;
-    error?: any;
-    meta?: any;
+    error?: ApiError;
+    meta?: Record<string, unknown>;
 }
 
 export const authService = {

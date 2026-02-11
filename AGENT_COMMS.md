@@ -18,5 +18,26 @@
 ## Active Messages
 *(Newest on top)*
 
+### [2026-02-11] [FROM: Frontend] → [TO: ALL]
+**Subject**: Data Principal Portal UI Implementation
+**Type**: HANDOFF
+
+**Changes**:
+- Implemented `/portal/*` routes in `App.tsx` (standalone layout).
+- Created `PortalLayout`, `PortalLogin`, `PortalDashboard`, `PortalHistory`, `PortalRequests`.
+- Added `portalService.ts`, `portalApi.ts`, and `portalAuthStore.ts` (using `sessionStorage`).
+- Wired OTP auth flow and DSR submission modal.
+
+**Features Enabled**:
+- Data Subjects can log in via OTP (mocked).
+- View privacy score and consent history.
+- Submit new DSR requests (Access, Correction, Erasure).
+
+**Verification**: `npm run build` ✅ | `npm run lint` ✅
+
+**Action Required**:
+- **Backend**: Implement `/public/portal/*` endpoints to replace mocks.
+- **Test**: Add E2E tests for the portal flow.
+
 ## Resolved / Archived
 *(Move resolved threads here)*

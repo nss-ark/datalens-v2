@@ -1,0 +1,63 @@
+import { portalApi } from './portalApi';
+import type { ApiResponse, PaginatedResponse } from '../types/common';
+import type {
+    PortalProfile,
+    AuthResponse,
+    VerifyOTPInput,
+    ConsentSummary,
+    ConsentHistoryEntry,
+    DPRRequest,
+    CreateDPRInput
+} from '../types/portal';
+
+export const portalService = {
+    // --- Auth ---
+    async requestOTP(identifier: { email?: string; phone?: string }): Promise<void> {
+        await portalApi.post('/public/portal/auth/otp', identifier);
+    },
+
+    async verifyOTP(data: VerifyOTPInput): Promise<AuthResponse> {
+        const res = await portalApi.post<ApiResponse<AuthResponse>>('/public/portal/auth/verify', data);
+        return res.data.data;
+    },
+
+    async getProfile(): Promise<PortalProfile> {
+        const res = await portalApi.get<ApiResponse<PortalProfile>>('/public/portal/profile');
+        return res.data.data;
+    },
+
+    // --- Dashboard & Consents ---
+    async getConsentSummary(): Promise<ConsentSummary[]> {
+        const res = await portalApi.get<ApiResponse<ConsentSummary[]>>('/public/portal/consents');
+        return res.data.data;
+    },
+
+    async withdrawConsent(purpose_id: string): Promise<void> {
+        await portalApi.post('/public/portal/consent/withdraw', { purpose_id });
+    },
+
+    async grantConsent(purpose_id: string): Promise<void> { // Re-granting/Opt-in
+        await portalApi.post('/public/portal/consent/grant', { purpose_id });
+    },
+
+    async getHistory(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<ConsentHistoryEntry>> {
+        const res = await portalApi.get<ApiResponse<PaginatedResponse<ConsentHistoryEntry>>>('/public/portal/history', { params });
+        return res.data.data;
+    },
+
+    // --- DPR Requests ---
+    async listRequests(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<DPRRequest>> {
+        const res = await portalApi.get<ApiResponse<PaginatedResponse<DPRRequest>>>('/public/portal/dpr', { params });
+        return res.data.data;
+    },
+
+    async createRequest(data: CreateDPRInput): Promise<DPRRequest> {
+        const res = await portalApi.post<ApiResponse<DPRRequest>>('/public/portal/dpr', data);
+        return res.data.data;
+    },
+
+    async getRequest(id: string): Promise<DPRRequest> {
+        const res = await portalApi.get<ApiResponse<DPRRequest>>(`/public/portal/dpr/${id}`);
+        return res.data.data;
+    }
+};

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS dsr_requests (
     sla_deadline TIMESTAMP WITH TIME ZONE NOT NULL,
     assigned_to UUID,
     reason TEXT,
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE
@@ -33,6 +34,24 @@ CREATE TABLE IF NOT EXISTS dsr_tasks (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE
 );
+
+-- Fix compatibility with 001 if exists
+ALTER TABLE dsr_tasks ADD COLUMN IF NOT EXISTS tenant_id UUID;
+ALTER TABLE dsr_tasks ADD COLUMN IF NOT EXISTS task_type VARCHAR(50) NOT NULL DEFAULT 'ACCESS';
+ALTER TABLE dsr_tasks ADD COLUMN IF NOT EXISTS error TEXT;
+ALTER TABLE dsr_tasks ALTER COLUMN result TYPE JSONB USING result::JSONB;
+ALTER TABLE dsr_tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE dsr_tasks DROP COLUMN IF EXISTS action;
+
+-- Drop old FK to dsrs and add new FK to dsr_requests
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'dsr_tasks_dsr_id_fkey') THEN
+        ALTER TABLE dsr_tasks DROP CONSTRAINT dsr_tasks_dsr_id_fkey;
+    END IF;
+END $$;
+
+ALTER TABLE dsr_tasks ADD CONSTRAINT dsr_tasks_dsr_id_fkey FOREIGN KEY (dsr_id) REFERENCES dsr_requests(id) ON DELETE CASCADE;
 
 CREATE INDEX idx_dsr_task_dsr_id ON dsr_tasks(dsr_id);
 CREATE INDEX idx_dsr_task_tenant_id ON dsr_tasks(tenant_id);

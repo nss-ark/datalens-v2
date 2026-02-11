@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/pkg/httputil"
 	"github.com/complyark/datalens/pkg/types"
-	// Assuming this is where middleware is
 )
 
 // Mocks
@@ -84,12 +84,13 @@ func TestDiscoveryHandler_ScanDataSource(t *testing.T) {
 	// Verify
 	require.Equal(t, http.StatusAccepted, w.Code)
 
-	var resp map[string]interface{}
+	var resp httputil.Response
 	err := json.NewDecoder(w.Body).Decode(&resp)
 	require.NoError(t, err)
 
-	assert.Equal(t, runID.String(), resp["job_id"])
-	assert.Equal(t, "Scan queued", resp["message"])
+	data := resp.Data.(map[string]interface{})
+	assert.Equal(t, runID.String(), data["job_id"])
+	assert.Equal(t, "Scan queued", data["message"])
 
 	scanSvc.AssertExpectations(t)
 }
@@ -178,13 +179,18 @@ func TestDiscoveryHandler_GetClassifications(t *testing.T) {
 	// Verify
 	require.Equal(t, http.StatusOK, w.Code)
 
-	var resp types.PaginatedResult[discovery.PIIClassification]
+	var resp httputil.Response
 	err := json.NewDecoder(w.Body).Decode(&resp)
 	require.NoError(t, err)
 
-	assert.Len(t, resp.Items, 2)
-	assert.Equal(t, 2, resp.Total)
-	assert.Equal(t, types.PIIType("EMAIL"), resp.Items[0].Type)
+	// Re-marshal to get types
+	b, _ := json.Marshal(resp.Data)
+	var result types.PaginatedResult[discovery.PIIClassification]
+	json.Unmarshal(b, &result)
+
+	assert.Len(t, result.Items, 2)
+	assert.Equal(t, 2, result.Total)
+	assert.Equal(t, types.PIIType("EMAIL"), result.Items[0].Type)
 
 	discSvc.AssertExpectations(t)
 }

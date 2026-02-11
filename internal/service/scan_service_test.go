@@ -173,7 +173,7 @@ func TestScanService_EnqueueScan_Success(t *testing.T) {
 func TestScanService_EnqueueScan_ConcurrencyLimit(t *testing.T) {
 	// Setup
 	scanRepo := new(MockScanRunRepo)
-	dsRepo := newMockDataSourceRepo()
+	dsRepo := new(MockDataSourceRepo)
 	queue := new(MockScanQueue)
 	discoverySvc := new(MockDiscoveryOrchestrator)
 	svc := NewScanService(scanRepo, dsRepo, queue, discoverySvc, slog.Default())
@@ -181,6 +181,16 @@ func TestScanService_EnqueueScan_ConcurrencyLimit(t *testing.T) {
 	ctx := context.Background()
 	tenantID := types.NewID()
 	dsID := types.NewID()
+
+	// Mock Data Source
+	ds := &discovery.DataSource{
+		TenantEntity: types.TenantEntity{
+			BaseEntity: types.BaseEntity{ID: dsID},
+			TenantID:   tenantID,
+		},
+		Name: "Test DB",
+	}
+	dsRepo.On("GetByID", ctx, dsID).Return(ds, nil)
 
 	// Mock Active Scans (3 - limit is 3)
 	activeScans := []discovery.ScanRun{{}, {}, {}}
@@ -190,6 +200,7 @@ func TestScanService_EnqueueScan_ConcurrencyLimit(t *testing.T) {
 	_, err := svc.EnqueueScan(ctx, dsID, tenantID, discovery.ScanTypeFull)
 
 	// Verify
+	t.Logf("Error received: %v", err)
 	assert.Error(t, err)
 	// Check for quota exceeded error
 	assert.Contains(t, err.Error(), "max concurrent scans")

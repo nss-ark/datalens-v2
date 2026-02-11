@@ -27,7 +27,7 @@ export interface ApiResponse<T> {
     success: boolean;
     data: T;
     error?: ApiError;
-    meta?: any;
+    meta?: Record<string, unknown>;
 }
 
 // Matches pkg/types/types.go PaginatedResult

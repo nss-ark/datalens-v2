@@ -162,7 +162,11 @@ func (e *DSRExecutor) executeTask(ctx context.Context, dsr *compliance.DSR, task
 		task.CompletedAt = &completedAt
 	}
 
-	return e.dsrRepo.UpdateTask(ctx, task)
+	if err := e.dsrRepo.UpdateTask(ctx, task); err != nil {
+		return fmt.Errorf("update task status: %w", err)
+	}
+
+	return execErr
 }
 
 // executeAccessRequest collects and exports all data for the subject.

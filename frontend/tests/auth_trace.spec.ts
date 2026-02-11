@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import fs from 'fs';
 
 test('Auth Flow Trace JSON', async ({ page }) => {
-    const log: any = {};
+    const log: Record<string, unknown> = {};
 
     await page.goto('http://localhost:3000/login');
 
@@ -33,8 +33,8 @@ test('Auth Flow Trace JSON', async ({ page }) => {
         } else {
             log.meStatus = 'TIMEOUT';
         }
-    } catch (e: any) {
-        log.meError = e.toString();
+    } catch (e) {
+        log.meError = String(e);
     }
 
     log.finalUrl = page.url();

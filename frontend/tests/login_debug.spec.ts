@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test('Login Network Debug', async ({ page }) => {
     console.log('Navigating to login page...');
@@ -24,7 +24,7 @@ test('Login Network Debug', async ({ page }) => {
     try {
         const body = await response.json();
         console.log('Login API Body:', JSON.stringify(body));
-    } catch (e) {
+    } catch {
         console.log('Could not parse response body JSON');
     }
 

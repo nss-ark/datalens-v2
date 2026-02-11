@@ -204,17 +204,17 @@
 ### Sprint 9-10: Consent Manager (Weeks 19-22)
 
 #### 2.5 Consent Engine
-- [/] Implement `Consent` entity with lifecycle (Batch 5)
-- [ ] Create consent capture API (with proof recording)
+- [x] Implement `Consent` entity with lifecycle (Batch 5)
+- [x] Create consent capture API (with proof recording) (Batch 5 - partial)
 - [ ] Implement consent withdrawal flow
 - [ ] Implement consent expiry management with notifications
 - [ ] Create consent receipt generation
-- [/] Implement consent enforcement (check before data processing) (Batch 5)
+- [x] Implement consent enforcement (check before data processing) (Batch 5)
 
 #### 2.6 Embeddable Consent Widget (CMS)
-- [/] Implement `ConsentWidget` CRUD service (Batch 5)
+- [x] Implement `ConsentWidget` CRUD service (Batch 5)
 - [ ] Implement widget API key generation and validation
-- [/] Build public API: `POST /api/public/consent/sessions` (record decisions) (Batch 5)
+- [x] Build public API: `POST /api/public/consent/sessions` (record decisions) (Batch 5)
 - [ ] Build public API: `GET /api/public/consent/check` (check consent status)
 - [ ] Build public API: `POST /api/public/consent/withdraw` (withdraw consent)
 - [ ] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config)
@@ -231,23 +231,23 @@
 - [ ] Implement widget version auto-increment on config change
 
 #### 2.7 Data Principal Portal
-- [ ] Build portal page served by Control Centre (standalone + iframe-embeddable)
-- [ ] Implement OTP-based identity verification (Email + Phone)
-- [ ] Build `DataPrincipalProfile` CRUD service
-- [ ] Link verified profile to `compliance.DataSubject`
-- [ ] Build consent dashboard (current status per purpose, toggle on/off)
-- [ ] Build consent history timeline (immutable, chronological, paginated)
-- [ ] Implement digital signature for consent history entries
-- [ ] Build portal public API: `POST /api/public/portal/verify`
-- [ ] Build portal public API: `GET /api/public/portal/profile`
-- [ ] Build portal public API: `GET /api/public/portal/consent-history`
-- [ ] Implement portal session management (short-lived JWT)
+- [x] Build portal page served by Control Centre (standalone + iframe-embeddable) (Batch 6)
+- [x] Implement OTP-based identity verification (Email + Phone) (Batch 6)
+- [x] Build `DataPrincipalProfile` CRUD service (Batch 6)
+- [x] Link verified profile to `compliance.DataSubject` (Batch 6)
+- [x] Build consent dashboard (current status per purpose, toggle on/off) (Batch 6)
+- [x] Build consent history timeline (immutable, chronological, paginated) (Batch 6)
+- [x] Implement digital signature for consent history entries (Batch 5/6)
+- [x] Build portal public API: `POST /api/public/portal/verify` (Batch 6)
+- [x] Build portal public API: `GET /api/public/portal/profile` (Batch 6)
+- [x] Build portal public API: `GET /api/public/portal/consent-history` (Batch 6)
+- [x] Implement portal session management (short-lived JWT) (Batch 6)
 
 #### 2.8 DPR (Data Principal Rights) Flows
-- [ ] Build DPR submission: `POST /api/public/portal/dpr`
-- [ ] Build DPR tracking: `GET /api/public/portal/dpr/{id}`
+- [x] Build DPR submission: `POST /api/public/portal/dpr` (Batch 6)
+- [x] Build DPR tracking: `GET /api/public/portal/dpr/{id}` (Batch 6)
 - [ ] Build DPR download: `GET /api/public/portal/dpr/{id}/download` (ACCESS)
-- [ ] Link DPR request to internal `compliance.DSR` on creation
+- [x] Link DPR request to internal `compliance.DSR` on creation (Batch 6)
 - [ ] Implement DPR status flow: SUBMITTED → PENDING_VERIFY → VERIFIED → IN_PROGRESS → COMPLETED
 - [ ] Implement guardian consent for minors (DPDPA Section 9)
   - [ ] Guardian name, email, relation fields

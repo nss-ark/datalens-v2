@@ -304,6 +304,24 @@ func main() {
 	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
 	consentHandler := handler.NewConsentHandler(consentSvc)
 
+	// Portal Services
+	portalAuthSvc := service.NewPortalAuthService(
+		repository.NewDataPrincipalProfileRepo(dbPool),
+		rdb,
+		cfg.Portal.JWTSecret,
+		cfg.Portal.JWTExpiry,
+		slog.Default(),
+	)
+	dataPrincipalSvc := service.NewDataPrincipalService(
+		repository.NewDataPrincipalProfileRepo(dbPool),
+		repository.NewDPRRequestRepo(dbPool),
+		dsrRepo,
+		consentHistoryRepo,
+		eb,
+		slog.Default(),
+	)
+	portalHandler := handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc)
+
 	// =========================================================================
 	// Rate Limiter
 	// =========================================================================
@@ -346,6 +364,9 @@ func main() {
 			r.Use(mw.WidgetCORSMiddleware())
 			r.Mount("/", consentHandler.PublicRoutes())
 		})
+
+		// Portal API (Public + Portal JWT Auth)
+		r.Mount("/portal", portalHandler.Routes())
 	})
 
 	r.Route("/api/v2", func(r chi.Router) {

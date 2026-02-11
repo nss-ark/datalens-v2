@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 	ctx := context.Background()
 
 	var connStr string
-	var container testcontainers.Container
+	var container *tcpostgres.PostgresContainer
 	var err error
 
 	// Check for CI environment
@@ -80,7 +80,7 @@ func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	_, filename, _, _ := runtime.Caller(0)
 	migrationsDir := filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
 
-	files := []string{"001_initial_schema.sql", "002_api_keys.sql", "003_detection_feedback.sql"}
+	files := []string{"001_initial_schema.sql", "002_api_keys.sql", "003_detection_feedback.sql", "004_dsr.sql", "005_consent.sql"}
 	for _, f := range files {
 		sql, err := os.ReadFile(filepath.Join(migrationsDir, f))
 		if err != nil {
@@ -963,9 +963,18 @@ func TestScanRunRepo_CRUD(t *testing.T) {
 	// setupTestDB is redundant, we use testPool from TestMain
 	repo := repository.NewScanRunRepo(testPool)
 	dsRepo := repository.NewDataSourceRepo(testPool)
+	tenantRepo := repository.NewTenantRepo(testPool)
 	ctx := context.Background()
 
-	tenantID := types.NewID()
+	// 1. Setup Tenant (FK requirement)
+	tenant := &identity.Tenant{
+		Name:     "ScanTestCo",
+		Domain:   "scan-" + types.NewID().String()[:8] + ".com",
+		Status:   identity.TenantActive,
+		Settings: identity.TenantSettings{DefaultRegulation: "DPDPA"},
+	}
+	require.NoError(t, tenantRepo.Create(ctx, tenant))
+	tenantID := tenant.ID
 	dsID := types.NewID()
 
 	// 1. Setup DataSource (FK requirement)
@@ -978,6 +987,7 @@ func TestScanRunRepo_CRUD(t *testing.T) {
 		Type: types.DataSourcePostgreSQL,
 	}
 	require.NoError(t, dsRepo.Create(ctx, ds))
+	dsID = ds.ID
 
 	// 2. Create ScanRun
 	runID := types.NewID()

@@ -19,6 +19,7 @@ type Config struct {
 	JWT     JWTConfig
 	Agent   AgentConfig
 	Consent ConsentConfig
+	Portal  PortalConfig
 }
 
 // AppConfig holds application-level settings.
@@ -115,6 +116,12 @@ type ConsentConfig struct {
 	SigningKey string // HMAC-SHA256 key for signing consent records
 }
 
+// PortalConfig holds settings for the Data Principal Portal.
+type PortalConfig struct {
+	JWTSecret string
+	JWTExpiry time.Duration
+}
+
 // Load reads configuration from environment variables.
 func Load() (*Config, error) {
 	cfg := &Config{
@@ -173,6 +180,10 @@ func Load() (*Config, error) {
 		},
 		Consent: ConsentConfig{
 			SigningKey: getEnv("CONSENT_SIGNING_KEY", "dev-consent-signing-key-change-me"),
+		},
+		Portal: PortalConfig{
+			JWTSecret: getEnv("PORTAL_JWT_SECRET", "portal-secret-key-change-me-in-prod-32chars"),
+			JWTExpiry: getEnvDuration("PORTAL_JWT_EXPIRY", 15*time.Minute),
 		},
 	}
 

@@ -35,6 +35,6 @@ export const dsrService = {
 
     async execute(id: ID): Promise<void> {
         // Execute might return status message, but we just await completion
-        await api.post<ApiResponse<any>>(`/dsr/${id}/execute`);
+        await api.post<ApiResponse<void>>(`/dsr/${id}/execute`);
     },
 };

@@ -70,18 +70,18 @@ export const WidgetBuilder = ({ onClose }: WidgetBuilderProps) => {
         }
     };
 
-    const updateField = (field: string, value: any) => {
+    const updateField = <K extends keyof CreateWidgetInput>(field: K, value: CreateWidgetInput[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const updateConfig = (field: string, value: any) => {
+    const updateConfig = <K extends keyof CreateWidgetInput['config']>(field: K, value: CreateWidgetInput['config'][K]) => {
         setFormData(prev => ({
             ...prev,
             config: { ...prev.config, [field]: value }
         }));
     };
 
-    const updateTheme = (field: string, value: any) => {
+    const updateTheme = <K extends keyof CreateWidgetInput['config']['theme']>(field: K, value: CreateWidgetInput['config']['theme'][K]) => {
         setFormData(prev => ({
             ...prev,
             config: {
@@ -135,7 +135,7 @@ export const WidgetBuilder = ({ onClose }: WidgetBuilderProps) => {
                             <select
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
                                 value={formData.type}
-                                onChange={(e) => updateField('type', e.target.value)}
+                                onChange={(e) => updateField('type', e.target.value as CreateWidgetInput['type'])}
                             >
                                 <option value="BANNER">Cookie Banner</option>
                                 <option value="PREFERENCE_CENTER">Preference Center</option>
@@ -155,7 +155,7 @@ export const WidgetBuilder = ({ onClose }: WidgetBuilderProps) => {
                                     <div
                                         key={layout}
                                         className={`border rounded-lg p-4 cursor-pointer hover:border-blue-500 ${formData.config.layout === layout ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
-                                        onClick={() => updateConfig('layout', layout)}
+                                        onClick={() => updateConfig('layout', layout as CreateWidgetInput['config']['layout'])}
                                     >
                                         <div className="text-sm font-medium text-center">{layout.replace('_', ' ')}</div>
                                     </div>
@@ -216,7 +216,7 @@ export const WidgetBuilder = ({ onClose }: WidgetBuilderProps) => {
                             <select
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
                                 value={formData.config.default_state}
-                                onChange={(e) => updateConfig('default_state', e.target.value)}
+                                onChange={(e) => updateConfig('default_state', e.target.value as CreateWidgetInput['config']['default_state'])}
                             >
                                 <option value="OPT_OUT">Opt-Out (Data is collected unless user declines)</option>
                                 <option value="OPT_IN">Opt-In (Strict - No data until explicit consent)</option>

@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import fs from 'fs';
 
 test('Auth Flow Trace Headers', async ({ page }) => {
-    const log: any = {};
+    const log: Record<string, unknown> = {};
 
     await page.goto('http://localhost:3000/login');
 
@@ -16,7 +16,7 @@ test('Auth Flow Trace Headers', async ({ page }) => {
     page.on('console', msg => console.log(`[BROWSER] ${msg.text()}`));
 
     // Intercept the /users/me request to check headers
-    let usersMeHeaders = null;
+    let usersMeHeaders: Record<string, string> | null = null;
     page.on('request', request => {
         if (request.url().includes('/users/me')) {
             usersMeHeaders = request.headers();
@@ -31,7 +31,7 @@ test('Auth Flow Trace Headers', async ({ page }) => {
     // Wait for /users/me to happen (or fail)
     try {
         await page.waitForResponse(r => r.url().includes('/users/me'), { timeout: 3000 });
-    } catch (e) {
+    } catch {
         log.timeout = true;
     }
 

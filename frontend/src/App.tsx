@@ -13,6 +13,14 @@ import DSRDetail from './pages/DSRDetail';
 import ConsentWidgets from './pages/ConsentWidgets';
 import WidgetDetail from './pages/WidgetDetail';
 
+// Portal Components
+import { PortalLayout } from './components/Layout/PortalLayout';
+import { PortalProtectedRoute } from './components/Portal/PortalProtectedRoute';
+import PortalLogin from './pages/Portal/Login';
+import PortalDashboard from './pages/Portal/Dashboard';
+import PortalHistory from './pages/Portal/History';
+import PortalRequests from './pages/Portal/Requests';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -31,6 +39,32 @@ function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          {/* Portal Routes - Standalone Layout */}
+          <Route path="/portal/login" element={
+            <PortalLayout>
+              <PortalLogin />
+            </PortalLayout>
+          } />
+
+          <Route element={<PortalProtectedRoute />}>
+            <Route path="/portal" element={<Navigate to="/portal/dashboard" replace />} />
+            <Route path="/portal/dashboard" element={
+              <PortalLayout>
+                <PortalDashboard />
+              </PortalLayout>
+            } />
+            <Route path="/portal/history" element={
+              <PortalLayout>
+                <PortalHistory />
+              </PortalLayout>
+            } />
+            <Route path="/portal/requests" element={
+              <PortalLayout>
+                <PortalRequests />
+              </PortalLayout>
+            } />
+          </Route>
 
           {/* Protected routes */}
           <Route element={
