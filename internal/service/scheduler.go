@@ -8,26 +8,35 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/internal/domain/identity"
+	"github.com/complyark/datalens/pkg/types"
 )
 
 // SchedulerService manages automated scan scheduling based on cron expressions.
 type SchedulerService struct {
-	dsRepo      discovery.DataSourceRepository
-	scanService ScanOrchestrator
-	logger      *slog.Logger
-	parser      cron.Parser
-	ticker      *time.Ticker
-	stopChan    chan struct{}
+	dsRepo         discovery.DataSourceRepository
+	tenantRepo     identity.TenantRepository
+	policySvc      *PolicyService
+	scanService    ScanOrchestrator
+	logger         *slog.Logger
+	parser         cron.Parser
+	ticker         *time.Ticker
+	stopChan       chan struct{}
+	lastPolicyEval time.Time
 }
 
 // NewSchedulerService creates a new SchedulerService.
 func NewSchedulerService(
 	dsRepo discovery.DataSourceRepository,
+	tenantRepo identity.TenantRepository,
+	policySvc *PolicyService,
 	scanService ScanOrchestrator,
 	logger *slog.Logger,
 ) *SchedulerService {
 	return &SchedulerService{
 		dsRepo:      dsRepo,
+		tenantRepo:  tenantRepo,
+		policySvc:   policySvc,
 		scanService: scanService,
 		logger:      logger.With("service", "scheduler"),
 		parser:      cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow),
@@ -45,6 +54,7 @@ func (s *SchedulerService) Start(ctx context.Context) error {
 			select {
 			case <-s.ticker.C:
 				s.checkSchedules(ctx)
+				s.schedulePolicyEvaluations(ctx)
 			case <-s.stopChan:
 				s.logger.Info("Stopping scan scheduler")
 				return
@@ -80,6 +90,38 @@ func (s *SchedulerService) checkSchedules(ctx context.Context) {
 	// In production, we'd need a better approach (e.g., one scheduler per tenant or global scheduler with tenant iteration)
 
 	s.logger.Warn("Scheduler checkSchedules not fully implemented - requires tenant iteration strategy")
+}
+
+// schedulePolicyEvaluations triggers policy evaluation for all active tenants.
+func (s *SchedulerService) schedulePolicyEvaluations(ctx context.Context) {
+	// Run every hour
+	if time.Since(s.lastPolicyEval) < 1*time.Hour && !s.lastPolicyEval.IsZero() {
+		return
+	}
+	s.lastPolicyEval = time.Now()
+
+	// Fetch all tenants
+	tenants, err := s.tenantRepo.GetAll(ctx)
+	if err != nil {
+		s.logger.Error("Failed to list tenants for policy evaluation", "error", err)
+		return
+	}
+
+	for _, tenant := range tenants {
+		if tenant.Status != identity.TenantActive {
+			continue
+		}
+
+		// Run evaluation in background to not block scheduler
+		go func(tID types.ID) {
+			evalCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+
+			if err := s.policySvc.EvaluatePolicies(evalCtx, tID); err != nil {
+				s.logger.Error("Scheduled policy evaluation failed", "tenant_id", tID, "error", err)
+			}
+		}(tenant.ID)
+	}
 }
 
 // IsDue checks if a cron schedule is due for execution.

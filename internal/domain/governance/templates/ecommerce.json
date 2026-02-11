@@ -1,0 +1,33 @@
+{
+    "sector": "E-Commerce",
+    "mappings": [
+        {
+            "table_pattern": "^users$|^customers$",
+            "column_pattern": "",
+            "purpose_code": "IDENTITY",
+            "confidence": 0.9,
+            "reason": "Standard identity table name"
+        },
+        {
+            "table_pattern": "^orders$|^transactions$",
+            "column_pattern": "",
+            "purpose_code": "COMMERCIAL",
+            "confidence": 0.9,
+            "reason": "Standard transactional table name"
+        },
+        {
+            "table_pattern": "^payments$|^invoices$",
+            "column_pattern": "",
+            "purpose_code": "FINANCIAL",
+            "confidence": 0.9,
+            "reason": "Standard financial record table name"
+        },
+        {
+            "table_pattern": "^.*$",
+            "column_pattern": "^email$|^password$|^username$",
+            "purpose_code": "AUTHENTICATION",
+            "confidence": 0.8,
+            "reason": "Contains authentication credentials"
+        }
+    ]
+}

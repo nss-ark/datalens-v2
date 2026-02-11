@@ -59,6 +59,8 @@ Before writing any tests, check what's already covered to avoid duplication.
 | `internal/infrastructure/connector/s3_test.go` | S3 Connector (CSV/JSON/JSONL) | ✅ Unit tests (Batch 5) |
 | `internal/service/scheduler_test.go` | Scheduler operations | ✅ Unit tests (Batch 5) |
 | `internal/service/scan_service_test.go` | Scan service (queue, failure handling) | ✅ Unit tests (Batch 5) |
+| `internal/service/consent_service_test.go` | Consent Service (Widget, Session, HMAC) | ✅ Unit tests (Batch 5/6) |
+| `internal/handler/consent_handler_test.go` | Public/Internal API handlers | ✅ Unit tests (Batch 5/6) |
 
 ### Tests That Still Need Writing (Known Gaps)
 | Area | What's missing | Priority |
@@ -66,7 +68,7 @@ Before writing any tests, check what's already covered to avoid duplication.
 | Auth middleware | `internal/middleware/auth_middleware.go` — JWT parsing, context key injection | P1 |
 | Rate limit middleware | `internal/middleware/ratelimit_middleware.go` | P2 |
 | DSR handler | `internal/handler/dsr_handler.go` — request validation, response shapes | P1 |
-| Consent (entire module) | All consent services, handlers, repositories — **Batch 5 code needs tests** | P0 (Batch 6) |
+| Portal E2E | End-to-end test of Portal Login -> DPR Submission | P1 (Batch 7) |
 
 ---
 

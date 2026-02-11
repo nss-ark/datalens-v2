@@ -115,6 +115,7 @@ type TenantRepository interface {
 	Create(ctx context.Context, t *Tenant) error
 	GetByID(ctx context.Context, id types.ID) (*Tenant, error)
 	GetByDomain(ctx context.Context, domain string) (*Tenant, error)
+	GetAll(ctx context.Context) ([]Tenant, error)
 	Update(ctx context.Context, t *Tenant) error
 	Delete(ctx context.Context, id types.ID) error
 }

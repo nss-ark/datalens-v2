@@ -264,19 +264,19 @@
 ### Sprint 11-12: Purpose Mapping & Governance (Weeks 23-26)
 
 #### 2.9 Purpose Mapping Automation (User Feedback P0)
-- [ ] Implement context analysis engine (table + column patterns)
-- [ ] Create sector template framework
-- [ ] Build 6 sector templates: Hospitality, Airlines, E-commerce, Healthcare, BFSI, HR
-- [ ] Implement AI-powered purpose suggestion
-- [ ] Create one-click confirm UI for suggestions
+- [x] Implement context analysis engine (table + column patterns) (Batch 7)
+- [x] Create sector template framework (Batch 7)
+- [x] Build 6 sector templates: Hospitality, Airlines, E-commerce (1/6), Healthcare, BFSI, HR (Batch 7 - Partial)
+- [x] Implement AI-powered purpose suggestion (Batch 7)
+- [x] Create one-click confirm UI for suggestions (Batch 7)
 - [ ] Implement batch second-round review for low-confidence
 - [ ] Target: 70% auto-fill rate
 
 #### 2.10 Governance Policy Engine
-- [ ] Implement `Policy` entity with rule evaluation
-- [ ] Create policy templates (retention, access, transfer)
-- [ ] Implement violation detection (scheduled job)
-- [ ] Create alert system for policy violations
+- [x] Implement `Policy` entity with rule evaluation (Batch 7)
+- [x] Create policy templates (retention, access, transfer) (UI support in Batch 7)
+- [x] Implement violation detection (scheduled job) (Batch 7)
+- [x] Create alert system for policy violations (UI Dashboard in Batch 7)
 - [ ] Implement auto-remediation for simple cases
 
 #### 2.11 Data Lineage

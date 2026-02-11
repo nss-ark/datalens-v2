@@ -21,6 +21,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/complyark/datalens/internal/config"
+	"github.com/complyark/datalens/internal/domain/governance/templates"
 	"github.com/complyark/datalens/internal/handler"
 	mw "github.com/complyark/datalens/internal/middleware"
 	"github.com/complyark/datalens/internal/repository"
@@ -35,6 +36,7 @@ import (
 	"github.com/complyark/datalens/internal/infrastructure/queue"
 	"github.com/complyark/datalens/internal/service/ai"
 	"github.com/complyark/datalens/internal/service/detection"
+	govService "github.com/complyark/datalens/internal/service/governance"
 )
 
 func main() {
@@ -115,6 +117,9 @@ func main() {
 	consentWidgetRepo := repository.NewConsentWidgetRepo(dbPool)
 	consentSessionRepo := repository.NewConsentSessionRepo(dbPool)
 	consentHistoryRepo := repository.NewConsentHistoryRepo(dbPool)
+	policyRepo := repository.NewPostgresPolicyRepository(dbPool)
+	violationRepo := repository.NewPostgresViolationRepository(dbPool)
+	mappingRepo := repository.NewPostgresDataMappingRepository(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -228,6 +233,25 @@ func main() {
 		slog.Default(),
 	)
 
+	// 7b. Governance Context Engine
+	templateLoader, err := templates.NewLoader()
+	if err != nil {
+		log.Error("Failed to initialize template loader", "error", err)
+		os.Exit(1)
+	}
+	contextEngine := govService.NewContextEngine(templateLoader, aiGateway, slog.Default())
+
+	// 7c. Policy Engine
+	policySvc := service.NewPolicyService(
+		policyRepo,
+		violationRepo,
+		mappingRepo,
+		dsRepo,
+		piiRepo,
+		eb,
+		slog.Default(),
+	)
+
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)
 	scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
@@ -247,7 +271,7 @@ func main() {
 	}()
 
 	// 8b. Scan Scheduler
-	schedulerSvc := service.NewSchedulerService(dsRepo, scanSvc, slog.Default())
+	schedulerSvc := service.NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, slog.Default())
 	if err := schedulerSvc.Start(context.Background()); err != nil {
 		log.Error("Failed to start scan scheduler", "error", err)
 	}
@@ -303,6 +327,7 @@ func main() {
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
 	consentHandler := handler.NewConsentHandler(consentSvc)
+	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc)
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(
@@ -416,6 +441,10 @@ func main() {
 			r.Route("/audit", func(r chi.Router) {
 				// TODO: Wire audit log handlers (Sprint 2)
 			})
+
+			// Governance
+			r.Mount("/governance", governanceHandler.Routes())
+
 		})
 	})
 

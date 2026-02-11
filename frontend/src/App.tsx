@@ -12,6 +12,9 @@ import DSRList from './pages/DSRList';
 import DSRDetail from './pages/DSRDetail';
 import ConsentWidgets from './pages/ConsentWidgets';
 import WidgetDetail from './pages/WidgetDetail';
+import PurposeMapping from './pages/Governance/PurposeMapping';
+import PolicyManager from './pages/Governance/PolicyManager';
+import Violations from './pages/Governance/Violations';
 
 // Portal Components
 import { PortalLayout } from './components/Layout/PortalLayout';
@@ -94,8 +97,13 @@ function App() {
             <Route path="/consent/analytics" element={<PlaceholderPage title="Consent Analytics" />} />
             <Route path="/grievances" element={<PlaceholderPage title="Grievances" />} />
             <Route path="/nominations" element={<PlaceholderPage title="Nominations" />} />
-            <Route path="/purposes" element={<PlaceholderPage title="Purposes" />} />
-            <Route path="/departments" element={<PlaceholderPage title="Departments" />} />
+            {/* Governance Routes */}
+            <Route path="/governance/purposes" element={<PurposeMapping />} />
+            <Route path="/governance/policies" element={<PolicyManager />} />
+            <Route path="/governance/violations" element={<Violations />} />
+
+            {/* Placeholder routes */}
+            <Route path="/department" element={<PlaceholderPage title="Department" />} />
             <Route path="/third-parties" element={<PlaceholderPage title="Third Parties" />} />
             <Route path="/retention" element={<PlaceholderPage title="Retention Policies" />} />
             <Route path="/ropa" element={<PlaceholderPage title="RoPA" />} />

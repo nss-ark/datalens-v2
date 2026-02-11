@@ -77,6 +77,33 @@ func (r *TenantRepo) GetByDomain(ctx context.Context, domain string) (*identity.
 	return t, nil
 }
 
+func (r *TenantRepo) GetAll(ctx context.Context) ([]identity.Tenant, error) {
+	query := `
+		SELECT id, name, domain, industry, country, plan, status, settings, created_at, updated_at
+		FROM tenants
+		WHERE deleted_at IS NULL
+		ORDER BY created_at DESC`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("list all tenants: %w", err)
+	}
+	defer rows.Close()
+
+	var tenants []identity.Tenant
+	for rows.Next() {
+		var t identity.Tenant
+		if err := rows.Scan(
+			&t.ID, &t.Name, &t.Domain, &t.Industry, &t.Country, &t.Plan, &t.Status, &t.Settings,
+			&t.CreatedAt, &t.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan tenant: %w", err)
+		}
+		tenants = append(tenants, t)
+	}
+	return tenants, rows.Err()
+}
+
 func (r *TenantRepo) Update(ctx context.Context, t *identity.Tenant) error {
 	query := `
 		UPDATE tenants

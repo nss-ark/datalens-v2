@@ -64,17 +64,17 @@ You receive task specifications from an Orchestrator agent and implement them pr
 Before writing any code, understand what's already built so you extend (not duplicate) existing patterns.
 
 ### Existing Services (in `internal/service/`)
-`auth_service.go`, `tenant_service.go`, `datasource_service.go`, `discovery_service.go`, `scan_service.go`, `feedback_service.go`, `purpose_service.go`, `dashboard_service.go`, `dsr_service.go`, `dsr_executor.go`, `scheduler.go`, `apikey_service.go`, `consent_service.go` (Batch 5), `interfaces.go`
+`auth_service.go`, `tenant_service.go`, `datasource_service.go`, `discovery_service.go`, `scan_service.go`, `feedback_service.go`, `purpose_service.go`, `dashboard_service.go`, `dsr_service.go`, `dsr_executor.go`, `scheduler.go`, `apikey_service.go`, `consent_service.go`, `portal_auth_service.go`, `data_principal_service.go` (Batch 6), `interfaces.go`
 
 ### Existing Handlers (in `internal/handler/`)
-`auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go` (Batch 5)
+`auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`, `portal_handler.go` (Batch 6)
 
 ### Existing Connectors (in `internal/infrastructure/connector/`)
 `postgres.go`, `mysql.go`, `mongodb.go`, `s3.go`, `registry.go` — all implement `discovery.Connector` interface
 
-### Existing Domain Entities Ready for Implementation
-`internal/domain/consent/entities.go` contains **full definitions** for: `DataPrincipalProfile`, `DPRRequest` (Batch 6) + repository interfaces.
-**Implemented**: `ConsentWidget`, `ConsentSession`, `ConsentHistoryEntry` (Batch 5).
+### Existing Domain Entities - Focus Areas
+`internal/domain/governance/entities.go` contains definitions for: `Policy`, `Violation`, `SectorTemplate`.
+**Implemented**: `DataPrincipalProfile`, `DPRRequest` (Batch 6), `ConsentWidget` (Batch 5).
 
 ---
 

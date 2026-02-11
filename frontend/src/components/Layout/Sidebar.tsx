@@ -14,7 +14,7 @@ import {
     Award,
     Briefcase,
     Building2,
-    Globe,
+
     Clock,
     FileOutput,
     Settings,
@@ -64,9 +64,9 @@ const NAV_GROUPS = [
     {
         title: 'Governance',
         items: [
-            { to: '/purposes', label: 'Purposes', icon: Briefcase },
-            { to: '/departments', label: 'Departments', icon: Building2 },
-            { to: '/third-parties', label: 'Third Parties', icon: Globe },
+            { to: '/governance/purposes', label: 'Purpose Mapping', icon: Briefcase },
+            { to: '/governance/policies', label: 'Policy Manager', icon: Building2 },
+            { to: '/governance/violations', label: 'Compliance Issues', icon: AlertTriangle },
             { to: '/retention', label: 'Retention Policies', icon: Clock },
         ]
     },

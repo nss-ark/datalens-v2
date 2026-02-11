@@ -707,20 +707,20 @@ _Document Go interfaces that cross agent boundaries:_
 | 4 | Tests for Batch 3 + E2E | Test | ✅ COMPLETE |
 | 5 | CI/CD pipeline | DevOps | ✅ COMPLETE |
 
-**Sprint Batch 7** (Feb 11, 2026) — 🟡 IN PROGRESS
+**Sprint Batch 8** (Feb 11, 2026) — 🟡 IN PROGRESS
 
 | # | Task | Agent | Status | Parallel? |
 |---|------|-------|--------|-----------|
-| 1 | Purpose Mapping Automation (AI Suggestions) | Backend | ⏳ Waiting | ✅ Yes |
-| 2 | Governance Policy Engine (Entities + Rules) | Backend | ⏳ Waiting | ✅ Yes |
-| 3 | Data Lineage Tracking (Flows + Visualization) | Backend | ⏳ Waiting | ✅ Yes |
+| 1 | Data Lineage Tracking (Flows + Visualization) | Backend + Frontend | ⏳ Waiting | ✅ Yes |
+| 2 | DSR Auto-Verification (Post-execution check) | Backend | ⏳ Waiting | ✅ Yes |
+| 3 | E2E Tests (Governance + Portal + DSR) | Test | ⏳ Waiting | ✅ Yes |
 
-**Batch 6 Archive** (Completed Feb 11):
-- Portal Backend (OTP, API) ✅
-- Portal Frontend (UI) ✅
-- Batch 5 Tests ✅
+**Batch 7 Archive** (Completed Feb 11):
+- Purpose Mapping Automation (AI) ✅
+- Governance Policy Engine ✅
+- Governance Dashboard ✅
 
-**Next**: Batch 8 — Cloud Integrations & Enterprise Features.
+**Next**: Phase 3 — Cloud Integrations & Enterprise Features.
 
 **Batch 5 Archive** (Completed Feb 11):
 - Consent Engine Backend ✅
@@ -914,3 +914,30 @@ _Document Go interfaces that cross agent boundaries:_
 - **Frontend**: DSR Create modal can now send `notes` field in the payload.
 - **Test**: Verify DSR creation with notes and S3 connector registration.
 
+
+---
+
+### [2026-02-11 07:00 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: Purpose Mapping Automation Implemented
+**Type**: HANDOFF
+
+**Changes**:
+- Added `PurposeSuggestion` struct to `internal/domain/governance/entities.go` w/ strategy field.
+- Implemented `ContextEngine` in `internal/service/governance/context_engine.go` (Pattern + AI strategies).
+- Implemented `templates.Loader` and added `ecommerce.json` sector template.
+- Implemented `GovernanceHandler` with `POST /api/v2/governance/suggest`.
+- Wired everything significantly in `cmd/api/main.go`.
+
+**Features Enabled**:
+- **Pattern Strategy**: Deterministic purpose suggestions based on table/column regex (e.g. `users.email` -> `CONTACT`).
+- **AI Strategy**: Intelligent Suggestions via `ai.Gateway` when enabled (flag `use_ai=true`).
+- **Extensible**: New sector templates can be added to `internal/domain/governance/templates/*.json` without code changes.
+
+**API Endpoint**:
+- `POST /api/v2/governance/suggest`
+  - Body: `{ "items": [{"table_name": "...", "column_name": "..."}], "use_ai": true }`
+  - Response: List of `PurposeSuggestion` with confidence scores and reasoning.
+
+**Action Required**:
+- **Frontend**: Can now build the "Suggest Purpose" button in Data Mapping UI.
+- **Test**: Verify `ContextEngine` logic (unit tests added in `context_engine_test.go`).

@@ -71,7 +71,7 @@ Before writing any code, you MUST read the relevant documentation:
 
 ## Completed Work — What Already Exists
 
-### Existing Pages (10)
+### Existing Pages (13)
 | Page | File | Route | Status |
 |------|------|-------|--------|
 | Login | `pages/Login.tsx` | `/login` | ✅ Complete |
@@ -84,11 +84,15 @@ Before writing any code, you MUST read the relevant documentation:
 | Consent Widgets | `pages/ConsentWidgets.tsx` | `/consent/widgets` | ✅ Complete (Batch 5) |
 | Widget Detail | `pages/WidgetDetail.tsx` | `/consent/widgets/:id` | ✅ Complete (Batch 5) |
 | Widget Builder | `components/Consent/WidgetBuilder.tsx` | (Modal) | ✅ Complete (Batch 5) |
+| Portal Login | `pages/Portal/Login.tsx` | `/portal/login` | ✅ Complete (Batch 6) |
+| Portal Dashboard | `pages/Portal/Dashboard.tsx` | `/portal/dashboard` | ✅ Complete (Batch 6) |
+| Portal History | `pages/Portal/History.tsx` | `/portal/history` | ✅ Complete (Batch 6) |
 
-### Existing Components (15)
+### Existing Components (17)
 | Component | File | Purpose |
 |-----------|------|---------|
 | AppLayout | `components/Layout/AppLayout.tsx` | Main layout shell with Sidebar + Header |
+| PortalLayout | `components/Layout/PortalLayout.tsx` | Standalone layout for Portal (Batch 6) |
 | Sidebar | `components/Layout/Sidebar.tsx` | Navigation sidebar with grouped sections |
 | Header | `components/Layout/Header.tsx` | Top header bar |
 | DataTable | `components/DataTable/DataTable.tsx` | Reusable sortable, filterable table |
@@ -98,6 +102,7 @@ Before writing any code, you MUST read the relevant documentation:
 | ScanHistoryModal | `components/DataSources/ScanHistoryModal.tsx` | Scan run history viewer |
 | CreateDSRModal | `components/DSR/CreateDSRModal.tsx` | DSR creation form with dynamic identifiers |
 | WidgetBuilder | `components/Consent/WidgetBuilder.tsx` | Multi-step wizard for widget creation |
+| OTPInput | `components/common/OTPInput.tsx` | 6-digit OTP entry (Batch 6) |
 | Modal | `components/common/Modal.tsx` | Generic modal dialog |
 | StatusBadge | `components/common/StatusBadge.tsx` | Color-coded status indicator |
 | Button | `components/common/Button.tsx` | Styled button component |
@@ -108,25 +113,26 @@ Before writing any code, you MUST read the relevant documentation:
 | Service | File | Methods |
 |---------|------|---------|
 | API client | `services/api.ts` | Axios instance with JWT interceptor, 401 redirect |
+| Portal API | `services/portalApi.ts` | Separate axios instance for Portal (different JWT logic) |
 | Auth | `services/auth.ts` | `login`, `register`, `refreshToken` |
 | DSR | `services/dsr.ts` | `list`, `getById`, `create`, `approve`, `reject`, `getResult`, `execute` |
 | Consent | `services/consent.ts` | `listWidgets`, `getWidget`, `createWidget`, `updateWidget`, `deleteWidget` |
+| Portal | `services/portalService.ts` | `login`, `verify`, `getProfile`, `getHistory`, `submitDPR` |
 
 ### Existing Types
 | File | Types |
 |------|-------|
 | `types/common.ts` | `ID`, `BaseEntity`, `TenantEntity`, `PaginationParams`, `ApiResponse<T>`, `PaginatedResponse<T>`, `ApiError` |
 | `types/dsr.ts` | `DSR`, `DSRTask`, `DSRWithTasks`, `DSRListResponse`, `CreateDSRInput` |
-| `types/consent.ts` | `ConsentWidget`, `WidgetConfig`, `ThemeConfig` |
+| `types/consent.ts` | `ConsentWidget`, `WidgetConfig`, `ThemeConfig`, `DataPrincipalProfile` |
 
-### Upcoming Pages (Batches 6–8)
+### Upcoming Pages (Batches 7–8)
 | Page | Route | Batch | Notes |
 |------|-------|-------|-------|
-| Consent Records | `/consent/records` | 5/6 | Session list, filtering, analytics |
-| Consent Analytics | `/consent/analytics` | 5/6 | Charts: opt-in/out rates, trends, purpose breakdown |
-| Data Principal Portal | `/portal` (standalone) | 6 | **Different layout — NO sidebar**, OTP login, consent dashboard |
 | Purpose Mapping | `/governance/purposes` | 7 | AI suggestions, one-click confirm, batch review |
 | Governance Policies | `/governance/policies` | 7 | Policy list, rule editor, violations |
+| Data Lineage | `/governance/lineage` | 7 | Visual flow of data, purpose tracking |
+| DSR Automation | `/dsr/automation` | 8 | Workflow builder, auto-execution rules |
 
 ---
 

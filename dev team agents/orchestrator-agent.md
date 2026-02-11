@@ -112,19 +112,20 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - Structured logging via `slog`
 - `.env.example` with all config variables
 
-#### Backend Core (Sprints 1–5)
+#### Backend Core (Sprints 1–6)
 - **Auth**: JWT + refresh tokens, API key generation, user registration/login, RBAC (ADMIN, DPO, ANALYST, VIEWER)
 - **Tenant isolation**: `types.ContextKey("tenant_id")` on every request context, every query scoped by `tenant_id`
 - **API Gateway**: chi router, rate limiting middleware, CORS middleware
 - **Response envelope**: All responses wrapped in `{success, data, error, meta}` via `pkg/httputil/response.go`
-- **Domain entities**: DataSource, DataInventory, DataEntity, DataField, PIIClassification, Purpose, DataMapping, DSR, DSRTask, DetectionFeedback, ScanJob, ScanRun, ConsentWidget, ConsentSession, ConsentHistoryEntry
+- **Domain entities**: DataSource, DataInventory, DataEntity, DataField, PIIClassification, Purpose, DataMapping, DSR, DSRTask, DetectionFeedback, ScanJob, ScanRun, ConsentWidget, ConsentSession, ConsentHistoryEntry, DataPrincipalProfile, DPRRequest
 - **Repositories**: PostgreSQL via pgx for all entities above
-- **Services**: AuthService, TenantService, DataSourceService, DiscoveryService, ScanService, FeedbackService, PurposeService, DashboardService, DSRService, DSRExecutor, Scheduler, APIKeyService, ConsentService
-- **Handlers**: `auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`
+- **Services**: AuthService, TenantService, DataSourceService, DiscoveryService, ScanService, FeedbackService, PurposeService, DashboardService, DSRService, DSRExecutor, Scheduler, APIKeyService, ConsentService, PortalAuthService, DataPrincipalService
+- **Handlers**: `auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`, `portal_handler.go`
 - **Connectors**: PostgreSQL, MySQL, MongoDB, S3 (CSV/JSON/JSONL) — all implement `discovery.Connector` interface, registered in `internal/infrastructure/connector/registry.go`
 - **Scan orchestration**: NATS JetStream queue (`internal/infrastructure/queue/`), async job processing, incremental scanning, cron scheduling via `robfig/cron/v3`
 - **DSR engine**: Entity + state machine (PENDING→APPROVED→IN_PROGRESS→COMPLETED), task decomposition per data source, SLA tracking (30-day default), access/erasure/correction execution, parallel execution with semaphore, NATS queue for async processing
 - **Consent Engine**: `ConsentService` with widget CRUD, session recording (HMAC-SHA256 signed), consent check, withdrawal. Internal API (JWT) + Public API (API Key)
+- **Data Principal Portal**: OTP Authentication (Redis-backed), Profile Management, DPR Submission, Consent History (Portal JWT)
 - **Event bus**: NATS-based publish/subscribe (`pkg/eventbus/`)
 
 #### AI/ML (Sprints 3–4)
@@ -137,18 +138,19 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - Industry-specific detection strategy
 - Redis caching for AI responses
 
-#### Frontend (Sprints 3–5)
+#### Frontend (Sprints 3–6)
 - React 18 + TypeScript + Vite application in `frontend/`
-- **Pages** (8): Login, Register, Dashboard, DataSources, PIIDiscovery, DSRList, DSRDetail, ConsentWidgets, WidgetDetail
-- **Layout**: AppLayout with Sidebar + Header
-- **Components** (15): DataTable, Pagination, Modal, StatusBadge, Button, Toast, ProtectedRoute, StatCard, PIIChart, ScanHistoryModal, CreateDSRModal, WidgetBuilder
-- **Services**: `api.ts` (axios with JWT interceptor), `auth.ts`, `dsr.ts`, `consent.ts` — all use `ApiResponse<T>` unwrapping (`res.data.data`)
+- **Pages** (11): Login, Register, Dashboard, DataSources, PIIDiscovery, DSRList, DSRDetail, ConsentWidgets, WidgetDetail, PortalLogin, PortalDashboard
+- **Layout**: AppLayout with Sidebar + Header, PortalLayout (standalone)
+- **Components** (16): DataTable, Pagination, Modal, StatusBadge, Button, Toast, ProtectedRoute, StatCard, PIIChart, ScanHistoryModal, CreateDSRModal, WidgetBuilder, OTPInput, PortalLayout
+- **Services**: `api.ts` (axios with JWT interceptor), `auth.ts`, `dsr.ts`, `consent.ts`, `portalApi.ts` — all use `ApiResponse<T>` unwrapping (`res.data.data`)
 - **State**: Zustand auth store, React Query for server state
-- **Routes**: `/login`, `/register`, `/`, `/data-sources`, `/pii-discovery`, `/dsr`, `/dsr/:id`, `/consent/widgets`, `/consent/widgets/:id`
+- **Routes**: `/login`, `/register`, `/`, `/data-sources`, `/pii-discovery`, `/dsr`, `/dsr/:id`, `/consent/widgets`, `/consent/widgets/:id`, `/portal/*` (standalone)
 
-#### Tests (Batches 1–5)
-- 15+ test files: DSR service, DSR repository, MongoDB connector, dashboard handler, discovery handler, E2E pipeline test
+#### Tests (Batches 1–6)
+- 18+ test files: DSR service, DSR repository, MongoDB connector, dashboard handler, discovery handler, E2E pipeline test
 - **Batch 4 Tests**: DSR Executor (access/erasure), S3 Connector (CSV/JSON/JSONL), Scheduler, Scan Service
+- **Batch 5 Tests**: Consent Service (widget/session logic), Public API handlers
 - Compile-verified; execution requires Docker Desktop for testcontainers
 - In-memory mocks pattern in `internal/service/mocks_test.go`
 
