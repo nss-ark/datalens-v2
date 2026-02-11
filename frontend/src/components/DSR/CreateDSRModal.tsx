@@ -32,6 +32,7 @@ export function CreateDSRModal({ open, onClose }: CreateDSRModalProps) {
     const [subjectName, setSubjectName] = useState('');
     const [subjectEmail, setSubjectEmail] = useState('');
     const [priority, setPriority] = useState<DSRPriority>('MEDIUM');
+    const [notes, setNotes] = useState(''); // UI only for now
     const [identifiers, setIdentifiers] = useState<{ key: string; value: string }[]>([]);
 
     const resetForm = () => {
@@ -39,6 +40,7 @@ export function CreateDSRModal({ open, onClose }: CreateDSRModalProps) {
         setSubjectName('');
         setSubjectEmail('');
         setPriority('MEDIUM');
+        setNotes('');
         setIdentifiers([]);
     };
 
@@ -165,6 +167,21 @@ export function CreateDSRModal({ open, onClose }: CreateDSRModalProps) {
                             <option key={p.value} value={p.value}>{p.label}</option>
                         ))}
                     </select>
+                </div>
+
+                {/* Notes */}
+                <div>
+                    <label style={labelStyle}>Notes (Internal)</label>
+                    <textarea
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
+                        placeholder="Internal context or specific instructions..."
+                        rows={3}
+                        style={{ ...inputStyle, resize: 'vertical' }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                        * Notes are currently for reference only and not persisted.
+                    </div>
                 </div>
 
                 {/* Subject Identifiers */}

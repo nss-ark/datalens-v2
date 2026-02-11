@@ -137,6 +137,41 @@ func (r *DSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination
 	}, nil
 }
 
+// GetOverdue returns DSRs that have passed their SLA deadline and are still pending.
+func (r *DSRRepo) GetOverdue(ctx context.Context, tenantID types.ID) ([]compliance.DSR, error) {
+	query := `
+		SELECT id, tenant_id, request_type, status,
+		       subject_name, subject_email, subject_identifiers,
+		       priority, sla_deadline, assigned_to, reason,
+		       created_at, updated_at, completed_at
+		FROM dsr_requests
+		WHERE tenant_id = $1 
+		  AND status = 'PENDING'
+		  AND sla_deadline < NOW()
+		ORDER BY sla_deadline ASC`
+
+	rows, err := r.pool.Query(ctx, query, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("list overdue dsr: %w", err)
+	}
+	defer rows.Close()
+
+	var items []compliance.DSR
+	for rows.Next() {
+		var dsr compliance.DSR
+		if err := rows.Scan(
+			&dsr.ID, &dsr.TenantID, &dsr.RequestType, &dsr.Status,
+			&dsr.SubjectName, &dsr.SubjectEmail, &dsr.SubjectIdentifiers,
+			&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason,
+			&dsr.CreatedAt, &dsr.UpdatedAt, &dsr.CompletedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan dsr: %w", err)
+		}
+		items = append(items, dsr)
+	}
+	return items, rows.Err()
+}
+
 // Update updates an existing DSR.
 func (r *DSRRepo) Update(ctx context.Context, dsr *compliance.DSR) error {
 	query := `

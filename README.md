@@ -14,6 +14,7 @@
 
 ### Setup
 
+#### Linux / macOS
 ```bash
 # 1. Clone and configure
 cp .env.example .env
@@ -28,20 +29,29 @@ make migrate
 make dev
 ```
 
+#### Windows (PowerShell)
+```powershell
+# 1. Configure
+Copy-Item .env.example .env
+
+# 2. Start infrastructure
+.\scripts\build.ps1 -Target docker-up
+
+# 3. Run migrations
+.\scripts\build.ps1 -Target migrate
+
+# 4. Start API
+.\scripts\build.ps1 -Target dev
+```
+
 ### Available Commands
 
-```bash
-make help          # Show all commands
-make build         # Build all binaries
-make test          # Run all tests
-make lint          # Run linter
-make check         # Run all checks (fmt + vet + lint + test)
-make dev           # Start dev server
-make docker-up     # Start infrastructure
-make docker-down   # Stop infrastructure
-make migrate       # Run migrations
-make seed          # Seed dev data
-```
+| Linux (Make) | Windows (PS) | Description |
+|--------------|--------------|-------------|
+| `make build` | `build.ps1 -Target build` | Build binaries |
+| `make test` | `build.ps1 -Target test` | Run tests |
+| `make dev` | `build.ps1 -Target dev` | Start dev server |
+
 
 ## Architecture
 

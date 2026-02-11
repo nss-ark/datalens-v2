@@ -951,11 +951,9 @@ func TestFeedbackRepo_CRUD(t *testing.T) {
 }
 
 func TestScanRunRepo_CRUD(t *testing.T) {
-	pool := setupTestDB(t)
-	defer pool.Close()
-
-	repo := NewScanRunRepo(pool)
-	dsRepo := NewDataSourceRepo(pool)
+	// setupTestDB is redundant, we use testPool from TestMain
+	repo := repository.NewScanRunRepo(testPool)
+	dsRepo := repository.NewDataSourceRepo(testPool)
 	ctx := context.Background()
 
 	tenantID := types.NewID()

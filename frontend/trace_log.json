@@ -1,6 +1,6 @@
 {
   "loginStatus": 200,
-  "meStatus": 403,
-  "meBody": "{\"success\":false,\"error\":{\"code\":\"TENANT_REQUIRED\",\"message\":\"tenant context is required\"}}\n",
+  "meStatus": 200,
+  "meBody": "{\"success\":true,\"data\":{\"id\":\"e6f8e5df-8c20-462e-a421-f9b62ae103cb\",\"created_at\":\"2026-02-10T09:11:37.905215+05:30\",\"updated_at\":\"2026-02-11T00:49:00.203474+05:30\",\"tenant_id\":\"721be16d-c15a-479e-b224-0da56d9f9709\",\"email\":\"admin@acme.local\",\"name\":\"Acme Admin\",\"status\":\"ACTIVE\",\"role_ids\":[\"ae5a2f18-4153-4bc3-831e-62e5a3500b55\"],\"mfa_enabled\":false,\"last_login_at\":\"2026-02-11T00:49:00.189284+05:30\"}}\n",
   "finalUrl": "http://localhost:3000/dashboard"
 }

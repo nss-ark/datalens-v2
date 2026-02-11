@@ -86,7 +86,22 @@ const DSRDetail = () => {
     const isOverdue = days < 0;
     const isPending = dsr.status === 'PENDING';
     const isApproved = dsr.status === 'APPROVED';
+    const isInProgress = dsr.status === 'IN_PROGRESS';
+    const isCompleted = dsr.status === 'COMPLETED';
     const isTerminal = ['COMPLETED', 'REJECTED', 'FAILED'].includes(dsr.status);
+
+    // Calculate progress
+    let progress = 0;
+    if (isCompleted) progress = 100;
+    else if (isInProgress) {
+        if (dsr.tasks && dsr.tasks.length > 0) {
+            const completed = dsr.tasks.filter(t => t.status === 'COMPLETED' || t.status === 'VERIFIED').length;
+            progress = Math.round((completed / dsr.tasks.length) * 100);
+        } else {
+            progress = 50;
+        }
+    } else if (isApproved) progress = 10;
+    else if (isPending) progress = 0;
 
     const taskColumns: Column<DSRTask>[] = [
         {
@@ -159,7 +174,7 @@ const DSRDetail = () => {
             {/* Header Card */}
             <div style={{ ...cardStyle, marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-                    <div>
+                    <div style={{ flex: 1 }}>
                         <h1 style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
                             {dsr.subject_name}
                         </h1>
@@ -179,6 +194,21 @@ const DSRDetail = () => {
                             }}>
                                 {dsr.priority} Priority
                             </span>
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            <span>Progress</span>
+                            <span>{progress}%</span>
+                        </div>
+                        <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{
+                                width: `${progress}%`, height: '100%',
+                                backgroundColor: isTerminal && dsr.status !== 'COMPLETED' ? 'var(--status-danger)' : 'var(--accent-primary)',
+                                transition: 'width 0.5s ease-out'
+                            }} />
                         </div>
                     </div>
 
@@ -271,6 +301,20 @@ const DSRDetail = () => {
                 </div>
             </div>
 
+            {/* Timeline (Conceptual) */}
+            <div style={{ ...cardStyle, marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>Timeline</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
+                    <TimelineStep label="Received" date={dsr.created_at} completed={true} />
+                    <TimelineDivider completed={isApproved || isInProgress || isCompleted} />
+                    <TimelineStep label="Approved" date={isApproved || isInProgress || isCompleted ? dsr.updated_at : undefined} completed={isApproved || isInProgress || isCompleted} />
+                    <TimelineDivider completed={isInProgress || isCompleted} />
+                    <TimelineStep label="In Progress" completed={isInProgress || isCompleted} />
+                    <TimelineDivider completed={isCompleted} />
+                    <TimelineStep label="Completed" date={dsr.completed_at} completed={isCompleted} isLast />
+                </div>
+            </div>
+
             {/* Rejection Reason */}
             {dsr.reason && (
                 <div style={{ ...cardStyle, marginBottom: '20px', borderColor: 'var(--status-danger)', backgroundColor: '#fef2f2' }}>
@@ -360,5 +404,30 @@ const DSRDetail = () => {
         </div>
     );
 };
+
+// Timeline Components
+function TimelineStep({ label, date, completed, isLast }: { label: string; date?: string; completed: boolean; isLast?: boolean }) {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1, minWidth: '80px' }}>
+            <div style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                backgroundColor: completed ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                border: completed ? 'none' : '2px solid var(--border-primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', marginBottom: '8px'
+            }}>
+                {completed && <CheckCircle size={14} />}
+            </div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: completed ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{label}</div>
+            {date && <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{new Date(date).toLocaleDateString()}</div>}
+        </div>
+    );
+}
+
+function TimelineDivider({ completed }: { completed: boolean }) {
+    return (
+        <div style={{ flex: 1, height: '2px', backgroundColor: completed ? 'var(--accent-primary)' : 'var(--border-primary)', transform: 'translateY(-14px)', margin: '0 -10px', zIndex: 0 }} />
+    );
+}
 
 export default DSRDetail;

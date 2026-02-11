@@ -22,14 +22,21 @@ export interface PaginationParams {
     sortOrder?: 'asc' | 'desc';
 }
 
+// Generic API Response wrapper
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    error?: ApiError;
+    meta?: any;
+}
+
+// Matches pkg/types/types.go PaginatedResult
 export interface PaginatedResponse<T> {
-    data: T[];
-    meta: {
-        total: number;
-        page: number;
-        pageSize: number;
-        totalPages: number;
-    };
+    items: T[];
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
 }
 
 export interface ApiError {

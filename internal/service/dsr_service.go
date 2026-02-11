@@ -198,6 +198,15 @@ func (s *DSRService) GetDSRs(ctx context.Context, pagination types.Pagination, s
 	return s.dsrRepo.GetByTenant(ctx, tenantID, pagination, status)
 }
 
+// GetOverdue returns DSRs that have passed their SLA deadline.
+func (s *DSRService) GetOverdue(ctx context.Context) ([]compliance.DSR, error) {
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, errors.New("tenant id is required")
+	}
+	return s.dsrRepo.GetOverdue(ctx, tenantID)
+}
+
 // DTOs
 
 type CreateDSRRequest struct {

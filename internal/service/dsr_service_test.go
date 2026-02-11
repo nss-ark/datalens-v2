@@ -63,6 +63,17 @@ func (m *mockDSRRepository) GetByTenant(_ context.Context, tenantID types.ID, pa
 	}, nil
 }
 
+func (m *mockDSRRepository) GetOverdue(_ context.Context, tenantID types.ID) ([]compliance.DSR, error) {
+	var items []compliance.DSR
+	now := time.Now()
+	for _, dsr := range m.dsrs {
+		if dsr.TenantID == tenantID && dsr.Status == compliance.DSRStatusPending && dsr.SLADeadline.Before(now) {
+			items = append(items, *dsr)
+		}
+	}
+	return items, nil
+}
+
 func (m *mockDSRRepository) Update(_ context.Context, dsr *compliance.DSR) error {
 	m.dsrs[dsr.ID] = dsr
 	return nil
