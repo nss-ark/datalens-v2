@@ -707,23 +707,15 @@ _Document Go interfaces that cross agent boundaries:_
 | 4 | Tests for Batch 3 + E2E | Test | ✅ COMPLETE |
 | 5 | CI/CD pipeline | DevOps | ✅ COMPLETE |
 
-**Sprint Batch 8 (Completion Phase)** (Feb 12, 2026) — 🟡 IN PROGRESS
+**Sprint Batch 8A Archive** (Completed Feb 12, 2026):
+- Dockerized Data Sources (MySQL, Mongo, Postgres) ✅
+- Robust Mock Seeding Script (Edge Cases/PII) ✅
+- Local Dev Setup Script (One-Click) ✅
 
-| # | Task | Agent | Status | Parallel? |
-|---|------|-------|--------|-----------|
-| 1 | Fix Backend Build (Azure/AWS SDKs) | Backend | ⏳ Waiting | ✅ Yes |
-| 2 | Implement Data Lineage UI (React Flow) | Frontend | ⏳ Waiting | ✅ Yes |
-| 3 | Verify Audit & Connectors | Test | ⏳ Waiting | ❌ After #1 |
-
-**Batch 8 Initial Implementation** (Backend Components):
-- Data Lineage Backend API ✅
-- Cloud Connectors (Code complete, needs build fix) ✅
-- Audit Logging (Code complete, needs build fix) ✅
-
-**Batch 7A Archive** (Completed Feb 12):
-- E2E Testing (Portal + Governance) ✅
-- Backend Hardening (Lint + Logs) ✅
-- Frontend Polish (Error Boundaries) ✅
+**Next Phase**: **Enterprise Security & Scaling** (Batch 9).
+- Cloud Connectors (AWS/Azure) - *Refining & Testing*
+- Data Lineage - *Advanced Visualization*
+- RBAC & Audit - *Enterprise Enforcement*
 
 **Next**: Phase 3 — Enterprise Security & Scaling.
 
@@ -800,6 +792,46 @@ _Document Go interfaces that cross agent boundaries:_
 - Created `frontend/src/components/CreateDSRModal.tsx` — form with dynamic key-value identifiers
 - Created `frontend/src/pages/DSRList.tsx` — DataTable, status/type filters, SLA countdown
 - Created `frontend/src/pages/DSRDetail.tsx` — subject info, action buttons, progress bar, timeline, results panel
+
+---
+
+### [2026-02-12 03:00 IST] [FROM: DevOps] → [TO: ALL]
+**Subject**: Dockerized Data Sources & Local Dev Refactor
+**Type**: HANDOFF
+
+**Changes**:
+- Created `docker-compose.sources.yml` — Isolated target data sources for scanning.
+- Refactored `docker-compose.dev.yml` — Removed `mysql` and `mongo` services (now in sources), added shared network `datalens-dev`.
+- **Port Conflict Resolution**: `postgres-target` runs on port **5434** (App Postgres uses 5433).
+
+**New Services** (in `docker-compose.sources.yml`):
+- `mysql-target`: Port **3307** (Creds: `root/root`, DB: `inventory_db`)
+- `postgres-target`: Port **5434** (Creds: `postgres/postgres`, DB: `customers_db`)
+- `mongo-target`: Port **27018** (Creds: `admin/password`)
+
+**Action Required**:
+- **Backend/Test**: Use these ports/credentials for integration testing of scanning features.
+- **Backend**: You can now assume these services are available if `docker-compose.sources.yml` is up.
+
+---
+
+### [2026-02-12 03:10 IST] [FROM: DevOps] → [TO: ALL]
+**Subject**: Local Setup Script Available
+**Type**: HANDOFF
+
+**Changes**:
+- Created `scripts/setup_local_dev.ps1` (Windows) and `scripts/setup_local_dev.sh` (Linux/Mac).
+- **One-Click Setup**:
+  - Checks/Creates `.env`.
+  - Starts App Infra + Target Sources (Docker).
+  - Waits for DB health.
+  - Runs Migrations (`cmd/migrate`) and Seeder (`cmd/seeder`).
+  - Launches Backend and Frontend in new terminal windows.
+
+**Action Required**:
+- **All Agents**: Use `.\scripts\setup_local_dev.ps1` to spin up a fresh, seeded environment for testing.
+
+
 - Updated `App.tsx` — routes for `/dsr` (list) and `/dsr/:id` (detail)
 - Updated `frontend/src/types/common.ts` — added `ApiResponse<T>`, updated `PaginatedResponse<T>`
 

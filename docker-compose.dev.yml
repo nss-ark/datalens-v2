@@ -50,40 +50,6 @@ services:
       timeout: 5s
       retries: 5
 
-  mysql:
-    image: mysql:8.0
-    container_name: datalens-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root_dev
-      MYSQL_DATABASE: datalens
-      MYSQL_USER: datalens
-      MYSQL_PASSWORD: datalens_dev
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "datalens", "-pdatalens_dev" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  mongo:
-    image: mongo:7.0
-    container_name: datalens-mongo
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: datalens
-      MONGO_INITDB_ROOT_PASSWORD: datalens_dev
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   minio:
     image: minio/minio:latest
     container_name: datalens-minio
@@ -91,8 +57,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - "9000:9000"   # API
-      - "9001:9001"   # Console
+      - "9000:9000" # API
+      - "9001:9001" # Console
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -106,6 +72,11 @@ volumes:
   postgres_data:
   redis_data:
   nats_data:
-  mysql_data:
-  mongo_data:
+
   minio_data:
+
+
+networks:
+  datalens-dev:
+    name: datalens-dev
+    driver: bridge

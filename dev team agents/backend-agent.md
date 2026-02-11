@@ -74,11 +74,56 @@ Before writing any code, understand what's already built so you extend (not dupl
 
 ### Existing Domain Entities - Focus Areas
 `internal/domain/governance/entities.go` contains definitions for: `Policy`, `Violation`, `SectorTemplate`, `PurposeSuggestion`, `DataFlow` (Batch 8).
-**Implemented**: `DataPrincipalProfile`, `DPRRequest` (Batch 6), `ConsentWidget` (Batch 5), `Policy`, `Violation`.
+**Implemented**: `DataPrincipalProfile`, `DPRRequest` (Batch 6), `ConsentWidget` (Batch 5), `Policy`, `Violation`, `AuditLog` (Batch 8).
 
 ---
 
-## Code Patterns — Use These Exactly
+## Critical Rules & Patterns
+
+### 1. Handler Pattern (Strict)
+Every handler in `internal/handler/` MUST follow this structure:
+```go
+// Follow this exact pattern for all new handlers:
+type ConsentHandler struct {
+    service *service.ConsentService
+}
+
+func NewConsentHandler(service *service.ConsentService) *ConsentHandler {
+    return &ConsentHandler{service: service}
+}
+
+// Routes returns a chi.Router mounted at a path prefix (e.g., /api/v2/consent/widgets)
+func (h *ConsentHandler) Routes() chi.Router {
+    r := chi.NewRouter()
+    r.Post("/", h.Create)
+    r.Get("/", h.List)
+    r.Get("/{id}", h.GetByID)
+    r.Put("/{id}", h.Update)
+    r.Delete("/{id}", h.Delete)
+    return r
+}
+
+func (h *ConsentHandler) Create(w http.ResponseWriter, r *http.Request) {
+    var req service.CreateWidgetRequest
+    if err := httputil.DecodeJSON(r, &req); err != nil {
+        httputil.ErrorFromDomain(w, err)
+        return
+    }
+
+    widget, err := h.service.CreateWidget(r.Context(), req)
+    if err != nil {
+        httputil.ErrorFromDomain(w, err)
+        return
+    }
+
+    httputil.JSON(w, http.StatusCreated, widget)
+}
+```
+
+### 2. Seeding & Mock Data (Batch 8A Focus)
+- Use `brianvoe/gofakeit/v7` or similar for realistic PII.
+- **Edge Cases**: Create rows with NULLs, special chars, mixed types to test Scanner robustness.
+- **Volume**: Seed enough data (e.e.g., 10k rows) to test pagination and performance.
 
 ### Context Keys (pkg/types/context.go)
 ```go

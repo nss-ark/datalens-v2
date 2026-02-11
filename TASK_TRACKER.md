@@ -280,9 +280,9 @@
 - [ ] Implement auto-remediation for simple cases
 
 #### 2.11 Data Lineage
-- [ ] Implement data flow tracking
-- [ ] Create data lineage visualization API
-- [ ] Track purpose across data flows
+- [x] Implement data flow tracking (Batch 8)
+- [x] Create data lineage visualization API (Batch 8 Backend + Frontend UI)
+- [x] Track purpose across data flows (DataFlow entity)
 - [ ] Cross-border transfer documentation
 
 ### Phase 2 Milestone: `v2.2-beta`
@@ -291,6 +291,11 @@
 - [x] Purpose mapping with 70% auto-fill (Batch 7)
 - [x] Governance policies enforced (Batch 7 + E2E in 7A)
 - [ ] **Tag release v2.2-beta**
+
+#### 2.12 Local Infrastructure & Seeding (Batch 8A)
+- [x] Dockerized Target DBs (MySQL, Postgres, Mongo) (Batch 8A)
+- [x] Robust Seeding Tool (10k+ rows, edge cases) (Batch 8A)
+- [x] One-Click Local Setup Script (`setup_local_dev.ps1`) (Batch 8A)
 
 ---
 

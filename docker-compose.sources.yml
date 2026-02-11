@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # MySQL 8.0 Target
+  # Port: 3307 (mapped to container 3306)
+  # Credentials: root / root
+  mysql-target:
+    image: mysql:8.0
+    container_name: datalens-mysql-target
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: inventory_db
+      MYSQL_USER: local_user
+      MYSQL_PASSWORD: local_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_target_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datalens-dev
+
+  # Postgres 16 Target
+  # Port: 5434 (mapped to container 5432) - NOTE: 5434 to avoid conflict with App DB on 5433
+  # Credentials: postgres / postgres
+  postgres-target:
+    image: postgres:16-alpine
+    container_name: datalens-postgres-target
+    environment:
+      POSTGRES_DB: customers_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_target_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datalens-dev
+
+  # MongoDB 7.0 Target
+  # Port: 27018 (mapped to container 27017)
+  # Credentials: admin / password
+  mongo-target:
+    image: mongo:7.0
+    container_name: datalens-mongo-target
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_target_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datalens-dev
+
+volumes:
+  mysql_target_data:
+  postgres_target_data:
+  mongo_target_data:
+
+networks:
+  datalens-dev:
+    name: datalens-dev
+    driver: bridge

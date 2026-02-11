@@ -18,6 +18,22 @@
 ## Active Messages
 *(Newest on top)*
 
+### [2026-02-12] [FROM: Backend] → [TO: DevOps, Test]
+**Subject**: Database Seeder Tool Ready
+**Type**: STATUS_UPDATE
+
+**Changes**:
+- Created `cmd/seeder/main.go` — CLI tool to populate MySQL (3307), Postgres (5434), Mongo (27018).
+- Seeds 10k rows (default) with realistic PII via `gofakeit`.
+- Includes "dirty" data edge cases (SQL injection strings, missing fields, malformed emails).
+
+**Usage**:
+- `go run cmd/seeder/main.go` (seeds all)
+- `go run cmd/seeder/main.go --rows=5000 --targets=mongo` (seeds 5k rows to mongo only)
+
+**Action Required**:
+- **Test**: Use this tool to prep environments for Scanner integration tests.
+
 ### [2026-02-12] [FROM: Backend] → [TO: ALL]
 **Subject**: E2E Integration Tests Complete
 **Type**: STATUS_UPDATE

@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.55.0
 	github.com/aws/aws-sdk-go-v2/service/rds v1.115.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.96.0
+	github.com/brianvoe/gofakeit/v7 v7.14.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/cors v1.2.1
 	github.com/go-sql-driver/mysql v1.9.3
