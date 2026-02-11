@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/complyark/datalens/internal/domain/audit"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/domain/governance"
 	"github.com/complyark/datalens/internal/domain/identity"
@@ -758,4 +759,44 @@ func (r *mockScanRunRepo) Update(_ context.Context, run *discovery.ScanRun) erro
 	defer r.mu.Unlock()
 	r.runs[run.ID] = run
 	return nil
+}
+
+// =============================================================================
+// Mock Audit Repository
+// =============================================================================
+
+type mockAuditRepo struct {
+	mu   sync.Mutex
+	logs []audit.AuditLog
+}
+
+func newMockAuditRepo() *mockAuditRepo {
+	return &mockAuditRepo{logs: []audit.AuditLog{}}
+}
+
+func (r *mockAuditRepo) Create(_ context.Context, log *audit.AuditLog) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if log.ID == (types.ID{}) {
+		log.ID = types.NewID()
+	}
+	r.logs = append(r.logs, *log)
+	return nil
+}
+
+func (r *mockAuditRepo) GetByTenant(_ context.Context, tenantID types.ID, limit int) ([]audit.AuditLog, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []audit.AuditLog
+	count := 0
+	for _, l := range r.logs {
+		if l.TenantID == tenantID {
+			result = append(result, l)
+			count++
+			if limit > 0 && count >= limit {
+				break
+			}
+		}
+	}
+	return result, nil
 }

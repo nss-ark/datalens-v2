@@ -112,47 +112,31 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - Structured logging via `slog`
 - `.env.example` with all config variables
 
-#### Backend Core (Sprints 1–6)
-- **Auth**: JWT + refresh tokens, API key generation, user registration/login, RBAC (ADMIN, DPO, ANALYST, VIEWER)
-- **Tenant isolation**: `types.ContextKey("tenant_id")` on every request context, every query scoped by `tenant_id`
-- **API Gateway**: chi router, rate limiting middleware, CORS middleware
-- **Response envelope**: All responses wrapped in `{success, data, error, meta}` via `pkg/httputil/response.go`
-- **Domain entities**: DataSource, DataInventory, DataEntity, DataField, PIIClassification, Purpose, DataMapping, DSR, DSRTask, DetectionFeedback, ScanJob, ScanRun, ConsentWidget, ConsentSession, ConsentHistoryEntry, DataPrincipalProfile, DPRRequest
-- **Repositories**: PostgreSQL via pgx for all entities above
-- **Services**: AuthService, TenantService, DataSourceService, DiscoveryService, ScanService, FeedbackService, PurposeService, DashboardService, DSRService, DSRExecutor, Scheduler, APIKeyService, ConsentService, PortalAuthService, DataPrincipalService
-- **Handlers**: `auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`, `portal_handler.go`
-- **Connectors**: PostgreSQL, MySQL, MongoDB, S3 (CSV/JSON/JSONL) — all implement `discovery.Connector` interface, registered in `internal/infrastructure/connector/registry.go`
-- **Scan orchestration**: NATS JetStream queue (`internal/infrastructure/queue/`), async job processing, incremental scanning, cron scheduling via `robfig/cron/v3`
-- **DSR engine**: Entity + state machine (PENDING→APPROVED→IN_PROGRESS→COMPLETED), task decomposition per data source, SLA tracking (30-day default), access/erasure/correction execution, parallel execution with semaphore, NATS queue for async processing
-- **Consent Engine**: `ConsentService` with widget CRUD, session recording (HMAC-SHA256 signed), consent check, withdrawal. Internal API (JWT) + Public API (API Key)
-- **Data Principal Portal**: OTP Authentication (Redis-backed), Profile Management, DPR Submission, Consent History (Portal JWT)
-- **Event bus**: NATS-based publish/subscribe (`pkg/eventbus/`)
+#### Backend Core (Sprints 1–7A)
+- **Auth**: JWT + refresh tokens, API key generation, user registration/login, RBAC
+- **Tenant isolation**: `types.ContextKey("tenant_id")`
+- **Domain entities**: DataSource, DataInventory, ... DataPrincipalProfile, DPRRequest, Purpose, Policy, Violation, SectorTemplate
+- **Repositories**: PostgreSQL via pgx
+- **Services**: ..., ConsentService, PortalAuthService, DataPrincipalService, ContextEngine, PolicyService
+- **Handlers**: ..., consent_handler.go, portal_handler.go, governance_handler.go
+- **Connectors**: PostgreSQL, MySQL, MongoDB, S3 (CSV/JSON/JSONL)
+- **Governance**: Purpose Mapping (AI/Pattern), Policy Engine (Evaluation), Violation Tracking
+- **Portal**: OTP Auth, Profile, DPR Submission
 
-#### AI/ML (Sprints 3–4)
-- AI Gateway with OpenAI, Anthropic, Generic HTTP providers
-- Provider registry + factory + selector + fallback chain
-- PII detection prompt templates (versioned, in `internal/service/ai/prompts/`)
-- Detection strategies: AI (LLM-first), Pattern (regex), Heuristic (column names)
-- Composable PII Detector (union results, resolve ties)
-- PII sanitizer
-- Industry-specific detection strategy
-- Redis caching for AI responses
+#### Frontend (Sprints 3–7A)
+- **Pages**: ..., Portal/*, Governance/PurposeMapping, Governance/Policies, Governance/Violations
+- **Components**: ..., ProposalCard, PolicyForm, ErrorBoundary
+- **State**: Zustand auth store, React Query
 
-#### Frontend (Sprints 3–6)
-- React 18 + TypeScript + Vite application in `frontend/`
-- **Pages** (11): Login, Register, Dashboard, DataSources, PIIDiscovery, DSRList, DSRDetail, ConsentWidgets, WidgetDetail, PortalLogin, PortalDashboard
-- **Layout**: AppLayout with Sidebar + Header, PortalLayout (standalone)
-- **Components** (16): DataTable, Pagination, Modal, StatusBadge, Button, Toast, ProtectedRoute, StatCard, PIIChart, ScanHistoryModal, CreateDSRModal, WidgetBuilder, OTPInput, PortalLayout
-- **Services**: `api.ts` (axios with JWT interceptor), `auth.ts`, `dsr.ts`, `consent.ts`, `portalApi.ts` — all use `ApiResponse<T>` unwrapping (`res.data.data`)
-- **State**: Zustand auth store, React Query for server state
-- **Routes**: `/login`, `/register`, `/`, `/data-sources`, `/pii-discovery`, `/dsr`, `/dsr/:id`, `/consent/widgets`, `/consent/widgets/:id`, `/portal/*` (standalone)
+#### Tests (Batches 1–7A)
+- **E2E Tests**: Portal Flow (OTP->DPR), Governance Flow (Suggest->Policy->Violation)
+- **Unit Tests**: Core services, handlers, connectors
+- **Hardening**: Lint-free, standard error handling, structured logging
 
-#### Tests (Batches 1–7)
-- 20+ test files covering core services, handlers, and connectors.
-- **Batch 7 Focus**: E2E testing of Governance & Portal flows.
-- **Batch 7A Goal**: Rigorous hardening, bug fixing, and full integration test coverage before enterprise features.
-- Compile-verified; execution requires Docker Desktop for testcontainers.
-- In-memory mocks pattern in `internal/service/mocks_test.go`.
+#### Upcoming (Batch 8)
+- **Data Lineage**: Flow tracking, visualization API
+- **Cloud Connectors**: AWS (S3/RDS/DynamoDB), Azure (Blob/SQL)
+- **Audit Logging**: Enterprise-grade audit trail
 
 ### Known Technical Debt ⚠️
 1. **DSR correction is a stub** — `DSRExecutor` returns "correction not yet implemented for connector", needs connector `Update()` method

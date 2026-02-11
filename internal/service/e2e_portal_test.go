@@ -69,7 +69,11 @@ func TestE2E_PortalFlow(t *testing.T) {
 
 	eb := newMockEventBus() // Use mock event bus to capture events
 	dsrQueue := newMockDSRQueue()
-	dsrSvc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, logger)
+
+	auditRepo := newMockAuditRepo()
+	auditSvc := NewAuditService(auditRepo, logger)
+
+	dsrSvc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, auditSvc, logger)
 
 	// =========================================================================
 	// Step 1: Initiate Login (Request OTP)

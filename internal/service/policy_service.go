@@ -20,6 +20,7 @@ type PolicyService struct {
 	dsRepo        discovery.DataSourceRepository
 	piiRepo       discovery.PIIClassificationRepository
 	eventBus      eventbus.EventBus
+	auditService  *AuditService
 	logger        *slog.Logger
 }
 
@@ -30,7 +31,9 @@ func NewPolicyService(
 	mappingRepo governance.DataMappingRepository,
 	dsRepo discovery.DataSourceRepository,
 	piiRepo discovery.PIIClassificationRepository,
+
 	eventBus eventbus.EventBus,
+	auditService *AuditService,
 	logger *slog.Logger,
 ) *PolicyService {
 	return &PolicyService{
@@ -40,6 +43,7 @@ func NewPolicyService(
 		dsRepo:        dsRepo,
 		piiRepo:       piiRepo,
 		eventBus:      eventBus,
+		auditService:  auditService,
 		logger:        logger.With("service", "policy_service"),
 	}
 }
@@ -61,6 +65,8 @@ func (s *PolicyService) CreatePolicy(ctx context.Context, p *governance.Policy) 
 	if err := s.policyRepo.Create(ctx, p); err != nil {
 		return err
 	}
+
+	s.auditService.Log(ctx, tenantID, "POLICY_CREATE", "POLICY", p.ID, nil, tenantID)
 
 	event := eventbus.NewEvent("governance.policy_created", "governance", tenantID, p)
 	if err := s.eventBus.Publish(ctx, event); err != nil {

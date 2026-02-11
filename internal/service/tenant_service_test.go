@@ -16,7 +16,10 @@ func newTestTenantService() (*TenantService, *mockTenantRepo, *mockUserRepo) {
 	userRepo := newMockUserRepo()
 	roleRepo := newMockRoleRepo()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	authSvc := NewAuthService(userRepo, roleRepo, "test-secret-key-32chars!!", 15*time.Minute, 7*24*time.Hour, logger)
+	auditRepo := newMockAuditRepo()
+	auditSvc := NewAuditService(auditRepo, logger)
+
+	authSvc := NewAuthService(userRepo, roleRepo, "test-secret-key-32chars!!", 15*time.Minute, 7*24*time.Hour, logger, auditSvc)
 	svc := NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, logger)
 	return svc, tenantRepo, userRepo
 }

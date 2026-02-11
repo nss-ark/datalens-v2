@@ -118,12 +118,17 @@ func main() {
 	consentSessionRepo := repository.NewConsentSessionRepo(dbPool)
 	consentHistoryRepo := repository.NewConsentHistoryRepo(dbPool)
 	policyRepo := repository.NewPostgresPolicyRepository(dbPool)
+
 	violationRepo := repository.NewPostgresViolationRepository(dbPool)
 	mappingRepo := repository.NewPostgresDataMappingRepository(dbPool)
+	auditRepo := repository.NewPostgresAuditRepository(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
 	// =========================================================================
+
+	// Audit Service (Core dependency for others)
+	auditSvc := service.NewAuditService(auditRepo, slog.Default())
 
 	dsSvc := service.NewDataSourceService(dsRepo, eb, slog.Default())
 	purposeSvc := service.NewPurposeService(purposeRepo, eb, slog.Default())
@@ -133,7 +138,9 @@ func main() {
 		cfg.JWT.Secret,
 		cfg.JWT.AccessTokenExpiry,
 		cfg.JWT.RefreshTokenExpiry,
+
 		slog.Default(),
+		auditSvc,
 	)
 	tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
 	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
@@ -249,8 +256,13 @@ func main() {
 		dsRepo,
 		piiRepo,
 		eb,
+		auditSvc,
 		slog.Default(),
 	)
+
+	// 7d. Lineage Engine
+	lineageRepo := repository.NewPostgresLineageRepository(dbPool)
+	lineageSvc := service.NewLineageService(lineageRepo, dsRepo, eb, slog.Default())
 
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)
@@ -286,7 +298,7 @@ func main() {
 	}
 
 	// Update DSR Service with queue
-	dsrSvc = service.NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, slog.Default())
+	dsrSvc = service.NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, auditSvc, slog.Default())
 
 	// Initialize DSR Executor
 	dsrExecutor := service.NewDSRExecutor(dsrRepo, dsRepo, piiRepo, connRegistry, eb, slog.Default())
@@ -327,7 +339,7 @@ func main() {
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
 	consentHandler := handler.NewConsentHandler(consentSvc)
-	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc)
+	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(

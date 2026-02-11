@@ -12,17 +12,20 @@ import (
 )
 
 type GovernanceHandler struct {
-	contextEngine *govService.ContextEngine
-	policyService *service.PolicyService
+	contextEngine  *govService.ContextEngine
+	policyService  *service.PolicyService
+	lineageService *service.LineageService
 }
 
 func NewGovernanceHandler(
 	engine *govService.ContextEngine,
 	policyService *service.PolicyService,
+	lineageService *service.LineageService,
 ) *GovernanceHandler {
 	return &GovernanceHandler{
-		contextEngine: engine,
-		policyService: policyService,
+		contextEngine:  engine,
+		policyService:  policyService,
+		lineageService: lineageService,
 	}
 }
 
@@ -37,6 +40,10 @@ func (h *GovernanceHandler) Routes() chi.Router {
 	r.Post("/policies", h.CreatePolicy)
 	r.Get("/violations", h.ListViolations)
 	r.Post("/scan", h.TriggerScan)
+
+	// Lineage Routes
+	r.Get("/lineage", h.GetLineageGraph)
+	r.Post("/lineage", h.TrackFlow)
 
 	return r
 }
@@ -150,4 +157,43 @@ func (h *GovernanceHandler) TriggerScan(w http.ResponseWriter, r *http.Request) 
 	}
 
 	httputil.JSON(w, http.StatusOK, violations)
+}
+
+// =============================================================================
+// Data Lineage Endpoints
+// =============================================================================
+
+// GetLineageGraph returns the data flow graph for the tenant.
+// GET /api/v2/governance/lineage
+func (h *GovernanceHandler) GetLineageGraph(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := types.TenantIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorFromDomain(w, types.NewForbiddenError("tenant context required"))
+		return
+	}
+
+	graph, err := h.lineageService.GetGraph(r.Context(), tenantID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, graph)
+}
+
+// TrackFlow manually records a data flow.
+// POST /api/v2/governance/lineage
+func (h *GovernanceHandler) TrackFlow(w http.ResponseWriter, r *http.Request) {
+	var flow governance.DataFlow
+	if err := httputil.DecodeJSON(r, &flow); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	if err := h.lineageService.TrackFlow(r.Context(), &flow); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusCreated, flow)
 }

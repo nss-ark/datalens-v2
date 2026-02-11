@@ -6,12 +6,14 @@ import "context"
 type ContextKey string
 
 const (
-	ContextKeyUserID   ContextKey = "user_id"
-	ContextKeyTenantID ContextKey = "tenant_id"
-	ContextKeyEmail    ContextKey = "email"
-	ContextKeyName     ContextKey = "name"
-	ContextKeyRoles    ContextKey = "roles"
-	ContextKeyWidgetID ContextKey = "widget_id"
+	ContextKeyUserID    ContextKey = "user_id"
+	ContextKeyTenantID  ContextKey = "tenant_id"
+	ContextKeyEmail     ContextKey = "email"
+	ContextKeyName      ContextKey = "name"
+	ContextKeyRoles     ContextKey = "roles"
+	ContextKeyWidgetID  ContextKey = "widget_id"
+	ContextKeyIP        ContextKey = "ip"
+	ContextKeyUserAgent ContextKey = "user_agent"
 )
 
 // UserIDFromContext extracts the user ID from the request context.

@@ -1,7 +1,7 @@
 -- Add config to data_sources (missed in initial schema)
 -- Add config to data_sources (missed in initial schema)
 ALTER TABLE data_sources ADD COLUMN IF NOT EXISTS config JSONB NOT NULL DEFAULT '{}';
-ALTER TABLE data_sources ADD COLUMN IF NOT EXISTS scan_schedule JSONB;
+
 
 -- Consent Widgets
 CREATE TABLE IF NOT EXISTS consent_widgets (

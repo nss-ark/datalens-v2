@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/internal/infrastructure/connector/aws"
+	"github.com/complyark/datalens/internal/infrastructure/connector/azure"
 	"github.com/complyark/datalens/pkg/types"
 )
 
@@ -35,9 +37,24 @@ func NewConnectorRegistry() *ConnectorRegistry {
 	r.Register(types.DataSourceMongoDB, func() discovery.Connector {
 		return NewMongoDBConnector()
 	})
-	// TODO: Implement S3 connector
+
+	// AWS Connectors
 	r.Register(types.DataSourceS3, func() discovery.Connector {
-		return NewS3Connector()
+		return aws.NewS3Connector()
+	})
+	r.Register(types.DataSourceRDS, func() discovery.Connector {
+		return aws.NewRDSConnector()
+	})
+	r.Register(types.DataSourceDynamoDB, func() discovery.Connector {
+		return aws.NewDynamoDBConnector()
+	})
+
+	// Azure Connectors
+	r.Register(types.DataSourceAzureBlob, func() discovery.Connector {
+		return azure.NewBlobConnector()
+	})
+	r.Register(types.DataSourceAzureSQL, func() discovery.Connector {
+		return azure.NewAzureSQLConnector()
 	})
 
 	return r

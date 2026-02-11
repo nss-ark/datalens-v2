@@ -122,7 +122,7 @@ func TestDSRService_CreateDSR_Success(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -165,7 +165,7 @@ func TestDSRService_ApproveDSR_Success(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -228,7 +228,7 @@ func TestDSRService_RejectDSR_Success(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -271,7 +271,7 @@ func TestDSRService_ApproveDSR_InvalidTransition(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -304,7 +304,7 @@ func TestDSRService_GetDSRs_WithFilter(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)

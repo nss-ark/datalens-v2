@@ -83,6 +83,8 @@ const (
 	EntityTypeCollection EntityType = "COLLECTION"
 	EntityTypeFolder     EntityType = "FOLDER"
 	EntityTypeFile       EntityType = "FILE"
+	EntityTypeDatabase   EntityType = "DATABASE"
+	EntityTypeContainer  EntityType = "CONTAINER"
 )
 
 // =============================================================================

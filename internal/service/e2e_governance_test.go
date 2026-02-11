@@ -56,7 +56,10 @@ func TestE2E_GovernanceFlow(t *testing.T) {
 	// Let's construct it manually or mock the ContextEngine logic if it's complex to set up templates here.
 	// Simplified: We will manually create the Purpose to simulate "Applying" a suggestion.
 
-	policySvc := NewPolicyService(policyRepo, violationRepo, mappingRepo, dsRepo, piiRepo, eb, logger)
+	auditRepo := repository.NewPostgresAuditRepository(pool)
+	auditSvc := NewAuditService(auditRepo, logger)
+
+	policySvc := NewPolicyService(policyRepo, violationRepo, mappingRepo, dsRepo, piiRepo, eb, auditSvc, logger)
 
 	// Create Tenant
 	tenant := &identity.Tenant{

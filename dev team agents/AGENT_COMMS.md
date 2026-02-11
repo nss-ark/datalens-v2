@@ -707,13 +707,18 @@ _Document Go interfaces that cross agent boundaries:_
 | 4 | Tests for Batch 3 + E2E | Test | ✅ COMPLETE |
 | 5 | CI/CD pipeline | DevOps | ✅ COMPLETE |
 
-**Sprint Batch 8** (Feb 12, 2026) — 🟡 IN PROGRESS (Data Lineage & Cloud)
+**Sprint Batch 8 (Completion Phase)** (Feb 12, 2026) — 🟡 IN PROGRESS
 
 | # | Task | Agent | Status | Parallel? |
 |---|------|-------|--------|-----------|
-| 1 | Data Lineage & Flow Visualization | Backend + Frontend | ⏳ Waiting | ✅ Yes |
-| 2 | AWS/Azure Connector Integration | Backend | ⏳ Waiting | ✅ Yes |
-| 3 | Enterprise Audit Logging | Backend | ⏳ Waiting | ✅ Yes |
+| 1 | Fix Backend Build (Azure/AWS SDKs) | Backend | ⏳ Waiting | ✅ Yes |
+| 2 | Implement Data Lineage UI (React Flow) | Frontend | ⏳ Waiting | ✅ Yes |
+| 3 | Verify Audit & Connectors | Test | ⏳ Waiting | ❌ After #1 |
+
+**Batch 8 Initial Implementation** (Backend Components):
+- Data Lineage Backend API ✅
+- Cloud Connectors (Code complete, needs build fix) ✅
+- Audit Logging (Code complete, needs build fix) ✅
 
 **Batch 7A Archive** (Completed Feb 12):
 - E2E Testing (Portal + Governance) ✅

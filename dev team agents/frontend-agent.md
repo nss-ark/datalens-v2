@@ -71,7 +71,7 @@ Before writing any code, you MUST read the relevant documentation:
 
 ## Completed Work — What Already Exists
 
-### Existing Pages (13)
+### Existing Pages (16)
 | Page | File | Route | Status |
 |------|------|-------|--------|
 | Login | `pages/Login.tsx` | `/login` | ✅ Complete |
@@ -87,12 +87,15 @@ Before writing any code, you MUST read the relevant documentation:
 | Portal Login | `pages/Portal/Login.tsx` | `/portal/login` | ✅ Complete (Batch 6) |
 | Portal Dashboard | `pages/Portal/Dashboard.tsx` | `/portal/dashboard` | ✅ Complete (Batch 6) |
 | Portal History | `pages/Portal/History.tsx` | `/portal/history` | ✅ Complete (Batch 6) |
+| Purpose Mapping | `pages/Governance/PurposeMapping.tsx` | `/governance/purposes` | ✅ Complete (Batch 7) |
+| Policy Manager | `pages/Governance/PolicyManager.tsx` | `/governance/policies` | ✅ Complete (Batch 7) |
+| Violations | `pages/Governance/Violations.tsx` | `/governance/violations` | ✅ Complete (Batch 7) |
 
-### Existing Components (17)
+### Existing Components (20)
 | Component | File | Purpose |
 |-----------|------|---------|
 | AppLayout | `components/Layout/AppLayout.tsx` | Main layout shell with Sidebar + Header |
-| PortalLayout | `components/Layout/PortalLayout.tsx` | Standalone layout for Portal (Batch 6) |
+| PortalLayout | `components/Layout/PortalLayout.tsx` | Standalone layout for Portal |
 | Sidebar | `components/Layout/Sidebar.tsx` | Navigation sidebar with grouped sections |
 | Header | `components/Layout/Header.tsx` | Top header bar |
 | DataTable | `components/DataTable/DataTable.tsx` | Reusable sortable, filterable table |
@@ -100,9 +103,12 @@ Before writing any code, you MUST read the relevant documentation:
 | StatCard | `components/Dashboard/StatCard.tsx` | Metric card with icon and value |
 | PIIChart | `components/Dashboard/PIIChart.tsx` | PII category distribution chart |
 | ScanHistoryModal | `components/DataSources/ScanHistoryModal.tsx` | Scan run history viewer |
-| CreateDSRModal | `components/DSR/CreateDSRModal.tsx` | DSR creation form with dynamic identifiers |
-| WidgetBuilder | `components/Consent/WidgetBuilder.tsx` | Multi-step wizard for widget creation |
-| OTPInput | `components/common/OTPInput.tsx` | 6-digit OTP entry (Batch 6) |
+| CreateDSRModal | `components/DSR/CreateDSRModal.tsx` | DSR creation form |
+| WidgetBuilder | `components/Consent/WidgetBuilder.tsx` | Multi-step wizard |
+| OTPInput | `components/common/OTPInput.tsx` | 6-digit OTP entry |
+| SuggestionCard | `components/Governance/SuggestionCard.tsx` | AI purpose suggestion display (Batch 7) |
+| PolicyForm | `components/Governance/PolicyForm.tsx` | Policy creation modal (Batch 7) |
+| ErrorBoundary | `components/common/ErrorBoundary.tsx` | Crash protection (Batch 7A) |
 | Modal | `components/common/Modal.tsx` | Generic modal dialog |
 | StatusBadge | `components/common/StatusBadge.tsx` | Color-coded status indicator |
 | Button | `components/common/Button.tsx` | Styled button component |
@@ -113,11 +119,12 @@ Before writing any code, you MUST read the relevant documentation:
 | Service | File | Methods |
 |---------|------|---------|
 | API client | `services/api.ts` | Axios instance with JWT interceptor, 401 redirect |
-| Portal API | `services/portalApi.ts` | Separate axios instance for Portal (different JWT logic) |
+| Portal API | `services/portalApi.ts` | Separate axios instance for Portal |
 | Auth | `services/auth.ts` | `login`, `register`, `refreshToken` |
 | DSR | `services/dsr.ts` | `list`, `getById`, `create`, `approve`, `reject`, `getResult`, `execute` |
 | Consent | `services/consent.ts` | `listWidgets`, `getWidget`, `createWidget`, `updateWidget`, `deleteWidget` |
 | Portal | `services/portalService.ts` | `login`, `verify`, `getProfile`, `getHistory`, `submitDPR` |
+| Governance | `services/governanceService.ts` | `getSuggestions`, `applySuggestion`, `getPolicies`, `createPolicy`, `getViolations` |
 
 ### Existing Types
 | File | Types |
@@ -125,13 +132,12 @@ Before writing any code, you MUST read the relevant documentation:
 | `types/common.ts` | `ID`, `BaseEntity`, `TenantEntity`, `PaginationParams`, `ApiResponse<T>`, `PaginatedResponse<T>`, `ApiError` |
 | `types/dsr.ts` | `DSR`, `DSRTask`, `DSRWithTasks`, `DSRListResponse`, `CreateDSRInput` |
 | `types/consent.ts` | `ConsentWidget`, `WidgetConfig`, `ThemeConfig`, `DataPrincipalProfile` |
+| `types/governance.ts` | `PurposeSuggestion`, `Policy`, `Violation` |
 
-### Upcoming Pages (Batches 7–8)
+### Upcoming Pages (Batch 8)
 | Page | Route | Batch | Notes |
 |------|-------|-------|-------|
-| Purpose Mapping | `/governance/purposes` | 7 | AI suggestions, one-click confirm, batch review |
-| Governance Policies | `/governance/policies` | 7 | Policy list, rule editor, violations |
-| Data Lineage | `/governance/lineage` | 7 | Visual flow of data, purpose tracking |
+| Data Lineage | `/governance/lineage` | 8 | Visual flow of data, purpose tracking (Sankey/Graph) |
 | DSR Automation | `/dsr/automation` | 8 | Workflow builder, auto-execution rules |
 
 ---

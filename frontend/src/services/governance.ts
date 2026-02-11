@@ -3,7 +3,8 @@ import type {
     PurposeSuggestion,
     GovernancePolicy,
     PolicyViolation,
-    CreatePolicyRequest
+    CreatePolicyRequest,
+    LineageGraph
 } from '../types/governance';
 
 export const governanceService = {
@@ -49,5 +50,11 @@ export const governanceService = {
 
     resolveViolation: async (id: string): Promise<void> => {
         await api.post(`/governance/violations/${id}/resolve`);
+    },
+
+    // Data Lineage
+    getLineage: async (): Promise<LineageGraph> => {
+        const response = await api.get('/governance/lineage');
+        return response.data;
     }
 };

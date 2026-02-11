@@ -57,6 +57,14 @@ func TestConnectorRegistry_RegisterAndGet(t *testing.T) {
 	mysqlConn, err := registry.GetConnector(types.DataSourceMySQL)
 	require.NoError(t, err)
 	assert.NotNil(t, mysqlConn)
+
+	s3Conn, err := registry.GetConnector(types.DataSourceS3)
+	require.NoError(t, err)
+	assert.NotNil(t, s3Conn)
+
+	blobConn, err := registry.GetConnector(types.DataSourceAzureBlob)
+	require.NoError(t, err)
+	assert.NotNil(t, blobConn)
 }
 
 func TestConnectorRegistry_UnknownType(t *testing.T) {

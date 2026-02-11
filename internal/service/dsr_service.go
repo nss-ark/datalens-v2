@@ -21,6 +21,7 @@ type DSRService struct {
 	dataSourceRepo discovery.DataSourceRepository
 	dsrQueue       queue.DSRQueue
 	eventBus       eventbus.EventBus
+	auditService   *AuditService
 	logger         *slog.Logger
 }
 
@@ -29,15 +30,19 @@ func NewDSRService(
 	dsrRepo compliance.DSRRepository,
 	dataSourceRepo discovery.DataSourceRepository,
 	dsrQueue queue.DSRQueue,
+
 	eventBus eventbus.EventBus,
+	auditService *AuditService,
 	logger *slog.Logger,
 ) *DSRService {
 	return &DSRService{
 		dsrRepo:        dsrRepo,
 		dataSourceRepo: dataSourceRepo,
 		dsrQueue:       dsrQueue,
-		eventBus:       eventBus,
-		logger:         logger,
+
+		eventBus:     eventBus,
+		auditService: auditService,
+		logger:       logger,
 	}
 }
 

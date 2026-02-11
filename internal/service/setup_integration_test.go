@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -84,26 +85,35 @@ func setupPostgres(t *testing.T) *pgxpool.Pool {
 }
 
 func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
-	// Find migrations directory relative to this test file.
-	// Assuming this file is in internal/service/
 	_, filename, _, _ := runtime.Caller(0)
-	migrationsDir := filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
+	serviceDir := filepath.Dir(filename)
 
-	filesToCheck := []string{"001_initial_schema.sql", "002_api_keys.sql", "003_detection_feedback.sql", "004_dsr.sql", "005_consent.sql", "006_governance_violations.sql"}
+	// Define migration directories relative to this file (internal/service)
+	// 1. Root migrations: ../../migrations
+	// 2. Internal migrations: ../database/migrations
+	dirs := []string{
+		filepath.Join(serviceDir, "..", "..", "migrations"),
+		filepath.Join(serviceDir, "..", "database", "migrations"),
+	}
 
-	for _, f := range filesToCheck {
-		path := filepath.Join(migrationsDir, f)
-		// Check if file exists first to avoid error if I added a hypothetical one
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			continue
-		}
-
-		sql, err := os.ReadFile(path)
+	for _, dir := range dirs {
+		files, err := filepath.Glob(filepath.Join(dir, "*.sql"))
 		if err != nil {
 			return err
 		}
-		if _, err := pool.Exec(ctx, string(sql)); err != nil {
-			return err
+
+		// Sort files to ensure order (001, 002, ...)
+		// filepath.Glob returns sorted matches, but no harm in verifying or relying on it.
+		// (Glob output is sorted)
+
+		for _, path := range files {
+			sql, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			if _, err := pool.Exec(ctx, string(sql)); err != nil {
+				return fmt.Errorf("failed to execute migration %s: %w", filepath.Base(path), err)
+			}
 		}
 	}
 	return nil

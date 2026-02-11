@@ -61,12 +61,14 @@ Before writing any tests, check what's already covered to avoid duplication.
 | `internal/service/scan_service_test.go` | Scan service (queue, failure handling) | ✅ Unit tests (Batch 5) |
 | `internal/service/consent_service_test.go` | Consent Service (Widget, Session, HMAC) | ✅ Unit tests (Batch 5/6) |
 | `internal/service/context_engine_test.go` | Purpose Context Engine (Pattern/AI) | ✅ Unit tests (Batch 7) |
+| `internal/service/e2e_portal_test.go` | Portal Flow (OTP -> DPR) | ✅ E2E Integration (Batch 7A) |
+| `internal/service/e2e_governance_test.go` | Governance Flow (Suggest -> Violation) | ✅ E2E Integration (Batch 7A) |
 
-### Tests That Still Need Writing (Known Gaps - Batch 7A Focus)
+### Tests That Still Need Writing (Known Gaps - Batch 8 Focus)
 | Area | What's missing | Priority |
 |------|---------------|----------|
-| **E2E Portal Flow** | Login -> View Profile -> Submit DPR -> Verify Internal DSR creation | **P0** |
-| **E2E Governance** | Suggest Purpose -> Accept -> Verify Update -> Check Policy Violation | **P0** |
+| **Data Lineage** | Test flow tracking and graph generation | **P0** |
+| **Cloud Connectors** | Integration tests for AWS/Azure (using LocalStack/Azurite) | **P1** |
 | Auth middleware | `internal/middleware/auth_middleware.go` — JWT parsing, edge cases | P1 |
 | Rate limit middleware | `internal/middleware/ratelimit_middleware.go` | P2 |
 | DSR handler | `internal/handler/dsr_handler.go` validation | P1 |

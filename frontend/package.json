@@ -11,14 +11,17 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",
+    "@types/dagre": "^0.7.53",
     "axios": "^1.13.5",
     "clsx": "^2.1.1",
+    "dagre": "^0.8.5",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.1",
     "react-router-dom": "^7.13.0",
+    "reactflow": "^11.11.4",
     "recharts": "^3.7.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.11"

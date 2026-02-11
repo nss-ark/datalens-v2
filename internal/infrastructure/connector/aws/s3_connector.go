@@ -1,4 +1,4 @@
-package connector
+package aws
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/complyark/datalens/internal/domain/discovery"
 )
@@ -39,16 +38,13 @@ func NewS3Connector() *S3Connector {
 func (c *S3Connector) Connect(ctx context.Context, ds *discovery.DataSource) error {
 	c.bucket = ds.Database // We reuse Database field for bucket name
 
-	// Load AWS config
-	// In production, this would use credentials from ds.Credentials/Config
-	// For MVP/Tests, we'll load default config or use existing client if set (for tests)
 	if c.client != nil {
 		return nil
 	}
 
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := LoadConfig(ctx, ds)
 	if err != nil {
-		return fmt.Errorf("load aws config: %w", err)
+		return err
 	}
 
 	c.client = s3.NewFromConfig(cfg)
@@ -123,7 +119,20 @@ func (c *S3Connector) GetFields(ctx context.Context, entityID string) ([]discove
 // field = CSV Header or JSON Key
 func (c *S3Connector) SampleData(ctx context.Context, entity, field string, limit int) ([]string, error) {
 	if c.client == nil {
-		return nil, fmt.Errorf("not connected")
+		// Use a mock client if not connected (for testing without Connect)
+		// Or return error. For now error is safer.
+		// BUT existing tests might rely on manually setting client and not calling Connect?
+		// S3Connector struct field `client` is unexported, so tests in same package can set it.
+		// If in different package (like `aws_test` vs `aws`), they can't.
+		// We'll assume tests are in same package or `_test` package accessing exported methods.
+		// The existing test `TestS3_ParseCSV` sets `client` manually.
+		// Since we are in `package aws`, and tests will be in `package aws` (or `aws_test`),
+		// we should be fine if we keep `client` unexported but accessible to tests in same package.
+		// However, if we put tests in `aws_test` package, we can't access `client`.
+		// We should put tests in `package aws`.
+		if c.client == nil {
+			return nil, fmt.Errorf("not connected")
+		}
 	}
 
 	// Get object stream
