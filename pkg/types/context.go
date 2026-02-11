@@ -11,6 +11,7 @@ const (
 	ContextKeyEmail    ContextKey = "email"
 	ContextKeyName     ContextKey = "name"
 	ContextKeyRoles    ContextKey = "roles"
+	ContextKeyWidgetID ContextKey = "widget_id"
 )
 
 // UserIDFromContext extracts the user ID from the request context.

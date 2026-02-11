@@ -28,15 +28,15 @@ func (r *DSRRepo) Create(ctx context.Context, dsr *compliance.DSR) error {
 		INSERT INTO dsr_requests (
 			id, tenant_id, request_type, status,
 			subject_name, subject_email, subject_identifiers,
-			priority, sla_deadline, assigned_to, reason,
+			priority, sla_deadline, assigned_to, reason, notes,
 			created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING created_at, updated_at`
 
 	return r.pool.QueryRow(ctx, query,
 		dsr.ID, dsr.TenantID, dsr.RequestType, dsr.Status,
 		dsr.SubjectName, dsr.SubjectEmail, dsr.SubjectIdentifiers,
-		dsr.Priority, dsr.SLADeadline, dsr.AssignedTo, dsr.Reason,
+		dsr.Priority, dsr.SLADeadline, dsr.AssignedTo, dsr.Reason, dsr.Notes,
 		dsr.CreatedAt, dsr.UpdatedAt,
 	).Scan(&dsr.CreatedAt, &dsr.UpdatedAt)
 }
@@ -46,7 +46,7 @@ func (r *DSRRepo) GetByID(ctx context.Context, id types.ID) (*compliance.DSR, er
 	query := `
 		SELECT id, tenant_id, request_type, status,
 		       subject_name, subject_email, subject_identifiers,
-		       priority, sla_deadline, assigned_to, reason,
+		       priority, sla_deadline, assigned_to, reason, notes,
 		       created_at, updated_at, completed_at
 		FROM dsr_requests
 		WHERE id = $1`
@@ -55,7 +55,7 @@ func (r *DSRRepo) GetByID(ctx context.Context, id types.ID) (*compliance.DSR, er
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&dsr.ID, &dsr.TenantID, &dsr.RequestType, &dsr.Status,
 		&dsr.SubjectName, &dsr.SubjectEmail, &dsr.SubjectIdentifiers,
-		&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason,
+		&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason, &dsr.Notes,
 		&dsr.CreatedAt, &dsr.UpdatedAt, &dsr.CompletedAt,
 	)
 	if err != nil {
@@ -91,7 +91,7 @@ func (r *DSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination
 	query := fmt.Sprintf(`
 		SELECT id, tenant_id, request_type, status,
 		       subject_name, subject_email, subject_identifiers,
-		       priority, sla_deadline, assigned_to, reason,
+		       priority, sla_deadline, assigned_to, reason, notes,
 		       created_at, updated_at, completed_at
 		%s
 		ORDER BY created_at DESC
@@ -111,7 +111,7 @@ func (r *DSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination
 		if err := rows.Scan(
 			&dsr.ID, &dsr.TenantID, &dsr.RequestType, &dsr.Status,
 			&dsr.SubjectName, &dsr.SubjectEmail, &dsr.SubjectIdentifiers,
-			&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason,
+			&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason, &dsr.Notes,
 			&dsr.CreatedAt, &dsr.UpdatedAt, &dsr.CompletedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan dsr: %w", err)
@@ -142,7 +142,7 @@ func (r *DSRRepo) GetOverdue(ctx context.Context, tenantID types.ID) ([]complian
 	query := `
 		SELECT id, tenant_id, request_type, status,
 		       subject_name, subject_email, subject_identifiers,
-		       priority, sla_deadline, assigned_to, reason,
+		       priority, sla_deadline, assigned_to, reason, notes,
 		       created_at, updated_at, completed_at
 		FROM dsr_requests
 		WHERE tenant_id = $1 
@@ -162,7 +162,7 @@ func (r *DSRRepo) GetOverdue(ctx context.Context, tenantID types.ID) ([]complian
 		if err := rows.Scan(
 			&dsr.ID, &dsr.TenantID, &dsr.RequestType, &dsr.Status,
 			&dsr.SubjectName, &dsr.SubjectEmail, &dsr.SubjectIdentifiers,
-			&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason,
+			&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason, &dsr.Notes,
 			&dsr.CreatedAt, &dsr.UpdatedAt, &dsr.CompletedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan dsr: %w", err)

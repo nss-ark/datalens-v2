@@ -10,6 +10,8 @@ import DataSources from './pages/DataSources';
 import PIIDiscovery from './pages/PIIDiscovery';
 import DSRList from './pages/DSRList';
 import DSRDetail from './pages/DSRDetail';
+import ConsentWidgets from './pages/ConsentWidgets';
+import WidgetDetail from './pages/WidgetDetail';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,14 +46,16 @@ function App() {
             <Route path="/agents" element={<PlaceholderPage title="Agents" />} />
             {/* Active routes */}
             <Route path="/pii/review" element={<PIIDiscovery />} />
+            <Route path="/dsr" element={<DSRList />} />
+            <Route path="/dsr/:id" element={<DSRDetail />} />
+            <Route path="/consent/widgets" element={<ConsentWidgets />} />
+            <Route path="/consent/widgets/:id" element={<WidgetDetail />} />
 
             {/* Placeholder routes */}
             <Route path="/agents" element={<PlaceholderPage title="Agents" />} />
             <Route path="/pii/inventory" element={<PlaceholderPage title="PII Inventory" />} />
             <Route path="/lineage" element={<PlaceholderPage title="Data Lineage" />} />
             <Route path="/subjects" element={<PlaceholderPage title="Data Subjects" />} />
-            <Route path="/dsr" element={<DSRList />} />
-            <Route path="/dsr/:id" element={<DSRDetail />} />
             <Route path="/consent" element={<PlaceholderPage title="Consent Records" />} />
             <Route path="/consent/analytics" element={<PlaceholderPage title="Consent Analytics" />} />
             <Route path="/grievances" element={<PlaceholderPage title="Grievances" />} />

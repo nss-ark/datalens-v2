@@ -172,6 +172,57 @@ Content-Type: application/json
 | POST | `/consent/withdraw` | Withdraw consent |
 | GET | `/consent/analytics` | Consent analytics |
 
+### Notice Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/consent/notices` | List consent notices |
+| POST | `/consent/notices` | Create notice (English source) |
+| GET | `/consent/notices/:id` | Get notice with translations |
+| PUT | `/consent/notices/:id` | Update notice (creates new version) |
+| POST | `/consent/notices/:id/publish` | Publish notice version |
+| POST | `/consent/notices/:id/archive` | Archive notice |
+| POST | `/consent/notices/:id/translate` | Trigger HuggingFace translation for all 22 languages |
+| GET | `/consent/notices/:id/translations` | List translations for a notice version |
+| PUT | `/consent/notices/:id/translations/:lang` | Override/edit a specific translation |
+
+**Example: Trigger Translation**
+```http
+POST /consent/notices/uuid/translate
+Authorization: Bearer {token}
+
+Response:
+{
+  "data": {
+    "notice_id": "uuid",
+    "version": 2,
+    "translations_requested": 22,
+    "status": "IN_PROGRESS"
+  },
+  "message": "Translation triggered for 22 languages"
+}
+```
+
+### Consent Notifications
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/consent/notifications` | List sent notifications |
+| GET | `/consent/notifications/templates` | List notification templates |
+| POST | `/consent/notifications/templates` | Create notification template |
+| PUT | `/consent/notifications/templates/:id` | Update template |
+| POST | `/consent/notifications/send` | Manually send notification |
+
+### DigiLocker Integration
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/integrations/digilocker/authorize` | Initiate DigiLocker OAuth 2.0 + PKCE flow |
+| POST | `/integrations/digilocker/callback` | Handle OAuth callback, exchange code for token |
+| GET | `/integrations/digilocker/user` | Get DigiLocker user details (identity verification) |
+| POST | `/integrations/digilocker/push` | Push consent artifact URI to user's DigiLocker |
+| GET | `/integrations/digilocker/documents` | List user's issued documents (for KYC/age verification) |
+
 ### Grievances
 
 | Method | Endpoint | Description |

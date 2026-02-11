@@ -29,6 +29,7 @@ const (
 	RequestTypeErasure     DSRRequestType = "ERASURE"
 	RequestTypeCorrection  DSRRequestType = "CORRECTION"
 	RequestTypePortability DSRRequestType = "PORTABILITY"
+	RequestTypeNomination  DSRRequestType = "NOMINATION"
 )
 
 // DSR represents a Data Subject Request.
@@ -44,6 +45,7 @@ type DSR struct {
 	SLADeadline        time.Time         `json:"sla_deadline"`
 	AssignedTo         *types.ID         `json:"assigned_to,omitempty"`
 	Reason             string            `json:"reason,omitempty"` // For rejection or specific context
+	Notes              string            `json:"notes,omitempty"`  // Added back
 	CreatedAt          time.Time         `json:"created_at"`
 	UpdatedAt          time.Time         `json:"updated_at"`
 	CompletedAt        *time.Time        `json:"completed_at,omitempty"`
@@ -54,6 +56,7 @@ type DSRRepository interface {
 	Create(ctx context.Context, dsr *DSR) error
 	GetByID(ctx context.Context, id types.ID) (*DSR, error)
 	GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *DSRStatus) (*types.PaginatedResult[DSR], error)
+	GetOverdue(ctx context.Context, tenantID types.ID) ([]DSR, error)
 	Update(ctx context.Context, dsr *DSR) error
 
 	// Task management

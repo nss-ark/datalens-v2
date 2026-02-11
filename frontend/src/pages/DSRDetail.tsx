@@ -406,7 +406,7 @@ const DSRDetail = () => {
 };
 
 // Timeline Components
-function TimelineStep({ label, date, completed, isLast }: { label: string; date?: string; completed: boolean; isLast?: boolean }) {
+function TimelineStep({ label, date, completed }: { label: string; date?: string; completed: boolean; isLast?: boolean }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1, minWidth: '80px' }}>
             <div style={{

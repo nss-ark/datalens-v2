@@ -60,6 +60,7 @@ func (s *DSRService) CreateDSR(ctx context.Context, req CreateDSRRequest) (*comp
 		SubjectEmail:       req.SubjectEmail,
 		SubjectIdentifiers: req.SubjectIdentifiers,
 		Priority:           req.Priority,
+		Notes:              req.Notes,
 		SLADeadline:        slaDeadline,
 		CreatedAt:          time.Now().UTC(),
 		UpdatedAt:          time.Now().UTC(),
@@ -215,6 +216,7 @@ type CreateDSRRequest struct {
 	SubjectEmail       string                    `json:"subject_email"`
 	SubjectIdentifiers map[string]string         `json:"subject_identifiers"`
 	Priority           string                    `json:"priority"`
+	Notes              string                    `json:"notes"`
 }
 
 type DSRWithTasks struct {

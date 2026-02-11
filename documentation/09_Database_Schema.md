@@ -176,6 +176,80 @@ consent_records (
 )
 ```
 
+### Consent Module (Separate — MeITY BRD Alignment)
+
+```sql
+-- Consent notices (versioned, per-tenant)
+consent_notices (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id       UUID REFERENCES clients(id),
+  name            VARCHAR(255) NOT NULL,
+  description     TEXT,
+  version         INT DEFAULT 1,
+  status          VARCHAR(20) DEFAULT 'DRAFT',  -- DRAFT, PUBLISHED, ACTIVE, ARCHIVED
+  purpose_ids     UUID[],                         -- Linked processing purposes
+  content_en      TEXT NOT NULL,                   -- English source text (authoritative)
+  require_explicit BOOLEAN DEFAULT true,
+  consent_expiry_days INT DEFAULT 365,
+  published_at    TIMESTAMP,
+  archived_at     TIMESTAMP,
+  created_by      UUID REFERENCES client_users(id),
+  created_at      TIMESTAMP DEFAULT NOW(),
+  updated_at      TIMESTAMP DEFAULT NOW()
+)
+
+-- Notice translations (HuggingFace API output, per version)
+consent_notice_translations (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  notice_id       UUID REFERENCES consent_notices(id),
+  notice_version  INT NOT NULL,
+  language_code   VARCHAR(10) NOT NULL,            -- ISO 639: en, hi, bn, ta, etc.
+  translated_text TEXT NOT NULL,
+  translation_source VARCHAR(50) DEFAULT 'HUGGINGFACE',  -- HUGGINGFACE, MANUAL
+  translated_at   TIMESTAMP DEFAULT NOW(),
+  reviewed_by     UUID REFERENCES client_users(id),
+  reviewed_at     TIMESTAMP,
+  created_at      TIMESTAMP DEFAULT NOW(),
+  UNIQUE(notice_id, notice_version, language_code)
+)
+
+-- Consent notifications (event log)
+consent_notifications (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id       UUID REFERENCES clients(id),
+  recipient_type  VARCHAR(30) NOT NULL,            -- DATA_PRINCIPAL, DATA_FIDUCIARY, DATA_PROCESSOR
+  recipient_id    UUID,
+  event_type      VARCHAR(50) NOT NULL,            -- CONSENT_GRANTED, CONSENT_WITHDRAWN, CONSENT_EXPIRING, etc.
+  channel         VARCHAR(20) NOT NULL,            -- EMAIL, SMS, IN_APP, WEBHOOK
+  template_id     UUID,
+  payload         JSONB,
+  status          VARCHAR(20) DEFAULT 'PENDING',   -- PENDING, SENT, FAILED, DELIVERED
+  sent_at         TIMESTAMP,
+  error_message   TEXT,
+  created_at      TIMESTAMP DEFAULT NOW()
+)
+
+-- Consent renewal tracking
+consent_renewal_logs (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id       UUID REFERENCES clients(id),
+  subject_id      UUID NOT NULL,
+  original_consent_id UUID REFERENCES consent_records(id),
+  renewed_consent_id  UUID REFERENCES consent_records(id),
+  reminder_sent_at    TIMESTAMP,
+  reminder_channel    VARCHAR(20),
+  renewed_at          TIMESTAMP,
+  status              VARCHAR(20) DEFAULT 'REMINDER_SENT',  -- REMINDER_SENT, RENEWED, EXPIRED, LAPSED
+  created_at          TIMESTAMP DEFAULT NOW()
+)
+
+-- Indexes for consent module tables
+CREATE INDEX idx_consent_notices_client_status ON consent_notices(client_id, status);
+CREATE INDEX idx_notice_translations_notice ON consent_notice_translations(notice_id, language_code);
+CREATE INDEX idx_consent_notifications_client ON consent_notifications(client_id, event_type);
+CREATE INDEX idx_consent_renewal_client ON consent_renewal_logs(client_id, status);
+```
+
 ### Recipients
 
 ```sql

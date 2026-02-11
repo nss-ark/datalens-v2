@@ -226,7 +226,7 @@ func (e *EncryptionService) Decrypt(ciphertext []byte) ([]byte, error) {
 | Requirement | Implementation |
 |-------------|----------------|
 | Free consent | No dark patterns, clear UI |
-| Informed | Detailed notices |
+| Informed | Detailed notices in 22 Eighth Schedule languages |
 | Specific | Per-purpose consent |
 | Unambiguous | Explicit actions required |
 | Withdrawable | Easy withdrawal mechanism |
@@ -235,8 +235,8 @@ func (e *EncryptionService) Decrypt(ciphertext []byte) ([]byte, error) {
 
 | Requirement | Implementation |
 |-------------|----------------|
-| Identify minors | Age verification |
-| Guardian consent | Parent/guardian approval flow |
+| Identify minors | Age verification (DigiLocker integration) |
+| Guardian consent | Parent/guardian OTP approval flow |
 | Special handling | Enhanced restrictions |
 
 ### Section 11-13: Data Subject Rights
@@ -263,6 +263,53 @@ func (e *EncryptionService) Decrypt(ciphertext []byte) ([]byte, error) {
 |-------------|----------------|
 | Nominate person | Nomination management |
 | Death handling | Nominee can exercise rights |
+
+---
+
+## MeITY BRD Compliance Matrix
+
+Mapping each BRD section to DataLens features:
+
+| BRD Section | Requirement | DataLens Feature | Status |
+|-------------|-------------|------------------|--------|
+| § 4.1.1 | Consent Collection | Embeddable widget with per-purpose toggles | ✅ Documented |
+| § 4.1.2 | Consent Validation | Digital signature (SHA-256), immutable records | ✅ Documented |
+| § 4.1.3 | Consent Update | Notice versioning, re-consent on purpose change | ✅ Documented |
+| § 4.1.4 | Consent Renewal | Proactive expiry reminders, renewal workflow | ✅ Documented |
+| § 4.1.5 | Consent Withdrawal | Portal + API withdrawal, cascading notifications | ✅ Documented |
+| § 4.3 | User Dashboard | Data Principal Portal (consent history, DPR, appeal) | ✅ Documented |
+| § 4.4 | Consent Notifications | DP/DF/Processor alerts via Email, SMS, Webhook | ✅ Documented |
+| § 4.5 | Grievance Redressal | Dedicated grievance module with SLA tracking | ✅ Documented |
+| § 4.6 | System Administration | RBAC (5 roles), MFA, tenant management | ✅ Documented |
+| § 4.7 | Logging & Audit | Immutable audit logs with hash chain, tamper-proof | ✅ Documented |
+
+---
+
+## WCAG 2.1 Compliance (BRD Requirement)
+
+Consent UIs must meet WCAG 2.1 Level AA accessibility standards:
+
+| Principle | Requirements |
+|-----------|-------------|
+| **Perceivable** | Text alternatives, captions, color contrast ≥ 4.5:1, resizable text |
+| **Operable** | Keyboard navigable, no time limits on consent decisions, clear focus indicators |
+| **Understandable** | Readable language, predictable navigation, input assistance |
+| **Robust** | Compatible with assistive technologies, valid semantic HTML |
+
+---
+
+## Immutable Audit Logging (BRD § 4.7)
+
+All consent-related actions are logged as tamper-proof, hash-chained records:
+
+| Requirement | Implementation |
+|-------------|----------------|
+| Comprehensive | Every consent action logged (grant, deny, withdraw, renew, update) |
+| Tamper-proof | Hash chain: each record includes SHA-256 of previous record |
+| Immutable | Append-only storage, no updates or deletes permitted |
+| Queryable | Full-text search by subject, purpose, date range, action type |
+| Exportable | CSV/JSON export for regulatory audits |
+| Retention | Configurable per regulation (DPDPA: minimum 5 years) |
 
 ---
 

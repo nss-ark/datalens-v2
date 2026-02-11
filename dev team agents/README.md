@@ -6,6 +6,7 @@ This folder contains the prompt files and coordination tools for the DataLens 2.
 
 **Model**: Hub-and-Spoke with shared communication board
 **Router**: Human (you) — copies task specs to agent chats and routes results back
+**Last Updated**: February 11, 2026 (post-Batch 4)
 
 ---
 
@@ -14,17 +15,38 @@ This folder contains the prompt files and coordination tools for the DataLens 2.
 | Agent | File | Role |
 |-------|------|------|
 | 🎯 **Orchestrator** | [`orchestrator-agent.md`](./orchestrator-agent.md) | Sprint planning, task decomposition, progress tracking |
-| ⚙️ **Backend** | [`backend-agent.md`](./backend-agent.md) | Go API, services, repositories, domain logic |
-| 🎨 **Frontend** | [`frontend-agent.md`](./frontend-agent.md) | React + TypeScript UI, pages, components |
-| 🤖 **AI/ML** | [`ai-ml-agent.md`](./ai-ml-agent.md) | PII detection, LLM integration, AI gateway |
+| ⚙️ **Backend** | [`backend-agent.md`](./backend-agent.md) | Go 1.24 API, services, repositories, domain logic |
+| 🎨 **Frontend** | [`frontend-agent.md`](./frontend-agent.md) | React 18 + TypeScript UI, pages, components |
+| 🤖 **AI/ML** | [`ai-ml-agent.md`](./ai-ml-agent.md) | PII detection, LLM integration, purpose suggestion |
 | 🧪 **Test** | [`test-agent.md`](./test-agent.md) | Unit tests, integration tests, E2E tests |
 | 🚀 **DevOps** | [`devops-agent.md`](./devops-agent.md) | Docker, CI/CD, K8s, observability |
 
 ## Communication
 
 | File | Purpose |
-|------|---------|
+|------|------------|
 | 📋 [`AGENT_COMMS.md`](./AGENT_COMMS.md) | Shared message board for inter-agent communication |
+
+---
+
+## Current Sprint Progress
+
+### ✅ Completed (Batches 1–4)
+- Infrastructure: monorepo, Docker, CI/CD, NATS, PostgreSQL, Redis
+- Auth: JWT + refresh tokens, API keys, RBAC, tenant isolation
+- Data Discovery: 4 connectors (PostgreSQL, MySQL, MongoDB, S3), async scanning, scheduling
+- AI/ML: AI Gateway (OpenAI, Anthropic, generic), PII detection pipeline, industry templates
+- DSR Engine: entity, state machine, executor (access, erasure, correction), parallel execution
+- Frontend: 7 pages, 14 components, React Query, Zustand auth store
+- Tests: 10+ test files, compile-verified
+
+### 🔜 Next Up (Batches 5–8)
+| Batch | Focus | Key Deliverables |
+|-------|-------|-----------------|
+| **5** | Consent Engine | Widget CRUD, consent session capture, embeddable JS snippet, consent UI |
+| **6** | Data Principal Portal | OTP verification, portal UI, DPR submission, guardian consent |
+| **7** | Purpose Mapping & Governance | AI purpose suggestion, sector templates, policy engine |
+| **8** | Polish & Enterprise | DSR auto-verification, identity matching, observability, E2E tests |
 
 ---
 
@@ -96,6 +118,21 @@ Backend Agent                          Frontend Agent
 
 ---
 
+## What Each Prompt Contains
+
+Every agent prompt has been comprehensively written to include:
+- **Role clarity** — exactly what they do and don't do
+- **Completed work inventory** — what's already built so they don't recreate it
+- **Real code patterns** — actual examples from the codebase (handler pattern, service pattern, API unwrapping, etc.)
+- **Correct technical details** — Go 1.24, correct directory paths, module path
+- **Reference documentation** — which docs to read and when
+- **Upcoming work context** — what's expected in Batches 5–8
+- **Cross-cutting concerns** — public APIs, consent widget CORS, portal OTP, digital signatures
+- **Inter-agent communication** — what to check and post in AGENT_COMMS.md
+- **Known gotchas** — bugs and patterns that have caused issues before (context keys, ApiResponse unwrapping)
+
+---
+
 ## Documentation References
 
 All agents reference documentation from:
@@ -123,5 +160,7 @@ documentation/
 ├── 20_Strategic_Architecture.md  # Design patterns
 ├── 21_Domain_Model.md            # DDD entities
 ├── 22_AI_Integration_Strategy.md # AI integration
-└── 23_AGILE_Development_Plan.md  # Sprint methodology
+├── 23_AGILE_Development_Plan.md  # Sprint methodology
+├── 24_DigiLocker_Integration.md  # DigiLocker OAuth + identity verification (NEW)
+└── 25_Notice_Management.md       # Notice lifecycle + HuggingFace translation (NEW)
 ```

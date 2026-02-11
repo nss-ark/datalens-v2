@@ -31,25 +31,34 @@ var testPool *pgxpool.Pool
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	// Start Postgres container
-	container, err := tcpostgres.Run(ctx,
-		"postgres:16-alpine",
-		tcpostgres.WithDatabase("datalens_test"),
-		tcpostgres.WithUsername("test"),
-		tcpostgres.WithPassword("test"),
-		testcontainers.WithWaitStrategy(
-			wait.ForListeningPort("5432/tcp").
-				WithStartupTimeout(60*time.Second),
-		),
-	)
-	if err != nil {
-		panic("failed to start postgres container: " + err.Error())
-	}
-	defer container.Terminate(ctx)
+	var connStr string
+	var container testcontainers.Container
+	var err error
 
-	connStr, err := container.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		panic("failed to get connection string: " + err.Error())
+	// Check for CI environment
+	if os.Getenv("DATABASE_URL") != "" {
+		connStr = os.Getenv("DATABASE_URL")
+	} else {
+		// Start Postgres container
+		container, err = tcpostgres.Run(ctx,
+			"postgres:16-alpine",
+			tcpostgres.WithDatabase("datalens_test"),
+			tcpostgres.WithUsername("test"),
+			tcpostgres.WithPassword("test"),
+			testcontainers.WithWaitStrategy(
+				wait.ForListeningPort("5432/tcp").
+					WithStartupTimeout(60*time.Second),
+			),
+		)
+		if err != nil {
+			panic("failed to start postgres container: " + err.Error())
+		}
+		defer container.Terminate(ctx)
+
+		connStr, err = container.ConnectionString(ctx, "sslmode=disable")
+		if err != nil {
+			panic("failed to get connection string: " + err.Error())
+		}
 	}
 
 	testPool, err = pgxpool.New(ctx, connStr)

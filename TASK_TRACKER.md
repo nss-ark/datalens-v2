@@ -164,7 +164,7 @@
 - [ ] All core entities working
 - [ ] PII detection with AI achieving >85% accuracy
 - [ ] 4+ database connectors working
-- [ ] File and S3 scanning working
+- [x] File and S3 scanning working (Batch 4/5)
 - [ ] Event bus operational
 - [ ] API gateway with auth
 - [ ] **Tag release v2.1-alpha**
@@ -186,6 +186,7 @@
 - [x] Implement erasure request execution (data deletion) — identifies PII locations, emits `dsr.data_deleted` event (Batch 4)
 - [x] Implement correction request execution (data update) — stub for MVP, needs connector `Update()` method (Batch 4)
 - [ ] Implement portability request (structured export)
+- [/] Implement nomination request execution (DPDPA Requirement) (Batch 5)
 - [x] Execute across multiple data sources in parallel — semaphore-bounded (default 5), NATS queue (Batch 4)
 
 #### 2.3 DSR Auto-Verification (User Feedback P0)
@@ -203,17 +204,17 @@
 ### Sprint 9-10: Consent Manager (Weeks 19-22)
 
 #### 2.5 Consent Engine
-- [ ] Implement `Consent` entity with lifecycle
+- [/] Implement `Consent` entity with lifecycle (Batch 5)
 - [ ] Create consent capture API (with proof recording)
 - [ ] Implement consent withdrawal flow
 - [ ] Implement consent expiry management with notifications
 - [ ] Create consent receipt generation
-- [ ] Implement consent enforcement (check before data processing)
+- [/] Implement consent enforcement (check before data processing) (Batch 5)
 
 #### 2.6 Embeddable Consent Widget (CMS)
-- [ ] Implement `ConsentWidget` CRUD service
+- [/] Implement `ConsentWidget` CRUD service (Batch 5)
 - [ ] Implement widget API key generation and validation
-- [ ] Build public API: `POST /api/public/consent/sessions` (record decisions)
+- [/] Build public API: `POST /api/public/consent/sessions` (record decisions) (Batch 5)
 - [ ] Build public API: `GET /api/public/consent/check` (check consent status)
 - [ ] Build public API: `POST /api/public/consent/withdraw` (withdraw consent)
 - [ ] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config)
@@ -424,6 +425,50 @@
 
 ---
 
+## Consent Module (Sprint — MeITY BRD Alignment)
+
+### Notice Management
+- [ ] Implement `consent_notices` and `consent_notice_translations` DB migrations
+- [ ] Notice CRUD API (create, read, update, publish, archive)
+- [ ] Notice versioning logic (version increment on publish)
+- [ ] Notice-to-widget binding API
+- [ ] Notice management UI in Control Centre
+
+### Translation Pipeline (HuggingFace)
+- [ ] HuggingFace API integration service
+- [ ] Translate endpoint (`POST /consent/notices/:id/translate`)
+- [ ] Translation storage and retrieval
+- [ ] Manual translation override endpoint
+- [ ] Translation status tracking (per-language progress)
+
+### Consent Notifications
+- [ ] `consent_notifications` DB migration
+- [ ] Notification template management API
+- [ ] Event-driven notification triggers (consent granted/withdrawn/expiring)
+- [ ] Email, SMS, Webhook delivery channels
+- [ ] In-app notification component
+
+### Consent Renewal
+- [ ] `consent_renewal_logs` DB migration
+- [ ] Renewal reminder scheduler (30/15/7 days)
+- [ ] Renewal API and UI flow
+- [ ] Expiry handling (mark as LAPSED)
+
+### DigiLocker Integration
+- [ ] OAuth 2.0 + PKCE flow implementation
+- [ ] Identity verification via DigiLocker User API
+- [ ] Age verification for parental consent (DPDPA § 9)
+- [ ] Consent artifact push to DigiLocker
+- [ ] Fallback to OTP on DigiLocker unavailability
+
+### Consent Enforcement Middleware (Planned)
+- [ ] Consent check endpoint optimization (< 50ms p99)
+- [ ] Redis-backed consent cache
+- [ ] Cache invalidation on consent withdrawal (pub/sub)
+- [ ] Language SDKs (Go, Python, Node.js)
+
+---
+
 ## Compliance Adapter Backlog (Post-GA)
 
 ### DPDPA Adapter (Ships with GA)
@@ -457,4 +502,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 11, 2026 — Batch 4 complete (DSR execution, DSR UI, S3 connector, CI/CD)
+> **Last Updated**: February 11, 2026 — Consent module documentation and sprint tasks added (MeITY BRD alignment); Nomination request planning

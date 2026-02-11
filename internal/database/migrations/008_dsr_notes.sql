@@ -1,0 +1,1 @@
+ALTER TABLE dsr_requests ADD COLUMN notes TEXT DEFAULT '';

@@ -66,10 +66,11 @@ const (
 	EventDSRRejected  = "dsr.rejected"
 
 	// Consent Events
-	EventConsentGranted   = "consent.granted"
-	EventConsentWithdrawn = "consent.withdrawn"
-	EventConsentExpiring  = "consent.expiring"
-	EventConsentExpired   = "consent.expired"
+	EventConsentGranted       = "consent.granted"
+	EventConsentWithdrawn     = "consent.withdrawn"
+	EventConsentWidgetCreated = "consent.widget_created"
+	EventConsentExpiring      = "consent.expiring"
+	EventConsentExpired       = "consent.expired"
 
 	// Breach Events
 	EventBreachDetected = "breach.detected"

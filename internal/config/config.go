@@ -11,13 +11,14 @@ import (
 
 // Config holds the complete application configuration.
 type Config struct {
-	App   AppConfig
-	DB    DatabaseConfig
-	Redis RedisConfig
-	NATS  NATSConfig
-	AI    AIConfig
-	JWT   JWTConfig
-	Agent AgentConfig
+	App     AppConfig
+	DB      DatabaseConfig
+	Redis   RedisConfig
+	NATS    NATSConfig
+	AI      AIConfig
+	JWT     JWTConfig
+	Agent   AgentConfig
+	Consent ConsentConfig
 }
 
 // AppConfig holds application-level settings.
@@ -109,6 +110,11 @@ type AgentConfig struct {
 	ControlCentreEndpoint string
 }
 
+// ConsentConfig holds consent module settings.
+type ConsentConfig struct {
+	SigningKey string // HMAC-SHA256 key for signing consent records
+}
+
 // Load reads configuration from environment variables.
 func Load() (*Config, error) {
 	cfg := &Config{
@@ -164,6 +170,9 @@ func Load() (*Config, error) {
 			ID:                    getEnv("AGENT_ID", ""),
 			APIKey:                getEnv("AGENT_API_KEY", ""),
 			ControlCentreEndpoint: getEnv("CONTROL_CENTRE_ENDPOINT", "http://localhost:8080"),
+		},
+		Consent: ConsentConfig{
+			SigningKey: getEnv("CONSENT_SIGNING_KEY", "dev-consent-signing-key-change-me"),
 		},
 	}
 

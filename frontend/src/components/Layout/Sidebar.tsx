@@ -54,7 +54,8 @@ const NAV_GROUPS = [
         title: 'Compliance',
         items: [
             { to: '/dsr', label: 'DSR Requests', icon: FileText },
-            { to: '/consent', label: 'Consent Records', icon: ShieldCheck },
+            { to: '/consent/widgets', label: 'Consent Widgets', icon: ShieldCheck },
+            { to: '/consent', label: 'Consent Records', icon: CheckSquare },
             { to: '/consent/analytics', label: 'Consent Analytics', icon: BarChart3 },
             { to: '/grievances', label: 'Grievances', icon: AlertTriangle },
             { to: '/nominations', label: 'Nominations', icon: Award },

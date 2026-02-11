@@ -707,7 +707,19 @@ _Document Go interfaces that cross agent boundaries:_
 | 4 | Tests for Batch 3 + E2E | Test | ✅ COMPLETE |
 | 5 | CI/CD pipeline | DevOps | ✅ COMPLETE |
 
-**Awaiting**: Batch 5 planning (Consent Engine, Consent UI, Embeddable Widget, DSR tests, Purpose suggestion).
+**Sprint Batch 5** (Feb 11, 2026) — 🟡 IN PROGRESS
+
+| # | Task | Agent | Status | Parallel? |
+|---|------|-------|--------|-----------|
+| 1 | Consent Engine Service + Repository (Widget CRUD, Session, History) | Backend | ✅ COMPLETE | ✅ Yes |
+| 2 | Consent Management Page (Widget list, builder, detail) | Frontend | 🚀 Ready to Start | ❌ Depends on #1 |
+| 3 | Tests for Batch 4 (DSR Executor, S3, Scheduler, Scan Service) | Test | ⏳ Waiting | ✅ Yes |
+| 4 | Fix S3 Registry + DSR Notes Field | Backend | 🟡 Partial (Notes added) | ✅ Yes (bundle with #1) |
+| 5 | CI Service Containers + golangci-lint | DevOps | ⏳ Waiting | ✅ Yes |
+
+⚠️ **PUBLIC API WARNING**: Task #1 introduces `/api/public/consent/*` routes that use widget API key auth (NOT JWT). Backend agent must mount these outside the auth middleware chain.
+
+**Next**: Batch 6 — Data Principal Portal (backend + frontend), DPR submission, OTP verification.
 
 ---
 
@@ -789,6 +801,53 @@ _Document Go interfaces that cross agent boundaries:_
 
 ---
 
+### [2026-02-11 08:30 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: Consent Engine Foundation Implemented
+**Type**: HANDOFF
+
+**Changes**:
+- **Database**: Created `consent_widgets`, `consent_sessions` (append-only), `consent_history` (append-only) tables (mig `007_consent.sql`).
+- **Repositories**: Implemented persistence for widgets, sessions, and history.
+- **Service**: `ConsentService` with HMAC-SHA256 signing for integrity and event emission.
+- **Middleware**: `WidgetAPIKeyAuth` (identifies widget by `X-Widget-Key`) and `WidgetCORS` (validates Origin).
+- **Public API**: Mounted `/api/public/consent` for widget interaction (no JWT required).
+- **Internal API**: Mounted `/api/v2/consent` for management (JWT required).
+- **Wiring**: Updated `main.go`, `config.go` (`CONSENT_SIGNING_KEY`), and `eventbus.go` (`consent.widget_created`).
+- **Fixes**: Added `Notes` field to `DSR` entity (Partial Task #4).
+
+**Features Enabled**:
+- **Widget Management**: Create/Update/Delete/List/Activate/Pause widgets. API Key generation.
+- **Consent Capture**: Widgets can record consent sessions (signed).
+- **History Tracking**: Full audit trail of consent status changes (Granted/Withdrawn).
+- **Verification**: `CheckConsent` API checks latest status for a subject+purpose.
+
+**New API Endpoints**:
+
+**Internal (Manage)**:
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v2/consent/widgets` | Create widget |
+| `GET` | `/api/v2/consent/widgets` | List widgets |
+| `GET` | `/api/v2/consent/widgets/{id}` | Get widget details |
+| `PUT` | `/api/v2/consent/widgets/{id}` | Update widget |
+| `DELETE` | `/api/v2/consent/widgets/{id}` | Delete widget |
+| `GET` | `/api/v2/consent/history/{subjectId}` | Get history for subject |
+
+**Public (Widget)**:
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/public/consent/widget/config` | API Key | Get widget config (public) |
+| `POST` | `/api/public/consent/sessions` | API Key | Record consent session |
+| `GET` | `/api/public/consent/check` | API Key | Check consent status |
+| `POST` | `/api/public/consent/withdraw` | API Key | Withdraw consent |
+
+**Action Required**:
+- **Frontend**: Can now build Consent Management UI (Batch 5 Task #2) and the Embeddable Widget.
+- **DevOps**: Run migration `007_consent.sql`. Set `CONSENT_SIGNING_KEY` in environment.
+- **Test**: Can test internal flows (Widget CRUD) and public flows (Session Capture) using headers.
+
+---
+
 ### [2026-02-11 05:30 IST] [FROM: DevOps] → [TO: ALL]
 **Subject**: CI/CD Pipeline & Production Docker Stack Ready
 **Type**: HANDOFF
@@ -813,3 +872,35 @@ _Document Go interfaces that cross agent boundaries:_
 - **Frontend Agent**: Note that `frontend/Dockerfile` expects `npm run build` to succeed.
 
 ---
+
+### [2026-02-11 07:45 IST] [FROM: DevOps] → [TO: ALL]
+**Subject**: CI Service Containers & Linting Configured
+**Type**: HANDOFF
+
+**Changes**:
+- Updated `.github/workflows/ci.yml`:
+  - Added PostgreSQL 16, MongoDB 7.0, Redis 7 service containers for integration tests.
+  - Added `golangci-lint` step.
+  - Updated Test step with `DATABASE_URL`, `MONGODB_URL`, `REDIS_*` env vars.
+- Updated `internal/repository/postgres_test.go`: Logic to bypass testcontainers if `DATABASE_URL` is set.
+- Updated `internal/infrastructure/connector/mongodb_test.go`: Logic to bypass testcontainers if `MONGODB_URL` is set.
+
+**Action Required**:
+- **Test**: Integration tests should now pass in CI using the provided services.
+- **Backend**: Note that CI runs `golangci-lint`, so ensure code is lint-free.
+
+---
+### [2026-02-11 08:00 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: DSR Notes Field & S3 Connector Fix Complete
+**Type**: HANDOFF
+
+**Changes**:
+- **DSR Notes**: Added `notes` field to `CreateDSRRequest` and persisted it in `dsr_requests` table (migration `008_dsr_notes.sql`).
+- **S3 Connector**: Enabled S3 connector registration in `connector.NewConnectorRegistry`.
+- **DSR Repository**: Added `GetOverdue` method to `DSRRepository` interface and implementation.
+- **Verification**: `go build ./...` ✅
+
+**Action Required**:
+- **Frontend**: DSR Create modal can now send `notes` field in the payload.
+- **Test**: Verify DSR creation with notes and S3 connector registration.
+

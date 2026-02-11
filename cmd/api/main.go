@@ -112,6 +112,9 @@ func main() {
 	feedbackRepo := repository.NewDetectionFeedbackRepo(dbPool)
 	scanRunRepo := repository.NewScanRunRepo(dbPool)
 	dsrRepo := repository.NewDSRRepo(dbPool)
+	consentWidgetRepo := repository.NewConsentWidgetRepo(dbPool)
+	consentSessionRepo := repository.NewConsentSessionRepo(dbPool)
+	consentHistoryRepo := repository.NewConsentHistoryRepo(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -131,6 +134,14 @@ func main() {
 	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
 	feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
 	var dsrSvc *service.DSRService // Will be initialized after DSR queue is created
+	consentSvc := service.NewConsentService(
+		consentWidgetRepo,
+		consentSessionRepo,
+		consentHistoryRepo,
+		eb,
+		cfg.Consent.SigningKey,
+		slog.Default(),
+	)
 	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
 
 	// Connector Registry (Postgres + MySQL built-in)
@@ -291,6 +302,7 @@ func main() {
 	feedbackHandler := handler.NewFeedbackHandler(feedbackSvc)
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
+	consentHandler := handler.NewConsentHandler(consentSvc)
 
 	// =========================================================================
 	// Rate Limiter
@@ -327,6 +339,15 @@ func main() {
 	})
 
 	// --- API Routes ---
+	r.Route("/api/public", func(r chi.Router) {
+		// Consent Widget API (Public, Widget Key Auth)
+		r.Route("/consent", func(r chi.Router) {
+			r.Use(mw.WidgetAuthMiddleware(consentWidgetRepo))
+			r.Use(mw.WidgetCORSMiddleware())
+			r.Mount("/", consentHandler.PublicRoutes())
+		})
+	})
+
 	r.Route("/api/v2", func(r chi.Router) {
 
 		// Public routes (no auth required)
@@ -368,9 +389,7 @@ func main() {
 			r.Mount("/dashboard", dashboardHandler.Routes())
 
 			// Consent
-			r.Route("/consent", func(r chi.Router) {
-				// TODO: Wire consent handlers (Sprint 3)
-			})
+			r.Mount("/consent", consentHandler.Routes())
 
 			// Audit
 			r.Route("/audit", func(r chi.Router) {

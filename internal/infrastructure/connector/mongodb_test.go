@@ -3,6 +3,7 @@ package connector
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -24,27 +25,39 @@ func TestMongoDBConnector_Integration(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 1. Start MongoDB Container
-	req := testcontainers.ContainerRequest{
-		Image:        "mongo:7.0",
-		ExposedPorts: []string{"27017/tcp"},
-		WaitingFor:   wait.ForLog("Waiting for connections").WithStartupTimeout(60 * time.Second),
+	// 1. Setup MongoDB (Container or CI Service)
+	var uri, host string
+	var port int
+	var container testcontainers.Container
+	var err error
+
+	if os.Getenv("MONGODB_URL") != "" {
+		uri = os.Getenv("MONGODB_URL")
+		host = "localhost"
+		port = 27017
+	} else {
+		req := testcontainers.ContainerRequest{
+			Image:        "mongo:7.0",
+			ExposedPorts: []string{"27017/tcp"},
+			WaitingFor:   wait.ForLog("Waiting for connections").WithStartupTimeout(60 * time.Second),
+		}
+
+		container, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		require.NoError(t, err)
+		defer container.Terminate(ctx)
+
+		host, err = container.Host(ctx)
+		require.NoError(t, err)
+
+		p, err := container.MappedPort(ctx, "27017")
+		require.NoError(t, err)
+		port = p.Int()
+
+		uri = fmt.Sprintf("mongodb://%s:%d", host, port)
 	}
-
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	require.NoError(t, err)
-	defer container.Terminate(ctx)
-
-	host, err := container.Host(ctx)
-	require.NoError(t, err)
-
-	port, err := container.MappedPort(ctx, "27017")
-	require.NoError(t, err)
-
-	uri := fmt.Sprintf("mongodb://%s:%d", host, port.Int())
 
 	// 2. Seed test data directly via mongo driver
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
@@ -88,7 +101,7 @@ func TestMongoDBConnector_Integration(t *testing.T) {
 	connector := NewMongoDBConnector()
 	ds := &discovery.DataSource{
 		Host:     host,
-		Port:     port.Int(),
+		Port:     port,
 		Database: "testdb",
 	}
 

@@ -32,6 +32,138 @@ Consent Management handles the capture, tracking, and management of consent from
 
 ---
 
+## Consent Lifecycle (MeITY BRD § 4.1)
+
+The consent lifecycle defines five distinct phases through which every consent record progresses. Each phase transition is immutably logged and triggers downstream notifications.
+
+```
+  COLLECTION ──► VALIDATION ──► ACTIVE ──► UPDATE/RENEWAL ──► WITHDRAWAL
+      │              │            │              │                  │
+      ▼              ▼            ▼              ▼                  ▼
+  User provides  Signature &  Processing   Purpose change      Processing
+  affirmative    metadata     permitted    or expiry nearing   must stop
+  action         verified                  → re-consent
+```
+
+### Phase Descriptions
+
+| Phase | Trigger | Actions | BRD Ref |
+|-------|---------|---------|---------|
+| **Collection** | User interacts with consent widget | Present notice in preferred language, capture explicit opt-in per purpose, record metadata (IP, UA, timestamp, language) | § 4.1.1 |
+| **Validation** | Consent submitted | Verify affirmative action, generate digital signature (SHA-256), store immutable record, emit `consent.granted` event | § 4.1.2 |
+| **Update** | Purpose definition changes, notice version changes | Identify affected consents, re-present updated notice, collect fresh consent, link to previous record | § 4.1.3 |
+| **Renewal** | Consent approaching expiry (`consent_expiry_days`) | Send proactive reminder (30/15/7 days before), present renewal notice, record renewed consent as new entry | § 4.1.4 |
+| **Withdrawal** | Data principal withdraws via portal or API | Mark consent `WITHDRAWN`, emit `consent.withdrawn` event, notify Data Fiduciary & processors, cascade to downstream systems | § 4.1.5 |
+
+### Consent Metadata (per record)
+
+Every consent interaction captures the following metadata as required by the BRD:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `subject_id` | Data Principal identifier | `uuid` |
+| `purpose_id` | Processing purpose granted/denied | `marketing` |
+| `consent_status` | Current state | `GRANTED`, `DENIED`, `WITHDRAWN` |
+| `language_preference` | Language in which notice was presented | `hi` (Hindi) |
+| `timestamp` | ISO 8601 timestamp of action | `2026-02-10T10:30:00Z` |
+| `widget_id` | Consent collection widget | `wdg_abc123` |
+| `notice_version` | Version of the notice shown | `1.2` |
+| `collection_channel` | How consent was collected | `BANNER`, `PORTAL`, `API` |
+| `ip_address` | Client IP | `192.168.1.1` |
+| `user_agent` | Browser/device fingerprint | `Mozilla/5.0...` |
+| `signature` | SHA-256 digital signature | `sha256:abc123...` |
+
+---
+
+## Multi-Language Support (Eighth Schedule)
+
+Consent notices must be available in all 22 languages listed in the Eighth Schedule of the Constitution of India. Translation is powered by a **HuggingFace API** integration — the English version of each notice is authored in the Control Centre, and translations are triggered from within the application.
+
+### Supported Languages
+
+| # | Language | ISO 639 | # | Language | ISO 639 |
+|---|----------|---------|---|----------|---------|
+| 1 | Assamese | `as` | 12 | Manipuri | `mni` |
+| 2 | Bengali | `bn` | 13 | Marathi | `mr` |
+| 3 | Bodo | `brx` | 14 | Nepali | `ne` |
+| 4 | Dogri | `doi` | 15 | Odia | `or` |
+| 5 | English | `en` | 16 | Punjabi | `pa` |
+| 6 | Gujarati | `gu` | 17 | Sanskrit | `sa` |
+| 7 | Hindi | `hi` | 18 | Santali | `sat` |
+| 8 | Kannada | `kn` | 19 | Sindhi | `sd` |
+| 9 | Kashmiri | `ks` | 20 | Tamil | `ta` |
+| 10 | Konkani | `kok` | 21 | Telugu | `te` |
+| 11 | Maithili | `mai` | 22 | Urdu | `ur` |
+
+### Translation Flow
+
+```
+  Author notice    Trigger          HuggingFace       Store
+  in English  ──►  translation  ──►  API call     ──►  per-language
+  (Control Centre)  (in-app)         (external)        translations
+                                                        │
+                                                        ▼
+                                                   Tied to notice
+                                                   version + audit logged
+```
+
+- **Trigger**: Admin clicks "Translate" for a notice version in the Control Centre
+- **API**: Application calls HuggingFace translation model endpoint with English text + target language code
+- **Storage**: Each translation is stored in `consent_notice_translations` linked to the notice version
+- **Versioning**: Translations are immutable per notice version — new notice version = new translations
+- **Fallback**: If translation fails, the English version is served with a language warning indicator
+
+---
+
+## Consent Notifications (MeITY BRD § 4.4)
+
+Notifications are sent to three stakeholder groups at key lifecycle events:
+
+### Notification Matrix
+
+| Event | Data Principal | Data Fiduciary | Data Processor |
+|-------|:--------------:|:--------------:|:--------------:|
+| Consent granted | ✅ Confirmation | ✅ Alert | — |
+| Consent withdrawn | ✅ Acknowledgment | ✅ Alert | ✅ Revocation notice |
+| Consent expiring (30d) | ✅ Reminder | ✅ Summary | — |
+| Consent renewed | ✅ Confirmation | ✅ Alert | — |
+| Notice updated | ✅ Re-consent request | ✅ Action required | — |
+| DPR submitted | ✅ Acknowledgment | ✅ Assignment | — |
+| DPR completed | ✅ Result + download | ✅ Closure | — |
+
+### Notification Channels
+
+| Channel | Use Case | Priority |
+|---------|----------|----------|
+| **Email** | Primary notification channel | High |
+| **SMS** | OTP, urgent alerts | High |
+| **In-App** | Dashboard notifications | Medium |
+| **Webhook** | External system integration (DF/Processor) | Medium |
+
+### Notification Schema
+
+```json
+{
+  "id": "uuid",
+  "tenant_id": "uuid",
+  "recipient_type": "DATA_PRINCIPAL",
+  "recipient_id": "uuid",
+  "event_type": "CONSENT_WITHDRAWN",
+  "channel": "EMAIL",
+  "template_id": "uuid",
+  "payload": {
+    "subject_name": "John Doe",
+    "purpose": "Marketing Communications",
+    "action_url": "https://portal.datalens.io/..."
+  },
+  "status": "SENT",
+  "sent_at": "2026-02-10T10:30:00Z",
+  "created_at": "2026-02-10T10:30:00Z"
+}
+```
+
+---
+
 ## Embeddable Consent Widget (CMS)
 
 ### Integration Methods
@@ -568,3 +700,58 @@ The Control Centre provides analytics on consent rates:
 - Cannot be bundled with terms
 - Must be as easy to withdraw as to give
 - Must be documented with timestamp and digital signature
+
+---
+
+## Consent Enforcement Middleware (Planned)
+
+> **Status**: Planned for future release. The API endpoint foundation is already in place.
+
+Organizations will be able to embed a **single-line consent check** in their application code to verify real-time consent validity before any processing activity. This acts as a middleware/SDK that calls the consent module's check endpoint.
+
+### Architecture
+
+```
+  Organization's App Code              DataLens
+  ─────────────────────              ────────
+  
+  if datalens.HasConsent(userId, "marketing") {     ──► GET /api/public/consent/check
+      processMarketingData()                              ?subject_id=X&purpose=marketing
+  }                                                   ◄── { "has_consent": true, ... }
+```
+
+### Existing Foundation (API Endpoint)
+
+The low-latency consent check endpoint is already defined:
+
+```http
+GET /api/public/consent/check?subject_id=uuid&purpose=marketing
+X-API-Key: pk_live_xxx
+
+Response (< 50ms target):
+{
+  "has_consent": true,
+  "consent_status": "GRANTED",
+  "granted_at": "2026-01-15T10:30:00Z",
+  "expires_at": "2027-01-15T10:30:00Z"
+}
+```
+
+### Planned SDK/Middleware Features
+
+| Feature | Description |
+|---------|-------------|
+| **One-line embed** | `datalens.HasConsent(subjectId, purposeId)` — single function call |
+| **Language SDKs** | Go, Python, Node.js, Java wrappers around the REST API |
+| **Local caching** | Short-lived cache (configurable TTL) to minimize API calls |
+| **Fail-safe mode** | Configurable: deny processing on API timeout (conservative) or allow (permissive) |
+| **Batch check** | Check multiple purposes in a single call |
+| **Event hook** | Emit events when consent is checked (for audit completeness) |
+| **Middleware pattern** | Express/Gin/FastAPI middleware that auto-blocks request if consent missing |
+
+### Design Considerations
+
+- **Latency**: Target < 50ms p99 via Redis-backed consent cache
+- **Cache invalidation**: Consent withdrawal events instantly invalidate cache via pub/sub
+- **Idempotency**: Check endpoint is read-only, safe to retry
+- **Rate limiting**: Higher limits for consent check vs. write operations (1000/min vs. 30/min)
