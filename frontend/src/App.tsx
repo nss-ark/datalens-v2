@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/Layout/AppLayout';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ToastContainer } from './components/common/Toast';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { GlobalErrorFallback } from './components/common/ErrorFallbacks';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -45,34 +47,44 @@ function App() {
 
           {/* Portal Routes - Standalone Layout */}
           <Route path="/portal/login" element={
-            <PortalLayout>
-              <PortalLogin />
-            </PortalLayout>
+            <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+              <PortalLayout>
+                <PortalLogin />
+              </PortalLayout>
+            </ErrorBoundary>
           } />
 
           <Route element={<PortalProtectedRoute />}>
             <Route path="/portal" element={<Navigate to="/portal/dashboard" replace />} />
             <Route path="/portal/dashboard" element={
-              <PortalLayout>
-                <PortalDashboard />
-              </PortalLayout>
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <PortalDashboard />
+                </PortalLayout>
+              </ErrorBoundary>
             } />
             <Route path="/portal/history" element={
-              <PortalLayout>
-                <PortalHistory />
-              </PortalLayout>
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <PortalHistory />
+                </PortalLayout>
+              </ErrorBoundary>
             } />
             <Route path="/portal/requests" element={
-              <PortalLayout>
-                <PortalRequests />
-              </PortalLayout>
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <PortalRequests />
+                </PortalLayout>
+              </ErrorBoundary>
             } />
           </Route>
 
           {/* Protected routes */}
           <Route element={
             <ProtectedRoute>
-              <AppLayout />
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <AppLayout />
+              </ErrorBoundary>
             </ProtectedRoute>
           }>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -6,6 +6,8 @@ import { DataTable, type Column } from '../components/DataTable/DataTable';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Modal } from '../components/common/Modal';
 import { ScanHistoryModal } from '../components/DataSources/ScanHistoryModal';
+import { ErrorBoundary as SafeBoundary } from '../components/common/ErrorBoundary';
+import { SectionErrorFallback } from '../components/common/ErrorFallbacks';
 import { useDataSources, useCreateDataSource, useScanDataSource, useScanStatus } from '../hooks/useDataSources';
 import { toast } from '../stores/toastStore';
 import type { DataSource, DataSourceType } from '../types/datasource';
@@ -49,7 +51,7 @@ const ScanAction = ({ dataSource }: { dataSource: DataSource }) => {
         return (
             <div className="flex items-center gap-2 text-sm text-indigo-600 font-medium bg-indigo-50 px-3 py-1.5 rounded-md">
                 <Loader2 size={14} className="animate-spin" />
-                {scanStatus?.progress_percentage ? `${scanStatus.progress_percentage}%` : 'Scanning...'}
+                {scanStatus?.progress_percentage ? `${scanStatus.progress_percentage}% ` : 'Scanning...'}
             </div>
         );
     }
@@ -203,15 +205,17 @@ const DataSources = () => {
             </div>
 
             {/* Table */}
-            <DataTable
-                columns={columns}
-                data={dataSources}
-                isLoading={isLoading}
-                keyExtractor={(row) => row.id}
-                onRowClick={(row) => navigate(`/datasources/${row.id}`)}
-                emptyTitle="No data sources yet"
-                emptyDescription="Connect your first database or storage system to start discovering PII."
-            />
+            <SafeBoundary FallbackComponent={SectionErrorFallback}>
+                <DataTable
+                    columns={columns}
+                    data={dataSources}
+                    isLoading={isLoading}
+                    keyExtractor={(row) => row.id}
+                    onRowClick={(row) => navigate(`/datasources/${row.id}`)}
+                    emptyTitle="No data sources yet"
+                    emptyDescription="Connect your first database or storage system to start discovering PII."
+                />
+            </SafeBoundary>
 
             {/* Add Data Source Modal */}
             <Modal

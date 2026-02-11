@@ -60,15 +60,16 @@ Before writing any tests, check what's already covered to avoid duplication.
 | `internal/service/scheduler_test.go` | Scheduler operations | ✅ Unit tests (Batch 5) |
 | `internal/service/scan_service_test.go` | Scan service (queue, failure handling) | ✅ Unit tests (Batch 5) |
 | `internal/service/consent_service_test.go` | Consent Service (Widget, Session, HMAC) | ✅ Unit tests (Batch 5/6) |
-| `internal/handler/consent_handler_test.go` | Public/Internal API handlers | ✅ Unit tests (Batch 5/6) |
+| `internal/service/context_engine_test.go` | Purpose Context Engine (Pattern/AI) | ✅ Unit tests (Batch 7) |
 
-### Tests That Still Need Writing (Known Gaps)
+### Tests That Still Need Writing (Known Gaps - Batch 7A Focus)
 | Area | What's missing | Priority |
 |------|---------------|----------|
-| Auth middleware | `internal/middleware/auth_middleware.go` — JWT parsing, context key injection | P1 |
+| **E2E Portal Flow** | Login -> View Profile -> Submit DPR -> Verify Internal DSR creation | **P0** |
+| **E2E Governance** | Suggest Purpose -> Accept -> Verify Update -> Check Policy Violation | **P0** |
+| Auth middleware | `internal/middleware/auth_middleware.go` — JWT parsing, edge cases | P1 |
 | Rate limit middleware | `internal/middleware/ratelimit_middleware.go` | P2 |
-| DSR handler | `internal/handler/dsr_handler.go` — request validation, response shapes | P1 |
-| Portal E2E | End-to-end test of Portal Login -> DPR Submission | P1 (Batch 7) |
+| DSR handler | `internal/handler/dsr_handler.go` validation | P1 |
 
 ---
 

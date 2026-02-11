@@ -101,7 +101,11 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*identity
 		return nil, fmt.Errorf("create user: %w", err)
 	}
 
-	s.logger.InfoContext(ctx, "user registered", "id", user.ID, "email", user.Email)
+	s.logger.InfoContext(ctx, "user registered",
+		slog.String("tenant_id", in.TenantID.String()),
+		slog.String("id", user.ID.String()),
+		slog.String("email", user.Email),
+	)
 	return user, nil
 }
 
@@ -137,7 +141,12 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*TokenPair, err
 	user.LastLoginAt = &now
 	_ = s.userRepo.Update(ctx, user)
 
-	s.logger.InfoContext(ctx, "user logged in", "id", user.ID, "email", user.Email)
+	s.logger.InfoContext(ctx, "user logged in",
+		slog.String("tenant_id", in.TenantID.String()),
+
+		slog.String("id", user.ID.String()),
+		slog.String("email", user.Email),
+	)
 	return pair, nil
 }
 
@@ -194,7 +203,11 @@ func (s *AuthService) GetUserRoles(ctx context.Context, userID types.ID) ([]iden
 	for _, rid := range user.RoleIDs {
 		role, err := s.roleRepo.GetByID(ctx, rid)
 		if err != nil {
-			s.logger.WarnContext(ctx, "role not found for user", "role_id", rid, "user_id", userID)
+			s.logger.WarnContext(ctx, "role not found for user",
+				slog.String("tenant_id", user.TenantID.String()),
+				slog.String("role_id", rid.String()),
+				slog.String("user_id", userID.String()),
+			)
 			continue
 		}
 		roles = append(roles, *role)

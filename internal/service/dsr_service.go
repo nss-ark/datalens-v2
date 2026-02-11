@@ -136,8 +136,11 @@ func (s *DSRService) ApproveDSR(ctx context.Context, id types.ID) (*compliance.D
 
 	// Queue for execution
 	if err := s.dsrQueue.Enqueue(ctx, dsr.ID.String()); err != nil {
-		s.logger.Error("failed to enqueue dsr for execution", "dsr_id", dsr.ID, "error", err)
-		// Don't fail approval, execution can be triggered manually
+		s.logger.Error("failed to enqueue dsr for execution",
+			slog.String("tenant_id", dsr.TenantID.String()),
+			slog.String("dsr_id", dsr.ID.String()),
+			slog.String("error", err.Error()),
+		) // Don't fail approval, execution can be triggered manually
 	}
 
 	return dsr, nil

@@ -6,6 +6,8 @@ import { StatCard } from '../components/Dashboard/StatCard';
 import { PIIChart } from '../components/Dashboard/PIIChart';
 import { DataTable } from '../components/DataTable/DataTable';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
+import { SectionErrorFallback } from '../components/common/ErrorFallbacks';
 import { dashboardService } from '../services/dashboard';
 import type { ScanSummary } from '../types/dashboard';
 
@@ -114,15 +116,17 @@ const Dashboard = () => {
                             View All
                         </Button>
                     </div>
-                    <DataTable
-                        columns={recentScansColumns}
-                        data={stats?.recent_scans ?? []}
-                        isLoading={isLoading}
-                        keyExtractor={(row) => row.id}
-                        emptyTitle="No recent scans"
-                        emptyDescription="Start a scan from the Data Sources page"
-                        loadingRows={3}
-                    />
+                    <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+                        <DataTable
+                            columns={recentScansColumns}
+                            data={stats?.recent_scans ?? []}
+                            isLoading={isLoading}
+                            keyExtractor={(row) => row.id}
+                            emptyTitle="No recent scans"
+                            emptyDescription="Start a scan from the Data Sources page"
+                            loadingRows={3}
+                        />
+                    </ErrorBoundary>
                 </div>
 
                 {/* PII Distribution */}
@@ -130,7 +134,9 @@ const Dashboard = () => {
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-lg font-semibold text-gray-900">PII by Category</h2>
                     </div>
-                    <PIIChart data={stats?.pii_stats.pii_by_category ?? {}} loading={isLoading} />
+                    <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+                        <PIIChart data={stats?.pii_stats.pii_by_category ?? {}} loading={isLoading} />
+                    </ErrorBoundary>
                 </div>
             </div>
         </div>

@@ -18,6 +18,33 @@
 ## Active Messages
 *(Newest on top)*
 
+### [2026-02-12] [FROM: Backend] → [TO: ALL]
+**Subject**: E2E Integration Tests Complete
+**Type**: STATUS_UPDATE
+
+**Changes**:
+- Implemented comprehensive E2E tests for Portal (`e2e_portal_test.go`) and Governance (`e2e_governance_test.go`).
+- Verified flows: OTP Login -> Profile -> DSR, and DataSource -> Scan -> Policy -> Violation.
+- Fixed 006 migration and SQL table name mismatches (`governance_` prefix removed from tables).
+- Validated `ScanDetectFeedbackPipeline` and full regression suite.
+
+**Verification**: `go test ./internal/service/... -tags=integration` ✅ | `go test ./...` ✅
+
+### [2026-02-12] [FROM: Frontend] → [TO: ALL]
+**Subject**: Frontend Polish & Hardening Complete
+**Type**: HANDOFF
+
+**Changes**:
+- Implemented Global and Section-level Error Boundaries (`App.tsx`, `Dashboard`, `DataSources`).
+- Fixed all linting errors (0 remaining).
+- Enforced stricter types in Governance models (`governance.ts`).
+- Verified loading/empty states across Portal and Governance pages.
+
+**Verification**: `npm run build` ✅ | `npm run lint` ✅
+
+**Action Required**:
+- **Test**: Proceed with E2E Portal & Governance Tests (Task #4). The UI is stable for automation.
+
 ### [2026-02-11] [FROM: Frontend] → [TO: ALL]
 **Subject**: Data Principal Portal UI Implementation
 **Type**: HANDOFF

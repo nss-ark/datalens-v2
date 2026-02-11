@@ -83,7 +83,7 @@ const PurposeMapping = () => {
                     <select
                         className="border-gray-300 rounded-md shadow-sm text-sm p-2 border"
                         value={filter}
-                        onChange={(e) => setFilter(e.target.value as any)}
+                        onChange={(e) => setFilter(e.target.value as 'all' | 'high_confidence')}
                     >
                         <option value="all">All Suggestions</option>
                         <option value="high_confidence">High Confidence Only</option>

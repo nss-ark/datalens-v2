@@ -154,11 +154,23 @@ func (r *mockTenantRepo) Update(_ context.Context, t *identity.Tenant) error {
 	r.tenants[t.ID] = t
 	return nil
 }
+
+// ... (existing code)
 func (r *mockTenantRepo) Delete(_ context.Context, id types.ID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.tenants, id)
 	return nil
+}
+
+func (r *mockTenantRepo) GetAll(_ context.Context) ([]identity.Tenant, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []identity.Tenant
+	for _, t := range r.tenants {
+		result = append(result, *t)
+	}
+	return result, nil
 }
 
 // =============================================================================

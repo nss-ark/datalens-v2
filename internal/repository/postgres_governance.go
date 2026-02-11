@@ -26,7 +26,7 @@ func NewPostgresPolicyRepository(db *pgxpool.Pool) *PostgresPolicyRepository {
 // Create persists a new policy.
 func (r *PostgresPolicyRepository) Create(ctx context.Context, p *governance.Policy) error {
 	query := `
-		INSERT INTO governance_policies (
+		INSERT INTO policies (
 			id, tenant_id, name, description, type, rules, severity, actions, is_active, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
@@ -43,7 +43,7 @@ func (r *PostgresPolicyRepository) Create(ctx context.Context, p *governance.Pol
 func (r *PostgresPolicyRepository) GetByID(ctx context.Context, id types.ID) (*governance.Policy, error) {
 	query := `
 		SELECT id, tenant_id, name, description, type, rules, severity, actions, is_active, created_at, updated_at
-		FROM governance_policies
+		FROM policies
 		WHERE id = $1
 	`
 	var p governance.Policy
@@ -63,7 +63,7 @@ func (r *PostgresPolicyRepository) GetByID(ctx context.Context, id types.ID) (*g
 func (r *PostgresPolicyRepository) GetActive(ctx context.Context, tenantID types.ID) ([]governance.Policy, error) {
 	query := `
 		SELECT id, tenant_id, name, description, type, rules, severity, actions, is_active, created_at, updated_at
-		FROM governance_policies
+		FROM policies
 		WHERE tenant_id = $1 AND is_active = true
 		ORDER BY created_at DESC
 	`
@@ -90,7 +90,7 @@ func (r *PostgresPolicyRepository) GetActive(ctx context.Context, tenantID types
 func (r *PostgresPolicyRepository) GetByType(ctx context.Context, tenantID types.ID, policyType governance.PolicyType) ([]governance.Policy, error) {
 	query := `
 		SELECT id, tenant_id, name, description, type, rules, severity, actions, is_active, created_at, updated_at
-		FROM governance_policies
+		FROM policies
 		WHERE tenant_id = $1 AND type = $2
 		ORDER BY created_at DESC
 	`
@@ -116,7 +116,7 @@ func (r *PostgresPolicyRepository) GetByType(ctx context.Context, tenantID types
 // Update updates an existing policy.
 func (r *PostgresPolicyRepository) Update(ctx context.Context, p *governance.Policy) error {
 	query := `
-		UPDATE governance_policies
+		UPDATE policies
 		SET name = $1, description = $2, type = $3, rules = $4, severity = $5, actions = $6, is_active = $7, updated_at = $8
 		WHERE id = $9
 	`
@@ -158,7 +158,7 @@ func NewPostgresViolationRepository(db *pgxpool.Pool) *PostgresViolationReposito
 // Create persists a new violation.
 func (r *PostgresViolationRepository) Create(ctx context.Context, v *governance.Violation) error {
 	query := `
-		INSERT INTO governance_violations (
+		INSERT INTO violations (
 			id, tenant_id, policy_id, data_source_id, entity_name, field_name, status, severity, detected_at, resolved_at, resolved_by, resolution
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
@@ -175,7 +175,7 @@ func (r *PostgresViolationRepository) Create(ctx context.Context, v *governance.
 func (r *PostgresViolationRepository) GetByID(ctx context.Context, id types.ID) (*governance.Violation, error) {
 	query := `
 		SELECT id, tenant_id, policy_id, data_source_id, entity_name, field_name, status, severity, detected_at, resolved_at, resolved_by, resolution
-		FROM governance_violations
+		FROM violations
 		WHERE id = $1
 	`
 	var v governance.Violation
@@ -199,7 +199,7 @@ func (r *PostgresViolationRepository) GetByTenant(ctx context.Context, tenantID 
 	if status != nil {
 		query = `
 			SELECT id, tenant_id, policy_id, data_source_id, entity_name, field_name, status, severity, detected_at, resolved_at, resolved_by, resolution
-			FROM governance_violations
+			FROM violations
 			WHERE tenant_id = $1 AND status = $2
 			ORDER BY detected_at DESC
 		`
@@ -207,7 +207,7 @@ func (r *PostgresViolationRepository) GetByTenant(ctx context.Context, tenantID 
 	} else {
 		query = `
 			SELECT id, tenant_id, policy_id, data_source_id, entity_name, field_name, status, severity, detected_at, resolved_at, resolved_by, resolution
-			FROM governance_violations
+			FROM violations
 			WHERE tenant_id = $1
 			ORDER BY detected_at DESC
 		`
@@ -237,7 +237,7 @@ func (r *PostgresViolationRepository) GetByTenant(ctx context.Context, tenantID 
 func (r *PostgresViolationRepository) GetByPolicy(ctx context.Context, policyID types.ID) ([]governance.Violation, error) {
 	query := `
 		SELECT id, tenant_id, policy_id, data_source_id, entity_name, field_name, status, severity, detected_at, resolved_at, resolved_by, resolution
-		FROM governance_violations
+		FROM violations
 		WHERE policy_id = $1
 		ORDER BY detected_at DESC
 	`
@@ -264,7 +264,7 @@ func (r *PostgresViolationRepository) GetByPolicy(ctx context.Context, policyID 
 func (r *PostgresViolationRepository) GetByDataSource(ctx context.Context, dataSourceID types.ID) ([]governance.Violation, error) {
 	query := `
 		SELECT id, tenant_id, policy_id, data_source_id, entity_name, field_name, status, severity, detected_at, resolved_at, resolved_by, resolution
-		FROM governance_violations
+		FROM violations
 		WHERE data_source_id = $1
 		ORDER BY detected_at DESC
 	`
@@ -290,7 +290,7 @@ func (r *PostgresViolationRepository) GetByDataSource(ctx context.Context, dataS
 // UpdateStatus updates the status of a violation (e.g., resolving it).
 func (r *PostgresViolationRepository) UpdateStatus(ctx context.Context, id types.ID, status governance.ViolationStatus, resolvedBy *types.ID, resolution *string) error {
 	query := `
-		UPDATE governance_violations
+		UPDATE violations
 		SET status = $1, resolved_by = $2, resolution = $3, resolved_at = $4
 		WHERE id = $5
 	`
@@ -323,7 +323,7 @@ func NewPostgresDataMappingRepository(db *pgxpool.Pool) *PostgresDataMappingRepo
 // Create persists a new data mapping.
 func (r *PostgresDataMappingRepository) Create(ctx context.Context, dm *governance.DataMapping) error {
 	query := `
-		INSERT INTO governance_data_mappings (
+		INSERT INTO data_mappings (
 			id, tenant_id, classification_id, purpose_ids, retention_days, third_party_ids, notes, mapped_by, mapped_at, cross_border, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
@@ -340,7 +340,7 @@ func (r *PostgresDataMappingRepository) Create(ctx context.Context, dm *governan
 func (r *PostgresDataMappingRepository) GetByID(ctx context.Context, id types.ID) (*governance.DataMapping, error) {
 	query := `
 		SELECT id, tenant_id, classification_id, purpose_ids, retention_days, third_party_ids, notes, mapped_by, mapped_at, cross_border, created_at, updated_at
-		FROM governance_data_mappings
+		FROM data_mappings
 		WHERE id = $1
 	`
 	var dm governance.DataMapping

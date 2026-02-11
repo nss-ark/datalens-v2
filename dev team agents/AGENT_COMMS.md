@@ -707,20 +707,20 @@ _Document Go interfaces that cross agent boundaries:_
 | 4 | Tests for Batch 3 + E2E | Test | ✅ COMPLETE |
 | 5 | CI/CD pipeline | DevOps | ✅ COMPLETE |
 
-**Sprint Batch 8** (Feb 11, 2026) — 🟡 IN PROGRESS
+**Sprint Batch 8** (Feb 12, 2026) — 🟡 IN PROGRESS (Data Lineage & Cloud)
 
 | # | Task | Agent | Status | Parallel? |
 |---|------|-------|--------|-----------|
-| 1 | Data Lineage Tracking (Flows + Visualization) | Backend + Frontend | ⏳ Waiting | ✅ Yes |
-| 2 | DSR Auto-Verification (Post-execution check) | Backend | ⏳ Waiting | ✅ Yes |
-| 3 | E2E Tests (Governance + Portal + DSR) | Test | ⏳ Waiting | ✅ Yes |
+| 1 | Data Lineage & Flow Visualization | Backend + Frontend | ⏳ Waiting | ✅ Yes |
+| 2 | AWS/Azure Connector Integration | Backend | ⏳ Waiting | ✅ Yes |
+| 3 | Enterprise Audit Logging | Backend | ⏳ Waiting | ✅ Yes |
 
-**Batch 7 Archive** (Completed Feb 11):
-- Purpose Mapping Automation (AI) ✅
-- Governance Policy Engine ✅
-- Governance Dashboard ✅
+**Batch 7A Archive** (Completed Feb 12):
+- E2E Testing (Portal + Governance) ✅
+- Backend Hardening (Lint + Logs) ✅
+- Frontend Polish (Error Boundaries) ✅
 
-**Next**: Phase 3 — Cloud Integrations & Enterprise Features.
+**Next**: Phase 3 — Enterprise Security & Scaling.
 
 **Batch 5 Archive** (Completed Feb 11):
 - Consent Engine Backend ✅

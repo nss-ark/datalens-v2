@@ -17,7 +17,7 @@ export interface GovernancePolicy {
     name: string;
     type: PolicyType;
     description: string;
-    rules: Record<string, any>;
+    rules: Record<string, unknown>;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
@@ -41,5 +41,5 @@ export interface CreatePolicyRequest {
     name: string;
     type: PolicyType;
     description: string;
-    rules: Record<string, any>;
+    rules: Record<string, unknown>;
 }

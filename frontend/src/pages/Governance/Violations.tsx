@@ -126,7 +126,7 @@ const Violations = () => {
                     <select
                         className="border-gray-300 rounded-md shadow-sm text-sm p-2 border"
                         value={filter}
-                        onChange={(e) => setFilter(e.target.value as any)}
+                        onChange={(e) => setFilter(e.target.value as 'all' | 'unresolved')}
                     >
                         <option value="all">All Violations</option>
                         <option value="unresolved">Unresolved Only</option>

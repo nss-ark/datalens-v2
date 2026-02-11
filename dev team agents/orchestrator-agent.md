@@ -147,12 +147,12 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - **State**: Zustand auth store, React Query for server state
 - **Routes**: `/login`, `/register`, `/`, `/data-sources`, `/pii-discovery`, `/dsr`, `/dsr/:id`, `/consent/widgets`, `/consent/widgets/:id`, `/portal/*` (standalone)
 
-#### Tests (Batches 1–6)
-- 18+ test files: DSR service, DSR repository, MongoDB connector, dashboard handler, discovery handler, E2E pipeline test
-- **Batch 4 Tests**: DSR Executor (access/erasure), S3 Connector (CSV/JSON/JSONL), Scheduler, Scan Service
-- **Batch 5 Tests**: Consent Service (widget/session logic), Public API handlers
-- Compile-verified; execution requires Docker Desktop for testcontainers
-- In-memory mocks pattern in `internal/service/mocks_test.go`
+#### Tests (Batches 1–7)
+- 20+ test files covering core services, handlers, and connectors.
+- **Batch 7 Focus**: E2E testing of Governance & Portal flows.
+- **Batch 7A Goal**: Rigorous hardening, bug fixing, and full integration test coverage before enterprise features.
+- Compile-verified; execution requires Docker Desktop for testcontainers.
+- In-memory mocks pattern in `internal/service/mocks_test.go`.
 
 ### Known Technical Debt ⚠️
 1. **DSR correction is a stub** — `DSRExecutor` returns "correction not yet implemented for connector", needs connector `Update()` method

@@ -87,7 +87,10 @@ func (s *ScanService) EnqueueScan(ctx context.Context, dataSourceID types.ID, te
 		return nil, fmt.Errorf("enqueue job: %w", err)
 	}
 
-	s.logger.Info("scan job enqueued", "run_id", run.ID, "ds_id", dataSourceID)
+	s.logger.Info("scan job enqueued", slog.String("tenant_id", tenantID.String()),
+		slog.String("run_id", run.ID.String()),
+		slog.String("ds_id", dataSourceID.String()),
+	)
 	return run, nil
 }
 
@@ -142,7 +145,10 @@ func (s *ScanService) ProcessScanJob(ctx context.Context, jobID string) error {
 	if scanErr != nil {
 		run.Status = discovery.ScanStatusFailed
 		run.ErrorMessage = types.Ptr(scanErr.Error())
-		s.logger.Error("scan failed", "run_id", run.ID, "error", scanErr)
+		s.logger.Error("scan failed", slog.String("tenant_id", run.TenantID.String()),
+			slog.String("run_id", run.ID.String()),
+			slog.String("error", scanErr.Error()),
+		)
 	} else {
 		run.Status = discovery.ScanStatusCompleted
 		run.Progress = 100
@@ -155,7 +161,10 @@ func (s *ScanService) ProcessScanJob(ctx context.Context, jobID string) error {
 	}
 
 	if err := s.scanRunRepo.Update(ctx, run); err != nil {
-		s.logger.Error("failed to update run status", "run_id", run.ID, "error", err)
+		s.logger.Error("failed to update run status", slog.String("tenant_id", run.TenantID.String()),
+			slog.String("run_id", run.ID.String()),
+			slog.String("error", err.Error()),
+		)
 		return err
 	}
 
