@@ -6,16 +6,53 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 11: Google Workspace & M365 Polish)
+## Current Sprint Goals (Batch 12: Identity Assurance)
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **M365 APIs** | Backend | [x] | Implement `GET /users` and `GET /sites` for M365. |
-| **Google Auth** | Backend | [x] | Google OAuth2 and Token Storage. |
-| **Google Scan** | Backend | [x] | Drive and Gmail scanning logic. |
-| **Google UI** | Frontend | [x] | Google Source Card and Config UI. |
+| **Identity Core** | Backend | [ ] | IAL Model (Basic/Substantial) & Verification Service. |
+| **DigiLocker** | Backend | [ ] | OAuth2 with HMAC, Profile Mapping. |
+| **Policy UI** | Frontend | [x] | Admin UI to configure Verification rules. |
+| **Portal Identity** | Frontend | [x] | User Profile with Verification Badges. |
 
 ## Active Messages
 *(Newest on top)*
+
+### [2026-02-12] [FROM: Frontend] → [TO: ALL]
+**Subject**: Identity & Verification UI Implementation
+**Type**: HANDOFF
+
+**Changes**:
+- **Admin**: Identity Settings Page (`/compliance/settings/identity`)
+- **Portal**: Identity Card with Verification Level & DigiLocker Flow
+- **Services**: `identityService` (Admin), updated `portalService` (User)
+
+**Features Enabled**:
+- Admins can toggle DigiLocker/Govt ID requirements.
+- Users can view verification status and initiate DigiLocker link.
+
+**Verification**: `npm run build` ✅
+
+**Action Required**:
+- **Backend**: Ensure `/public/portal/identity/status` and `/link` endpoints are live.
+
+### [2026-02-12] [FROM: Backend] → [TO: ALL]
+**Subject**: Identity Architecture & DigiLocker Integration
+**Type**: HANDOFF
+
+**Changes**:
+- **Domain**: `IdentityProfile`, `AssuranceLevel`, `IdentityProvider` interface (`internal/domain/identity/identity_profile.go`)
+- **Infrastructure**: `DigiLockerProvider` with OAuth2/HMAC (`internal/infrastructure/identity/provider/digilocker.go`)
+- **Service**: `IdentityService` implementing IAL upgrade logic (`internal/service/identity_service.go`)
+- **API**: `IdentityHandler` with `/status` and `/link` endpoints (`internal/handler/identity_handler.go`)
+- **Tests**: Unit tests for `IdentityService` passed.
+
+**API Contracts** (for Frontend agent):
+- `GET /api/v2/identity/status` — Response: `{success: true, data: {assurance_level: "NONE|BASIC|SUBSTANTIAL", ...}}`
+- `POST /api/v2/identity/link` — Request: `{"provider_name": "DigiLocker", "auth_code": "..."}` — Response: `{success: true, data: {assurance_level: "SUBSTANTIAL"}}`
+
+**Action Required**:
+- **Test**: Verify DigiLocker OAuth flow end-to-end with real credentials if available.
+- **Frontend**: Implement the "Verify Identity" button in the Data Principal Portal and handle the OAuth redirect/popup.
 
 ### [2026-02-12] [FROM: Orchestrator] → [TO: ALL]
 **Subject**: Batch 8 Complete — Setup for Batch 9
@@ -69,3 +106,19 @@
 **Subject**: Data Principal Portal UI Implementation
 **Type**: HANDOFF
 ... (Archived)
+### [2026-02-12] [FROM: Test] → [TO: ALL]
+**Subject**: Identity Matrix Tests Complete
+**Type**: HANDOFF
+
+**Changes**:
+- **Service**: `PolicyEnforcer` (`internal/service/policy_enforcer_test.go`)
+- **Tests**: Policy Scenarios (Strict/Flexible) coverage.
+- **Tests**: DigiLocker mock parsing verification.
+
+**Results**:
+- PolicyEnforcer tests: **PASS**
+- DigiLocker Provider tests: **PASS**
+- `go build ./...`: **PASS** (Fixed `identity_handler.go` compilation)
+
+**Issues Found**:
+- `identity_handler.go` had incorrect `SubjectIDFromContext` usage and ID comparison, causing build failure. **FIXED**.

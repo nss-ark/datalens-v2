@@ -38,6 +38,10 @@ import (
 	"github.com/complyark/datalens/internal/service/ai"
 	"github.com/complyark/datalens/internal/service/detection"
 	govService "github.com/complyark/datalens/internal/service/governance"
+
+	// Identity
+	"github.com/complyark/datalens/internal/domain/identity"
+	identityProvider "github.com/complyark/datalens/internal/infrastructure/identity/provider"
 )
 
 func main() {
@@ -124,6 +128,7 @@ func main() {
 	mappingRepo := repository.NewPostgresDataMappingRepository(dbPool)
 	auditRepo := repository.NewPostgresAuditRepository(dbPool)
 	breachRepo := repository.NewPostgresBreachRepository(dbPool)
+	identityProfileRepo := repository.NewIdentityProfileRepo(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -342,6 +347,20 @@ func main() {
 	// 7e. Breach Management
 	breachSvc := service.NewBreachService(breachRepo, auditSvc, eb, slog.Default())
 
+	// 7f. Identity Architecture
+	// DigiLocker Provider
+	digiLockerProvider := identityProvider.NewDigiLockerProvider(
+		cfg.Identity.DigiLocker.ClientID,
+		cfg.Identity.DigiLocker.ClientSecret,
+		cfg.Identity.DigiLocker.RedirectURI,
+	)
+
+	identitySvc := service.NewIdentityService(
+		identityProfileRepo,
+		[]identity.IdentityProvider{digiLockerProvider},
+		slog.Default(),
+	)
+
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)
 	scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
@@ -421,6 +440,7 @@ func main() {
 	breachHandler := handler.NewBreachHandler(breachSvc)
 	m365Handler := handler.NewM365Handler(m365AuthSvc)
 	googleHandler := handler.NewGoogleHandler(googleAuthSvc)
+	identityHandler := handler.NewIdentityHandler(identitySvc)
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(
@@ -544,6 +564,9 @@ func main() {
 
 			// Breach
 			r.Mount("/breach", breachHandler.Routes())
+
+			// Identity
+			r.Mount("/identity", identityHandler.Routes())
 
 		})
 	})

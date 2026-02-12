@@ -108,6 +108,8 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | Breach List | `pages/Breach/BreachList.tsx` | `/breach` | ✅ Complete (Batch 9) |
 | Breach Detail | `pages/Breach/BreachDetail.tsx` | `/breach/:id` | ✅ Complete (Batch 9) |
 | Breach Report | `pages/Breach/BreachReport.tsx` | `/breach/:id/report` | ✅ Complete (Batch 9) |
+| Identity Settings | `pages/Compliance/IdentitySettings.tsx` | `/compliance/settings/identity` | ✅ Complete (Batch 12) |
+| Portal Profile | `pages/Portal/Profile.tsx` | `/portal/profile` | ✅ Complete (Batch 12) |
 
 ### Existing Components (20)
 | Component | File | Purpose |

@@ -9,6 +9,7 @@ import type {
     DPRRequest,
     CreateDPRInput
 } from '../types/portal';
+import type { IdentityStatusResponse } from '../types/identity';
 
 export const portalService = {
     // --- Auth ---
@@ -58,6 +59,23 @@ export const portalService = {
 
     async getRequest(id: string): Promise<DPRRequest> {
         const res = await portalApi.get<ApiResponse<DPRRequest>>(`/public/portal/dpr/${id}`);
+        return res.data.data;
+    },
+
+    // --- Identity Verification ---
+    async getIdentityStatus(): Promise<IdentityStatusResponse> {
+        // Backend contract: GET /public/portal/identity/status
+        const res = await portalApi.get<ApiResponse<IdentityStatusResponse>>('/public/portal/identity/status');
+        return res.data.data;
+    },
+
+    async linkIdentity(provider: string, authCode: string, redirectUri?: string): Promise<IdentityStatusResponse> {
+        // Backend contract: POST /public/portal/identity/link
+        const res = await portalApi.post<ApiResponse<IdentityStatusResponse>>('/public/portal/identity/link', {
+            provider_name: provider,
+            auth_code: authCode,
+            redirect_uri: redirectUri
+        });
         return res.data.data;
     }
 };

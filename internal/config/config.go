@@ -22,6 +22,19 @@ type Config struct {
 	Portal    PortalConfig
 	Microsoft MicrosoftConfig
 	Google    GoogleConfig
+	Identity  IdentityConfig
+}
+
+// IdentityConfig holds identity provider settings.
+type IdentityConfig struct {
+	DigiLocker DigiLockerConfig
+}
+
+// DigiLockerConfig holds DigiLocker integration settings.
+type DigiLockerConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
 }
 
 // GoogleConfig holds Google Workspace integration settings.
@@ -212,6 +225,13 @@ func Load() (*Config, error) {
 			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 			RedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v2/auth/google/callback"),
+		},
+		Identity: IdentityConfig{
+			DigiLocker: DigiLockerConfig{
+				ClientID:     getEnv("DIGILOCKER_CLIENT_ID", ""),
+				ClientSecret: getEnv("DIGILOCKER_CLIENT_SECRET", ""),
+				RedirectURI:  getEnv("DIGILOCKER_REDIRECT_URI", "http://localhost:8080/api/v2/identity/digilocker/callback"),
+			},
 		},
 	}
 

@@ -14,7 +14,14 @@ const (
 	ContextKeyWidgetID  ContextKey = "widget_id"
 	ContextKeyIP        ContextKey = "ip"
 	ContextKeyUserAgent ContextKey = "user_agent"
+	ContextKeySubjectID ContextKey = "subject_id"
 )
+
+// SubjectIDFromContext extracts the subject ID from the request context.
+func SubjectIDFromContext(ctx context.Context) (ID, bool) {
+	id, ok := ctx.Value(ContextKeySubjectID).(ID)
+	return id, ok
+}
 
 // UserIDFromContext extracts the user ID from the request context.
 func UserIDFromContext(ctx context.Context) (ID, bool) {

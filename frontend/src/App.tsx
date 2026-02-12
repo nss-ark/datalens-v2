@@ -23,6 +23,7 @@ import DataLineage from './pages/Governance/DataLineage';
 import BreachDashboard from './pages/Breach/BreachDashboard';
 import CreateIncident from './pages/Breach/CreateIncident';
 import IncidentDetail from './pages/Breach/IncidentDetail';
+import IdentitySettings from './pages/Compliance/IdentitySettings';
 
 // Portal Components
 import { PortalLayout } from './components/Layout/PortalLayout';
@@ -124,6 +125,9 @@ function App() {
             <Route path="/governance/purposes" element={<PurposeMapping />} />
             <Route path="/governance/policies" element={<PolicyManager />} />
             <Route path="/governance/violations" element={<Violations />} />
+
+            {/* Compliance Settings */}
+            <Route path="/compliance/settings/identity" element={<IdentitySettings />} />
 
             {/* Placeholder routes */}
             <Route path="/department" element={<PlaceholderPage title="Department" />} />

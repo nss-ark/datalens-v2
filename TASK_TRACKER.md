@@ -317,6 +317,12 @@
 - [ ] Google Calendar (PII in events)
 - [x] OAuth2 authentication flow (Batch 11)
 
+### Sprint 15: Identity & Trust (Batch 12)
+- [x] Identity Assurance Domain (IAL1/IAL2)
+- [x] DigiLocker Integration (OAuth2 + HMAC)
+- [x] Identity Verification Policy UI (Admin)
+- [x] Data Principal Portal Verification Flow
+
 #### 3.3 Enhanced Connectors (Batch 8)
 - [x] Hardening AWS S3 Connector (JSON/CSV handling)
 - [x] Hardening RDS & DynamoDB Connectors

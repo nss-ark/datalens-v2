@@ -1,4 +1,5 @@
 import { usePortalAuthStore } from '../../stores/portalAuthStore';
+import { IdentityCard } from '../../components/Portal/IdentityCard';
 
 const PortalDashboard = () => {
     const profile = usePortalAuthStore(state => state.profile);
@@ -10,19 +11,26 @@ const PortalDashboard = () => {
                 <p className="text-gray-500 mt-2">Manage your privacy preferences and data rights.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {/* Stats Cards */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Privacy Score</div>
-                    <div className="text-3xl font-bold text-green-600">Good</div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                {/* Identity Verification Card - Takes full width on mobile, 1 col on large screens */}
+                <div className="lg:col-span-1">
+                    <IdentityCard />
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Active Consents</div>
-                    <div className="text-3xl font-bold text-blue-600">3</div>
-                </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div className="text-sm font-medium text-gray-500 mb-1">Open Requests</div>
-                    <div className="text-3xl font-bold text-orange-600">1</div>
+
+                {/* Stats Cards - Spans 2 cols */}
+                <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="text-sm font-medium text-gray-500 mb-1">Privacy Score</div>
+                        <div className="text-3xl font-bold text-green-600">Good</div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="text-sm font-medium text-gray-500 mb-1">Active Consents</div>
+                        <div className="text-3xl font-bold text-blue-600">3</div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="text-sm font-medium text-gray-500 mb-1">Open Requests</div>
+                        <div className="text-3xl font-bold text-orange-600">1</div>
+                    </div>
                 </div>
             </div>
 

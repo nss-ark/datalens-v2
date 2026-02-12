@@ -226,6 +226,9 @@ type TimeRange struct {
 // Metadata holds arbitrary key-value pairs.
 type Metadata map[string]any
 
+// JSON is a generic map for JSON data.
+type JSON map[string]any
+
 // Pagination holds pagination parameters.
 type Pagination struct {
 	Page     int `json:"page"`
