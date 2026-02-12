@@ -272,6 +272,7 @@ type ConsentSessionRepository interface {
 	GetBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]ConsentSession, error)
 	GetConversionStats(ctx context.Context, tenantID types.ID, from, to time.Time, interval string) ([]ConversionStat, error)
 	GetPurposeStats(ctx context.Context, tenantID types.ID, from, to time.Time) ([]PurposeStat, error)
+	GetExpiringSessions(ctx context.Context, withinDays int) ([]ConsentSession, error)
 }
 
 // ConversionStat represents consent conversion metrics over time.
@@ -313,4 +314,81 @@ type DPRRequestRepository interface {
 	GetByProfile(ctx context.Context, profileID types.ID) ([]DPRRequest, error)
 	GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[DPRRequest], error)
 	Update(ctx context.Context, r *DPRRequest) error
+}
+
+// =============================================================================
+// Consent Renewal
+// =============================================================================
+
+// ConsentRenewalLog tracks the lifecycle of consent renewal requests.
+type ConsentRenewalLog struct {
+	types.BaseEntity
+	TenantID       types.ID   `json:"tenant_id" db:"tenant_id"`
+	SubjectID      types.ID   `json:"subject_id" db:"subject_id"`
+	PurposeID      types.ID   `json:"purpose_id" db:"purpose_id"`
+	OriginalExpiry time.Time  `json:"original_expiry" db:"original_expiry"`
+	Status         string     `json:"status" db:"status"` // PENDING, RENEWED, LAPSED, IGNORED
+	ReminderSentAt *time.Time `json:"reminder_sent_at,omitempty" db:"reminder_sent_at"`
+	RenewedAt      *time.Time `json:"renewed_at,omitempty" db:"renewed_at"`
+}
+
+// ConsentRenewalRepository defines persistence for consent renewal logs.
+type ConsentRenewalRepository interface {
+	Create(ctx context.Context, l *ConsentRenewalLog) error
+	GetBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]ConsentRenewalLog, error)
+	Update(ctx context.Context, l *ConsentRenewalLog) error
+}
+
+// =============================================================================
+// ConsentNotice — Privacy Notice Management
+// =============================================================================
+
+// ConsentNotice represents a versioned privacy notice displayed to users.
+type ConsentNotice struct {
+	types.TenantEntity
+	SeriesID    types.ID     `json:"series_id" db:"series_id"` // Groups versions of the same notice
+	Title       string       `json:"title" db:"title"`
+	Content     string       `json:"content" db:"content"`       // Rich text (markdown/html)
+	Version     int          `json:"version" db:"version"`       // Auto-incremented on publish
+	Status      NoticeStatus `json:"status" db:"status"`         // DRAFT, PUBLISHED, ARCHIVED
+	Purposes    []types.ID   `json:"purposes" db:"purposes"`     // Linked purpose IDs
+	WidgetIDs   []types.ID   `json:"widget_ids" db:"widget_ids"` // Bound widgets
+	Regulation  string       `json:"regulation" db:"regulation"` // e.g., "DPDPA_2023"
+	PublishedAt *time.Time   `json:"published_at,omitempty" db:"published_at"`
+}
+
+// NoticeStatus tracks the lifecycle of a privacy notice.
+type NoticeStatus string
+
+const (
+	NoticeStatusDraft     NoticeStatus = "DRAFT"
+	NoticeStatusPublished NoticeStatus = "PUBLISHED"
+	NoticeStatusArchived  NoticeStatus = "ARCHIVED"
+)
+
+// ConsentNoticeTranslation holds translations for a specific notice version.
+type ConsentNoticeTranslation struct {
+	types.BaseEntity
+	NoticeID types.ID `json:"notice_id" db:"notice_id"`
+	Language string   `json:"language" db:"language"` // ISO 639-1 (en, hi, ta, etc.)
+	Title    string   `json:"title" db:"title"`
+	Content  string   `json:"content" db:"content"`
+}
+
+// ConsentNoticeRepository defines persistence for privacy notices.
+type ConsentNoticeRepository interface {
+	Create(ctx context.Context, n *ConsentNotice) error
+	GetByID(ctx context.Context, id types.ID) (*ConsentNotice, error)
+	GetByTenant(ctx context.Context, tenantID types.ID) ([]ConsentNotice, error)
+	Update(ctx context.Context, n *ConsentNotice) error
+	// Publish promotes a draft to published status and increments version.
+	Publish(ctx context.Context, id types.ID) (int, error) // Returns new version number
+	Archive(ctx context.Context, id types.ID) error
+	// BindToWidgets links a notice to specific widgets.
+	BindToWidgets(ctx context.Context, noticeID types.ID, widgetIDs []types.ID) error
+
+	// Translation methods
+	AddTranslation(ctx context.Context, t *ConsentNoticeTranslation) error
+	GetTranslations(ctx context.Context, noticeID types.ID) ([]ConsentNoticeTranslation, error)
+	GetLatestVersion(ctx context.Context, seriesID types.ID) (int, error)
 }

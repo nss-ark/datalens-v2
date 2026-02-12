@@ -330,6 +330,10 @@ func (r *mockConsentSessionRepo) GetPurposeStats(_ context.Context, tenantID typ
 	return nil, nil
 }
 
+func (r *mockConsentSessionRepo) GetExpiringSessions(_ context.Context, withinDays int) ([]consent.ConsentSession, error) {
+	return nil, nil
+}
+
 // Mock ConsentHistoryRepository
 type mockConsentHistoryRepo struct {
 	mu      sync.Mutex

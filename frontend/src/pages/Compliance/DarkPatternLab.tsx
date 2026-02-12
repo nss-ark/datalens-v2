@@ -184,7 +184,7 @@ export default function DarkPatternLab() {
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                                     Detected Issues
-                                    <StatusBadge status={result.detected_patterns.length > 0 ? 'Review Needed' : 'PASS'} />
+                                    <StatusBadge label={result.detected_patterns.length > 0 ? 'Review Needed' : 'PASS'} />
                                 </h3>
 
                                 {result.detected_patterns.length === 0 ? (

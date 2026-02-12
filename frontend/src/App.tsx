@@ -26,6 +26,7 @@ import IncidentDetail from './pages/Breach/IncidentDetail';
 import IdentitySettings from './pages/Compliance/IdentitySettings';
 import Analytics from './pages/Compliance/Analytics';
 import DarkPatternLab from './pages/Compliance/DarkPatternLab';
+import NoticeManager from './pages/Consent/NoticeManager';
 
 // Portal Components
 import { PortalLayout } from './components/Layout/PortalLayout';
@@ -34,6 +35,7 @@ import PortalLogin from './pages/Portal/Login';
 import PortalDashboard from './pages/Portal/Dashboard';
 import PortalHistory from './pages/Portal/History';
 import PortalRequests from './pages/Portal/Requests';
+import ConsentManage from './pages/Portal/ConsentManage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +88,13 @@ function App() {
                 </PortalLayout>
               </ErrorBoundary>
             } />
+            <Route path="/portal/consent" element={
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <ConsentManage />
+                </PortalLayout>
+              </ErrorBoundary>
+            } />
           </Route>
 
           {/* Protected routes */}
@@ -108,6 +117,7 @@ function App() {
             <Route path="/pii/review" element={<PIIDiscovery />} />
             <Route path="/dsr" element={<DSRList />} />
             <Route path="/dsr/:id" element={<DSRDetail />} />
+            <Route path="/consent/notices" element={<NoticeManager />} />
             <Route path="/consent/widgets" element={<ConsentWidgets />} />
             <Route path="/consent/widgets/:id" element={<WidgetDetail />} />
             <Route path="/breach" element={<BreachDashboard />} />

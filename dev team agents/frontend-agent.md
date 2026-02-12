@@ -110,6 +110,8 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | Breach Report | `pages/Breach/BreachReport.tsx` | `/breach/:id/report` | ✅ Complete (Batch 9) |
 | Identity Settings | `pages/Compliance/IdentitySettings.tsx` | `/compliance/settings/identity` | ✅ Complete (Batch 12) |
 | Portal Profile | `pages/Portal/Profile.tsx` | `/portal/profile` | ✅ Complete (Batch 12) |
+| Consent Analytics | `pages/Compliance/ConsentAnalytics.tsx` | `/compliance/analytics` | ✅ Complete (Batch 14) |
+| Dark Pattern Lab | `pages/Compliance/DarkPatternLab.tsx` | `/compliance/dark-patterns` | ✅ Complete (Batch 14) |
 
 ### Existing Components (20)
 | Component | File | Purpose |
@@ -141,6 +143,8 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | API client | `services/api.ts` | Axios instance with JWT interceptor, 401 redirect |
 | Portal API | `services/portalApi.ts` | Separate axios instance for Portal |
 | Auth | `services/auth.ts` | `login`, `register`, `refreshToken` |
+| Analytics | `services/analyticsService.ts` | `getConversionStats`, `getPurposeStats` (Batch 14) |
+| Dark Patterns | `services/darkPatternService.ts` | `analyzeContent` (Batch 14) |
 | DSR | `services/dsr.ts` | `list`, `getById`, `create`, `approve`, `reject`, `getResult`, `execute` |
 | Consent | `services/consent.ts` | `listWidgets`, `getWidget`, `createWidget`, `updateWidget`, `deleteWidget` |
 | Portal | `services/portalService.ts` | `login`, `verify`, `getProfile`, `getHistory`, `submitDPR` |
@@ -154,11 +158,11 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | `types/consent.ts` | `ConsentWidget`, `WidgetConfig`, `ThemeConfig`, `DataPrincipalProfile` |
 | `types/governance.ts` | `PurposeSuggestion`, `Policy`, `Violation` |
 
-### Upcoming Pages (Batch 8)
+### Upcoming Pages (Batch 15)
 | Page | Route | Batch | Notes |
 |------|-------|-------|-------|
-| Data Lineage | `/governance/lineage` | 8 | Visual flow of data, purpose tracking (Sankey/Graph) |
-| DSR Automation | `/dsr/automation` | 8 | Workflow builder, auto-execution rules |
+| Notice Manager | `/consent/notices` | 15 | Privacy notice CRUD, versioning, widget binding |
+| Consent Management (Portal) | `/portal/consent` | 15 | Per-purpose withdrawal with implications |
 
 ---
 

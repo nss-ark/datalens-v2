@@ -36,7 +36,7 @@ func newTestConsentHandler() (*handler.ConsentHandler, *mockConsentWidgetRepo) {
 	logger := slog.Default()
 
 	svc := service.NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, "test-secret", logger)
-	h := handler.NewConsentHandler(svc)
+	h := handler.NewConsentHandler(svc, nil)
 	return h, widgetRepo
 }
 
@@ -232,6 +232,10 @@ func (m *mockConsentSessionRepo) GetConversionStats(_ context.Context, tenantID 
 }
 
 func (m *mockConsentSessionRepo) GetPurposeStats(_ context.Context, tenantID types.ID, from, to time.Time) ([]consent.PurposeStat, error) {
+	return nil, nil
+}
+
+func (m *mockConsentSessionRepo) GetExpiringSessions(ctx context.Context, withinDays int) ([]consent.ConsentSession, error) {
 	return nil, nil
 }
 

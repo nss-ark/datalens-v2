@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/complyark/datalens/internal/domain/audit"
+	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/domain/governance"
 	"github.com/complyark/datalens/internal/domain/identity"
@@ -860,4 +862,380 @@ func (m *MockConnector) Export(ctx context.Context, entity string, filter map[st
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]map[string]interface{}), args.Error(1)
+}
+
+// =============================================================================
+// Mock Notice Repository
+// =============================================================================
+
+type mockNoticeRepo struct {
+	mu      sync.Mutex
+	notices map[types.ID]*consent.ConsentNotice
+}
+
+func newMockNoticeRepo() *mockNoticeRepo {
+	return &mockNoticeRepo{
+		notices: make(map[types.ID]*consent.ConsentNotice),
+	}
+}
+
+func (r *mockNoticeRepo) Create(_ context.Context, n *consent.ConsentNotice) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if n.ID == (types.ID{}) {
+		n.ID = types.NewID()
+	}
+	r.notices[n.ID] = n
+	return nil
+}
+
+func (r *mockNoticeRepo) GetByID(_ context.Context, id types.ID) (*consent.ConsentNotice, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	n, ok := r.notices[id]
+	if !ok {
+		return nil, fmt.Errorf("notice not found")
+	}
+	return n, nil
+}
+
+func (r *mockNoticeRepo) GetByTenant(_ context.Context, tenantID types.ID) ([]consent.ConsentNotice, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.ConsentNotice
+	for _, n := range r.notices {
+		if n.TenantID == tenantID {
+			result = append(result, *n)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockNoticeRepo) Update(_ context.Context, n *consent.ConsentNotice) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.notices[n.ID] = n
+	return nil
+}
+
+func (r *mockNoticeRepo) Publish(_ context.Context, id types.ID) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	n, ok := r.notices[id]
+	if !ok {
+		return 0, fmt.Errorf("notice not found")
+	}
+	n.Version++
+	n.Status = consent.NoticeStatusPublished
+	return n.Version, nil
+}
+
+func (r *mockNoticeRepo) Archive(_ context.Context, id types.ID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	n, ok := r.notices[id]
+	if !ok {
+		return fmt.Errorf("notice not found")
+	}
+	n.Status = consent.NoticeStatusArchived
+	return nil
+}
+
+func (r *mockNoticeRepo) BindToWidgets(_ context.Context, noticeID types.ID, widgetIDs []types.ID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	n, ok := r.notices[noticeID]
+	if !ok {
+		return fmt.Errorf("notice not found")
+	}
+	n.WidgetIDs = widgetIDs
+	return nil
+}
+
+func (r *mockNoticeRepo) AddTranslation(_ context.Context, t *consent.ConsentNoticeTranslation) error {
+	return nil // Mock implementation
+}
+
+func (r *mockNoticeRepo) GetTranslations(_ context.Context, noticeID types.ID) ([]consent.ConsentNoticeTranslation, error) {
+	return nil, nil // Mock implementation
+}
+
+func (r *mockNoticeRepo) GetLatestVersion(_ context.Context, seriesID types.ID) (int, error) {
+	return 0, nil
+}
+
+// =============================================================================
+// Mock Renewal Repository
+// =============================================================================
+
+type mockRenewalRepo struct {
+	mu   sync.Mutex
+	logs []consent.ConsentRenewalLog
+}
+
+func newMockRenewalRepo() *mockRenewalRepo {
+	return &mockRenewalRepo{
+		logs: []consent.ConsentRenewalLog{},
+	}
+}
+
+func (r *mockRenewalRepo) Create(_ context.Context, l *consent.ConsentRenewalLog) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if l.ID == (types.ID{}) {
+		l.ID = types.NewID()
+	}
+	r.logs = append(r.logs, *l)
+	return nil
+}
+
+func (r *mockRenewalRepo) GetBySubject(_ context.Context, tenantID, subjectID types.ID) ([]consent.ConsentRenewalLog, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.ConsentRenewalLog
+	for _, l := range r.logs {
+		if l.TenantID == tenantID && l.SubjectID == subjectID {
+			result = append(result, l)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockRenewalRepo) Update(_ context.Context, l *consent.ConsentRenewalLog) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	found := false
+	for i, existing := range r.logs {
+		if existing.ID == l.ID {
+			r.logs[i] = *l
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("renewal log not found")
+	}
+	return nil
+}
+
+// =============================================================================
+// Mock Widget Repository
+// =============================================================================
+
+type mockWidgetRepo struct {
+	mu      sync.Mutex
+	widgets map[types.ID]*consent.ConsentWidget
+}
+
+func newMockWidgetRepo() *mockWidgetRepo {
+	return &mockWidgetRepo{
+		widgets: make(map[types.ID]*consent.ConsentWidget),
+	}
+}
+
+func (r *mockWidgetRepo) Create(_ context.Context, w *consent.ConsentWidget) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if w.ID == (types.ID{}) {
+		w.ID = types.NewID()
+	}
+	r.widgets[w.ID] = w
+	return nil
+}
+
+func (r *mockWidgetRepo) GetByID(_ context.Context, id types.ID) (*consent.ConsentWidget, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	w, ok := r.widgets[id]
+	if !ok {
+		return nil, fmt.Errorf("widget not found")
+	}
+	return w, nil
+}
+
+func (r *mockWidgetRepo) GetByTenant(_ context.Context, tenantID types.ID) ([]consent.ConsentWidget, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.ConsentWidget
+	for _, w := range r.widgets {
+		if w.TenantID == tenantID {
+			result = append(result, *w)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockWidgetRepo) GetByAPIKey(_ context.Context, apiKey string) (*consent.ConsentWidget, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, w := range r.widgets {
+		if w.APIKey == apiKey {
+			return w, nil
+		}
+	}
+	return nil, fmt.Errorf("widget not found")
+}
+
+func (r *mockWidgetRepo) Update(_ context.Context, w *consent.ConsentWidget) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.widgets[w.ID] = w
+	return nil
+}
+
+func (r *mockWidgetRepo) Delete(_ context.Context, id types.ID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.widgets, id)
+	return nil
+}
+
+// =============================================================================
+// Mock Session Repository
+// =============================================================================
+
+type mockSessionRepo struct {
+	mu       sync.Mutex
+	sessions map[types.ID]*consent.ConsentSession
+}
+
+func newMockSessionRepo() *mockSessionRepo {
+	return &mockSessionRepo{
+		sessions: make(map[types.ID]*consent.ConsentSession),
+	}
+}
+
+func (r *mockSessionRepo) Create(_ context.Context, s *consent.ConsentSession) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if s.ID == (types.ID{}) {
+		s.ID = types.NewID()
+	}
+	r.sessions[s.ID] = s
+	return nil
+}
+
+func (r *mockSessionRepo) GetBySubject(_ context.Context, tenantID, subjectID types.ID) ([]consent.ConsentSession, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.ConsentSession
+	for _, s := range r.sessions {
+		if s.TenantID == tenantID && s.SubjectID != nil && *s.SubjectID == subjectID {
+			result = append(result, *s)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockSessionRepo) GetConversionStats(_ context.Context, tenantID types.ID, from, to time.Time, interval string) ([]consent.ConversionStat, error) {
+	return nil, nil // Mock
+}
+
+func (r *mockSessionRepo) GetPurposeStats(_ context.Context, tenantID types.ID, from, to time.Time) ([]consent.PurposeStat, error) {
+	return nil, nil // Mock
+}
+
+func (r *mockSessionRepo) GetExpiringSessions(_ context.Context, withinDays int) ([]consent.ConsentSession, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.ConsentSession
+	// now := time.Now().UTC() // Unused
+	// This is tricky without widget config access in the repo mock.
+	// For testing, we might assume the caller sets "CreatedAt" such that it expires.
+	// We'll just return all sessions for the mock and let the service filter?
+	// No, the service calls this to GET candidates.
+	// In the test, we'll probably rely on the test specifically creating sessions that should be returned.
+	// But `GetExpiringSessions` usually generates a SQL query based on expiry date.
+	// Here we can't easily simulate "Expiry Date" because it depends on Widget Config (which is in WidgetRepo).
+	// So for the MOCK, we will return ALL sessions, or maybe filter by some convention?
+	// ACTUALLY: The test `TestExpiryChecker_DetectsExpiringConsent` will set up a session.
+	// We can add a helper to the mock to "inject" expected return values for GetExpiringSessions.
+
+	// A better approach for the MOCK: just return all sessions. The Service loop (processSessionExpiry)
+	// re-checks the expiry math using the WidgetRepo. So returning extra sessions is fine (inefficient but correct).
+	// Wait, the Service:
+	// sessions, err := s.sessionRepo.GetExpiringSessions(ctx, 31)
+	// for _, session := range sessions { ... processSessionExpiry ... }
+	// processSessionExpiry gets the widget and checks expiry.
+	// So returning ALL sessions is safe for the mock.
+	for _, s := range r.sessions {
+		result = append(result, *s)
+	}
+	return result, nil
+}
+
+// Helper to manually seed expiring sessions if needed
+func (r *mockSessionRepo) SetSessions(sessions []consent.ConsentSession) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.sessions = make(map[types.ID]*consent.ConsentSession)
+	for _, s := range sessions {
+		val := s
+		r.sessions[s.ID] = &val
+	}
+}
+
+// =============================================================================
+// Mock History Repository
+// =============================================================================
+
+type mockHistoryRepo struct {
+	mu      sync.Mutex
+	entries []consent.ConsentHistoryEntry
+}
+
+func newMockHistoryRepo() *mockHistoryRepo {
+	return &mockHistoryRepo{
+		entries: []consent.ConsentHistoryEntry{},
+	}
+}
+
+func (r *mockHistoryRepo) Create(_ context.Context, entry *consent.ConsentHistoryEntry) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if entry.ID == (types.ID{}) {
+		entry.ID = types.NewID()
+	}
+	r.entries = append(r.entries, *entry)
+	return nil
+}
+
+func (r *mockHistoryRepo) GetBySubject(_ context.Context, tenantID, subjectID types.ID, pagination types.Pagination) (*types.PaginatedResult[consent.ConsentHistoryEntry], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []consent.ConsentHistoryEntry
+	for _, e := range r.entries {
+		if e.TenantID == tenantID && e.SubjectID == subjectID {
+			items = append(items, e)
+		}
+	}
+	return &types.PaginatedResult[consent.ConsentHistoryEntry]{Items: items, Total: len(items)}, nil
+}
+
+func (r *mockHistoryRepo) GetByPurpose(_ context.Context, tenantID, purposeID types.ID) ([]consent.ConsentHistoryEntry, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.ConsentHistoryEntry
+	for _, e := range r.entries {
+		if e.TenantID == tenantID && e.PurposeID == purposeID {
+			result = append(result, e)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockHistoryRepo) GetLatestState(_ context.Context, tenantID, subjectID, purposeID types.ID) (*consent.ConsentHistoryEntry, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var latest *consent.ConsentHistoryEntry
+	for _, e := range r.entries {
+		if e.TenantID == tenantID && e.SubjectID == subjectID && e.PurposeID == purposeID {
+			// Find the one with latest CreatedAt
+			if latest == nil || e.CreatedAt.After(latest.CreatedAt) {
+				val := e
+				latest = &val
+			}
+		}
+	}
+	return latest, nil
 }

@@ -1,0 +1,70 @@
+:root {
+  /* Page background: Deep dark violet/black */
+  --background: #0f0b15;
+
+  /* Primary text color: Off-white/Lavendar tint */
+  --foreground: #e0dce6;
+
+  /* Card background: Slightly lighter than page, rich dark violet */
+  --card: #1a1622;
+
+  /* Card text color */
+  --card-foreground: #e0dce6;
+
+  /* Primary buttons and links: Vibrant Violet */
+  --primary: #8b5cf6;
+
+  /* Text color on primary buttons */
+  --primary-foreground: #ffffff;
+
+  /* Secondary button background: Muted dark violet */
+  --secondary: #2e2a36;
+
+  /* Text colour on secondary buttons */
+  --secondary-foreground: #e0dce6;
+
+  /* Muted (lighter) background */
+  --muted: #2e2a36;
+
+  /* Muted (lighter) text colour */
+  --muted-foreground: #9ca3af;
+
+  /* Subtler than muted background */
+  --faint: #1a1622;
+
+  /* Subtler than muted text color */
+  --faint-foreground: #6b7280;
+
+  /* Accent background: Cyan/Teal for contrast */
+  --accent: #2e2a36;
+
+  /* Accent text color */
+  --accent-foreground: #22d3ee;
+
+  /* Error/danger color */
+  --danger: #ef4444;
+
+  /* Text color on danger background */
+  --danger-foreground: #fee2e2;
+
+  /* Success color */
+  --success: #10b981;
+
+  /* Text colour on success background */
+  --success-foreground: #d1fae5;
+
+  /* Warning color */
+  --warning: #f59e0b;
+
+  /* Text colour on warning background */
+  --warning-foreground: #fffbeb;
+
+  /* Border color (boxes): Subtle violet-grey */
+  --border: #3f3c45;
+
+  /* Input borders */
+  --input: #3f3c45;
+
+  /* Focus ring color: Primary Violet */
+  --ring: #8b5cf6;
+}

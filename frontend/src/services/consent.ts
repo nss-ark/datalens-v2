@@ -1,6 +1,6 @@
 import { api } from './api';
 import type { ApiResponse, ID, PaginatedResponse } from '../types/common';
-import type { ConsentWidget, CreateWidgetInput, UpdateWidgetInput } from '../types/consent';
+import type { ConsentWidget, CreateWidgetInput, UpdateWidgetInput, ConsentNotice, CreateNoticeInput, UpdateNoticeInput } from '../types/consent';
 
 export const consentService = {
     // Widgets
@@ -38,6 +38,36 @@ export const consentService = {
         return res.data.data;
     },
 
-    // Public / Widget Config (Authenticated via API Key usually, but for preview we might use internal)
-    // For now, let's stick to the internal management APIs.
+    // --- Notices ---
+    async listNotices(): Promise<ConsentNotice[]> {
+        const res = await api.get<ApiResponse<ConsentNotice[]>>('/consent/notices');
+        return res.data.data;
+    },
+
+    async getNotice(id: ID): Promise<ConsentNotice> {
+        const res = await api.get<ApiResponse<ConsentNotice>>(`/consent/notices/${id}`);
+        return res.data.data;
+    },
+
+    async createNotice(data: CreateNoticeInput): Promise<ConsentNotice> {
+        const res = await api.post<ApiResponse<ConsentNotice>>('/consent/notices', data);
+        return res.data.data;
+    },
+
+    async updateNotice(id: ID, data: UpdateNoticeInput): Promise<void> {
+        await api.put(`/consent/notices/${id}`, data);
+    },
+
+    async publishNotice(id: ID): Promise<ConsentNotice> {
+        const res = await api.post<ApiResponse<ConsentNotice>>(`/consent/notices/${id}/publish`);
+        return res.data.data;
+    },
+
+    async archiveNotice(id: ID): Promise<void> {
+        await api.post(`/consent/notices/${id}/archive`);
+    },
+
+    async bindNotice(id: ID, widgetIds: ID[]): Promise<void> {
+        await api.post(`/consent/notices/${id}/bind`, { widget_ids: widgetIds });
+    },
 };

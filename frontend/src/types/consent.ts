@@ -63,3 +63,35 @@ export interface RecordConsentRequest {
 export interface WithdrawConsentRequest {
     purpose_id: ID;
 }
+
+export interface ConsentNotice extends TenantEntity {
+    series_id: ID;
+    title: string;
+    content: string;
+    version: number;
+    status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+    purposes: ID[];
+    widget_ids: ID[];
+    regulation: string;
+    published_at?: string;
+}
+
+export interface CreateNoticeInput {
+    title: string;
+    content: string;
+    purposes: ID[];
+    regulation: string;
+    series_id?: ID;
+}
+
+export interface UpdateNoticeInput {
+    id: ID;
+    title: string;
+    content: string;
+    purposes: ID[];
+    regulation: string;
+}
+
+export interface BindNoticeInput {
+    widget_ids: ID[];
+}

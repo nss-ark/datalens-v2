@@ -3,11 +3,17 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/pkg/httputil"
 	"github.com/complyark/datalens/pkg/types"
 )
+
+// Private context key to avoid collisions
+type widgetContextKey string
+
+const contextKeyWidget widgetContextKey = "consent_widget"
 
 // WidgetAuthMiddleware creates a middleware that authenticates consent widgets.
 func WidgetAuthMiddleware(widgetRepo consent.ConsentWidgetRepository) func(http.Handler) http.Handler {
@@ -42,24 +48,12 @@ func WidgetAuthMiddleware(widgetRepo consent.ConsentWidgetRepository) func(http.
 			ctx = context.WithValue(ctx, types.ContextKeyWidgetID, widget.ID)
 
 			// Store widget for CORS check
-			// We use a private context key or simply make it accessible, but keeping it simple:
-			// Just use the retrieved widget for CORS logic in the NEXT middleware if needed,
-			// or handle CORS right here? The plan separates them. Let's stick to the plan request to verify origin.
-			// Actually, let's inject the whole widget or just the allowed origins if separate middleware needs it.
-			// For now, let's create a specific context key for the widget itself if needed, but ID + TenantID is usually enough.
-			// Since CORS middleware needs AllowedOrigins, let's add a context key or fetch it again (bad for perf).
-			// Efficient way: context key for the widget object.
 			ctx = context.WithValue(ctx, contextKeyWidget, widget)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
-
-// Private context key to avoid collisions
-type widgetContextKey string
-
-const contextKeyWidget widgetContextKey = "consent_widget"
 
 // WidgetCORSMiddleware validates the Origin header against the widget's allowed origins.
 // Must be placed AFTER WidgetAuthMiddleware.
@@ -76,23 +70,13 @@ func WidgetCORSMiddleware() func(http.Handler) http.Handler {
 
 			origin := r.Header.Get("Origin")
 
-			// If no origin (e.g. server-to-server or curl), we might allow or block.
-			// For browser widgets, Origin is expected.
-			// If allowed_origins is empty/loose, maybe allow all?
-			// Spec says "AllowedOrigins TEXT[]". If empty, maybe deny all or allow all?
-			// Let's assume strict: if defined, must match. If empty, maybe allow none (secure default).
-			// But for a widget to work, it must have allowed origins.
-
+			// If no origin (e.g. server-to-server or curl), we might block or allow depending on security policy.
+			// For public widgets, browsers always send Origin.
+			// If missing, we assume it's a direct API call (e.g. Postman) which is allowed if API key is valid.
+			// But for strict security, we might enforce Origin for browser-based endpoints.
+			// Let's allow empty Origin but don't set CORS headers.
 			if origin != "" {
-				allowed := false
-				for _, o := range widget.AllowedOrigins {
-					if o == "*" || o == origin {
-						allowed = true
-						break
-					}
-				}
-
-				if !allowed {
+				if !isOriginAllowed(origin, widget.AllowedOrigins) {
 					httputil.ErrorResponse(w, http.StatusForbidden, "CORS_ERROR", "origin not allowed")
 					return
 				}
@@ -112,4 +96,24 @@ func WidgetCORSMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// isOriginAllowed checks if the origin matches any of the allowed patterns.
+// Supports wildcards (e.g., "*.example.com").
+func isOriginAllowed(origin string, allowedOrigins []string) bool {
+	for _, pattern := range allowedOrigins {
+		if pattern == "*" {
+			return true
+		}
+		if pattern == origin {
+			return true
+		}
+		if strings.HasPrefix(pattern, "*.") {
+			suffix := pattern[1:] // e.g., ".example.com"
+			if strings.HasSuffix(origin, suffix) {
+				return true
+			}
+		}
+	}
+	return false
 }

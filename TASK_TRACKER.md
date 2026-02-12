@@ -207,20 +207,20 @@
 #### 2.5 Consent Engine
 - [x] Implement `Consent` entity with lifecycle (Batch 5)
 - [x] Create consent capture API (with proof recording) (Batch 5 - partial)
-- [ ] Implement consent withdrawal flow
-- [ ] Implement consent expiry management with notifications
+- [/] Implement consent withdrawal flow → **Batch 15 Task #1**
+- [/] Implement consent expiry management with notifications → **Batch 15 Task #3**
 - [ ] Create consent receipt generation
 - [x] Implement consent enforcement (check before data processing) (Batch 5)
 
 #### 2.6 Embeddable Consent Widget (CMS)
 - [x] Implement `ConsentWidget` CRUD service (Batch 5)
-- [ ] Implement widget API key generation and validation
+- [/] Implement widget API key generation and validation → **Batch 15 Task #1**
 - [x] Build public API: `POST /api/public/consent/sessions` (record decisions) (Batch 5)
-- [ ] Build public API: `GET /api/public/consent/check` (check consent status)
-- [ ] Build public API: `POST /api/public/consent/withdraw` (withdraw consent)
-- [ ] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config)
-- [ ] Implement CORS validation against `allowed_origins`
-- [ ] Build vanilla JS consent snippet (~15 KB gzipped, framework-agnostic)
+- [/] Build public API: `GET /api/public/consent/check` (check consent status) → **Batch 15 Task #1**
+- [/] Build public API: `POST /api/public/consent/withdraw` (withdraw consent) → **Batch 15 Task #1**
+- [/] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config) → **Batch 15 Task #1**
+- [/] Implement CORS validation against `allowed_origins` → **Batch 15 Task #1**
+- [ ] Build vanilla JS consent snippet (~15 KB gzipped, framework-agnostic) → Deferred (Batch 17+)
 - [ ] Support widget types: BANNER, PREFERENCE_CENTER, INLINE_FORM, PORTAL
 - [ ] Support layouts: BOTTOM_BAR, TOP_BAR, MODAL, SIDEBAR, FULL_PAGE
 - [ ] Implement widget theming (colors, fonts, logo, border radius)
@@ -418,45 +418,56 @@
 
 ## Consent Module (Sprint — MeITY BRD Alignment)
 
-### Notice Management
-- [ ] Implement `consent_notices` and `consent_notice_translations` DB migrations
-- [ ] Notice CRUD API (create, read, update, publish, archive)
-- [ ] Notice versioning logic (version increment on publish)
-- [ ] Notice-to-widget binding API
-- [ ] Notice management UI in Control Centre
+### Notice Management → **Batch 15 Task #2**
+- [/] Implement `consent_notices` and `consent_notice_translations` DB migrations
+- [/] Notice CRUD API (create, read, update, publish, archive)
+- [/] Notice versioning logic (version increment on publish)
+- [/] Notice-to-widget binding API
+- [/] Notice management UI in Control Centre → **Batch 15 Task #4**
 
-### Translation Pipeline (HuggingFace)
+### Translation Pipeline (HuggingFace) → **Deferred (Batch 16)**
 - [ ] HuggingFace API integration service
 - [ ] Translate endpoint (`POST /consent/notices/:id/translate`)
 - [ ] Translation storage and retrieval
 - [ ] Manual translation override endpoint
 - [ ] Translation status tracking (per-language progress)
 
-### Consent Notifications
+### Consent Notifications → **Deferred (Batch 16)**
 - [ ] `consent_notifications` DB migration
 - [ ] Notification template management API
 - [ ] Event-driven notification triggers (consent granted/withdrawn/expiring)
 - [ ] Email, SMS, Webhook delivery channels
 - [ ] In-app notification component
 
-### Consent Renewal
-- [ ] `consent_renewal_logs` DB migration
-- [ ] Renewal reminder scheduler (30/15/7 days)
-- [ ] Renewal API and UI flow
-- [ ] Expiry handling (mark as LAPSED)
+### Consent Renewal → **Batch 15 Task #3**
+- [/] `consent_renewal_logs` DB migration
+- [/] Renewal reminder scheduler (30/15/7 days)
+- [/] Renewal API and UI flow
+- [/] Expiry handling (mark as LAPSED)
 
-### DigiLocker Integration
-- [ ] OAuth 2.0 + PKCE flow implementation
-- [ ] Identity verification via DigiLocker User API
-- [ ] Age verification for parental consent (DPDPA § 9)
-- [ ] Consent artifact push to DigiLocker
-- [ ] Fallback to OTP on DigiLocker unavailability
+### DigiLocker Integration → ✅ Partially Complete (Batch 12)
+- [x] OAuth 2.0 + PKCE flow implementation (Batch 12)
+- [x] Identity verification via DigiLocker User API (Batch 12)
+- [ ] Age verification for parental consent (DPDPA § 9) → Deferred
+- [ ] Consent artifact push to DigiLocker → Deferred
+- [x] Fallback to OTP on DigiLocker unavailability (Batch 12)
 
-### Consent Enforcement Middleware (Planned)
-- [ ] Consent check endpoint optimization (< 50ms p99)
+### Consent Enforcement Middleware → **Deferred (Batch 17+)**
+- [ ] Consent check endpoint optimization (<50ms p99)
 - [ ] Redis-backed consent cache
 - [ ] Cache invalidation on consent withdrawal (pub/sub)
 - [ ] Language SDKs (Go, Python, Node.js)
+
+### Grievance Redressal → **Deferred (Batch 16)**
+- [ ] Complaint logging with categorization
+- [ ] Resolution tracking dashboard
+- [ ] DPO escalation workflow
+- [ ] Feedback collection on resolution
+
+### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
+- [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal
+- [ ] Data Retention Policy Configuration
+- [ ] Custom role creation and permission hierarchy
 
 ---
 
@@ -493,4 +504,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 11, 2026 — Consent module documentation and sprint tasks added (MeITY BRD alignment); Nomination request planning
+> **Last Updated**: February 12, 2026 — Batch 14 complete; Batch 15 (Consent Module Completion) planned; RBAC/Retention/Translations deferred; Grievance Redressal added to backlog

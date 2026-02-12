@@ -18,6 +18,7 @@ type SchedulerService struct {
 	tenantRepo     identity.TenantRepository
 	policySvc      *PolicyService
 	scanService    ScanOrchestrator
+	expirySvc      *ConsentExpiryService
 	logger         *slog.Logger
 	parser         cron.Parser
 	ticker         *time.Ticker
@@ -31,6 +32,7 @@ func NewSchedulerService(
 	tenantRepo identity.TenantRepository,
 	policySvc *PolicyService,
 	scanService ScanOrchestrator,
+	expirySvc *ConsentExpiryService,
 	logger *slog.Logger,
 ) *SchedulerService {
 	return &SchedulerService{
@@ -38,6 +40,7 @@ func NewSchedulerService(
 		tenantRepo:  tenantRepo,
 		policySvc:   policySvc,
 		scanService: scanService,
+		expirySvc:   expirySvc,
 		logger:      logger.With("service", "scheduler"),
 		parser:      cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow),
 		ticker:      time.NewTicker(60 * time.Second),
@@ -55,6 +58,7 @@ func (s *SchedulerService) Start(ctx context.Context) error {
 			case <-s.ticker.C:
 				s.checkSchedules(ctx)
 				s.schedulePolicyEvaluations(ctx)
+				s.checkConsentExpiries(ctx)
 			case <-s.stopChan:
 				s.logger.Info("Stopping scan scheduler")
 				return

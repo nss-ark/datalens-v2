@@ -48,7 +48,7 @@ func (m *MockScanOrchestrator) GetHistory(ctx context.Context, dataSourceID type
 func TestScheduler_IsDue(t *testing.T) {
 	// Setup
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	svc := NewSchedulerService(nil, nil, nil, nil, logger)
+	svc := NewSchedulerService(nil, nil, nil, nil, nil, logger)
 
 	// 1. Cron: Every minute (* * * * *)
 	// Last run: 2 minutes ago -> Due
@@ -90,7 +90,7 @@ func TestScheduler_IsDue(t *testing.T) {
 }
 
 func TestScheduler_ValidateCron(t *testing.T) {
-	svc := NewSchedulerService(nil, nil, nil, nil, slog.Default())
+	svc := NewSchedulerService(nil, nil, nil, nil, nil, slog.Default())
 
 	assert.NoError(t, svc.ValidateCron("* * * * *"))
 	assert.NoError(t, svc.ValidateCron("0 0 * * *"))
@@ -99,7 +99,7 @@ func TestScheduler_ValidateCron(t *testing.T) {
 
 func TestScheduler_Lifecycle(t *testing.T) {
 	// Just test Start/Stop doesn't panic
-	svc := NewSchedulerService(nil, nil, nil, nil, slog.Default())
+	svc := NewSchedulerService(nil, nil, nil, nil, nil, slog.Default())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

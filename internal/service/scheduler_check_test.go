@@ -90,7 +90,7 @@ func TestCheckSchedules_TriggersScan(t *testing.T) {
 	scanSvc := new(LocalMockScanOrchestrator)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	scheduler := NewSchedulerService(dsRepo, tenantRepo, nil, scanSvc, logger)
+	scheduler := NewSchedulerService(dsRepo, tenantRepo, nil, scanSvc, nil, logger)
 
 	ctx := context.Background()
 	tenantID := types.NewID()
@@ -132,7 +132,7 @@ func TestCheckSchedules_NotDue(t *testing.T) {
 	scanSvc := new(LocalMockScanOrchestrator)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	scheduler := NewSchedulerService(dsRepo, tenantRepo, nil, scanSvc, logger)
+	scheduler := NewSchedulerService(dsRepo, tenantRepo, nil, scanSvc, nil, logger)
 
 	ctx := context.Background()
 	tenantID := types.NewID()

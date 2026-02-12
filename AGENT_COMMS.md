@@ -6,16 +6,36 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 14: Consent Analytics & AI) ✅ COMPLETE
+## Current Sprint Goals (Batch 15: Consent Module Completion)
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **Consent Analytics** | Backend | [x] | JSONB aggregation API for conversion + purpose stats. |
-| **Analytics UI** | Frontend | [x] | Recharts dashboard with date filters. |
-| **Smart Purpose** | AI/ML | [x] | Industry context + sample data in prompts. |
-| **Dark Patterns** | AI/ML | [x] | India Guidelines 2023 — 13 pattern types + Lab UI. |
+| **Consent Public APIs** | Backend | [ ] | Check, Withdraw, Widget Config + API Key middleware + CORS. |
+| **Notice Management** | Backend | [ ] | CRUD, versioning, widget binding — DPDPA mandatory. |
+| **Consent Renewal/Expiry** | Backend | [ ] | Daily expiry checks, renewal reminders, renewal API. |
+| **Notice UI + Portal Withdrawal** | Frontend | [ ] | Notice admin page + portal consent revocation. |
+| **Consent Lifecycle Tests** | Test | [ ] | Grant→Check→Withdraw→Check, notice lifecycle, expiry. |
 
 ## Active Messages
 *(Newest on top)*
+
+### [2026-02-12] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 15 Started — Consent Module Completion (DPDPA Lifecycle)
+**Type**: ANNOUNCEMENT
+
+**Status**:
+- Batch 14 (Consent Analytics & AI) is **COMPLETE**.
+- Moving to Batch 15: Closing critical DPDPA compliance gaps.
+
+**Focus (BRD §4.1)**:
+- **Consent Public APIs**: Widget Check/Withdraw/Config endpoints (P0).
+- **Notice Management**: Privacy notice CRUD + version tracking + widget binding (P0).
+- **Consent Renewal**: Expiry detection + renewal reminders (P1).
+- **Portal Withdrawal**: Data Principal can revoke per-purpose consent (P1).
+
+**Deferred**:
+- RBAC → SuperAdmin portal (future)
+- Data Retention Config → System admin (future)
+- Translation Pipeline → Batch 16
 
 ### [2026-02-12] [FROM: AI/ML] → [TO: ALL]
 **Subject**: India Dark Pattern Detector (AI)

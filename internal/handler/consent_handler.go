@@ -15,12 +15,16 @@ import (
 
 // ConsentHandler handles HTTP requests for consent management.
 type ConsentHandler struct {
-	service *service.ConsentService
+	service   *service.ConsentService
+	expirySvc *service.ConsentExpiryService
 }
 
 // NewConsentHandler creates a new ConsentHandler.
-func NewConsentHandler(s *service.ConsentService) *ConsentHandler {
-	return &ConsentHandler{service: s}
+func NewConsentHandler(s *service.ConsentService, expirySvc *service.ConsentExpiryService) *ConsentHandler {
+	return &ConsentHandler{
+		service:   s,
+		expirySvc: expirySvc,
+	}
 }
 
 // Routes returns the router for internal (protected) consent endpoints.
@@ -54,6 +58,7 @@ func (h *ConsentHandler) PublicRoutes() chi.Router {
 	r.Post("/sessions", h.recordConsent)
 	r.Get("/check", h.checkConsent)
 	r.Post("/withdraw", h.withdrawConsent)
+	r.Post("/renew", h.renewConsent)
 
 	return r
 }

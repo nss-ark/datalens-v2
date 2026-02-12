@@ -122,8 +122,10 @@ func main() {
 	scanRunRepo := repository.NewScanRunRepo(dbPool)
 	dsrRepo := repository.NewDSRRepo(dbPool)
 	consentWidgetRepo := repository.NewConsentWidgetRepo(dbPool)
+	consentNoticeRepo := repository.NewPostgresNoticeRepository(dbPool)
 	consentSessionRepo := repository.NewConsentSessionRepo(dbPool)
 	consentHistoryRepo := repository.NewConsentHistoryRepo(dbPool)
+	consentRenewalRepo := repository.NewConsentRenewalRepo(dbPool)
 	policyRepo := repository.NewPostgresPolicyRepository(dbPool)
 
 	violationRepo := repository.NewPostgresViolationRepository(dbPool)
@@ -139,69 +141,7 @@ func main() {
 	// Audit Service (Core dependency for others)
 	auditSvc := service.NewAuditService(auditRepo, slog.Default())
 
-	// Connector Registry (Initialized below, but needed for dsSvc? Move initialization up!)
-	// Wait, connRegistry is initialized at line 229. We need to move it UP.
-	// See below.
-
-	// Temporarily: we can't just change the line here without moving the registry init block.
-	// I will do a multi-replace or two steps.
-	// Actually, connRegistry depends on detection service (detector).
-	// Detector depends on AI Gateway.
-	// This dependency chain is deep.
-	// We need to initialize registry BEFORE dsSvc.
-
-	// STRATEGY:
-	// 1. Move Connector Registry initialization UP, before `dsSvc` init.
-	// 2. But it needs `detector`. So move `detector` up too.
-	// 3. `detector` needs `aiGateway`. Move `aiGateway` up too.
-
-	// This is a big reorder in main.go.
-	// Instead of reordering everything which is risky with replace_file_content,
-	// I will just use `nil` for now and set it later? No, that's hacky.
-	// Go doesn't support that easily for struct fields unless we use setters.
-	// `NewDataSourceService` expects it.
-
-	// Let's reorder:
-	// AI Gateway -> Detector -> Connector Registry -> Service Init.
-
-	// Current order:
-	// 1. Repos
-	// 2. Services (including dsSvc)
-	// 3. AI Gateway
-	// 4. Detector
-	// 5. Connector Registry
-	// 6. Discovery Service
-
-	// I need to Move 3, 4, 5 BEFORE 2.
-
-	// This is too complex for a single replace block if lines are far apart.
-	// I will just change the `New` call here to use `connRegistry` (assuming I move it).
-	// But `connRegistry` variable won't exist yet.
-
-	// I'll leave this Block for now and use MultiReplace to reorder `main.go` chunks.
-	// OR use `task_boundary` to do it carefully.
-
-	// Actually, I can just initialize `dsSvc` LATER.
-	// Does anything depend on `dsSvc` before line 229?
-	// `schedulerSvc` (line 295) -> OK
-	// `dsHandler` (line 343) -> OK
-	// `policySvc` uses `dsRepo` not `dsSvc`.
-	// `scanSvc` uses `dsRepo`.
-	// `dsrSvc` uses `dsRepo`.
-
-	// So `dsSvc` is NOT a dependency for other SERVICES?
-	// `m365AuthSvc`? uses `dsRepo`.
-
-	// Wait, `tenantSvc` uses `authSvc`.
-	// `dsSvc` seems independent.
-
-	// So I can move `dsSvc` initialization down to after `connRegistry`.
-
-	// Let's check `service.NewDataSourceService` call site again.
-	// It is at line 135.
-	// I will DELETE it from here and ADD it after `connRegistry` init (line 232).
-
-	// Step 1: DELETE from here.
+	// Services Initialization - Order matters for dependencies
 
 	purposeSvc := service.NewPurposeService(purposeRepo, eb, slog.Default())
 	authSvc := service.NewAuthService(
@@ -228,6 +168,18 @@ func main() {
 		cfg.Consent.SigningKey,
 		slog.Default(),
 	)
+
+	consentExpirySvc := service.NewConsentExpiryService(
+		consentSessionRepo,
+		consentRenewalRepo,
+		consentHistoryRepo,
+		consentWidgetRepo,
+		eb,
+		slog.Default(),
+		consentSvc,
+	)
+
+	noticeSvc := service.NewNoticeService(consentNoticeRepo, consentWidgetRepo, eb, slog.Default())
 	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
 	analyticsSvc := analytics.NewConsentAnalyticsService(consentSessionRepo)
 
@@ -383,7 +335,7 @@ func main() {
 	}()
 
 	// 8b. Scan Scheduler
-	schedulerSvc := service.NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, slog.Default())
+	schedulerSvc := service.NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, consentExpirySvc, slog.Default())
 	if err := schedulerSvc.Start(context.Background()); err != nil {
 		log.Error("Failed to start scan scheduler", "error", err)
 	}
@@ -437,8 +389,9 @@ func main() {
 	discoveryHandler := handler.NewDiscoveryHandler(discoverySvc, scanSvc, inventoryRepo, entityRepo, fieldRepo)
 	feedbackHandler := handler.NewFeedbackHandler(feedbackSvc)
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
-	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
-	consentHandler := handler.NewConsentHandler(consentSvc)
+	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor)                  // dsrExecutor was created earlier
+	consentHandler := handler.NewConsentHandler(consentSvc, consentExpirySvc) // Updated constructor
+	noticeHandler := handler.NewNoticeHandler(noticeSvc)
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
 	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
 	breachHandler := handler.NewBreachHandler(breachSvc)
@@ -556,7 +509,10 @@ func main() {
 			r.Mount("/dashboard", dashboardHandler.Routes())
 
 			// Consent
-			r.Mount("/consent", consentHandler.Routes())
+			r.Route("/consent", func(r chi.Router) {
+				r.Mount("/", consentHandler.Routes())
+				r.Mount("/notices", noticeHandler.Routes())
+			})
 
 			// Audit
 			r.Route("/audit", func(r chi.Router) {

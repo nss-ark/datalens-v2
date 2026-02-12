@@ -427,17 +427,9 @@ func (s *ConsentService) RecordConsent(ctx context.Context, req RecordConsentReq
 func (s *ConsentService) CheckConsent(ctx context.Context, tenantID, subjectID, purposeID types.ID) (bool, error) {
 	entry, err := s.historyRepo.GetLatestState(ctx, tenantID, subjectID, purposeID)
 	if err != nil {
-		// If error is "no rows", it returns nil, nil from repo? 
-		// My repo impl for GetLatestState wraps error.
-		// I need to handle "not found" gracefully in repo or here.
-		// Let's assume repo returns nil, nil if not found (I'll fix repo import to be safe).
-		// Wait, I updated repo to return error if not found.
-		// I should update repo to return nil, nil or specific error.
-		// In previous step I wrote: "return nil, fmt.Errorf..."
-		// I should probably fix the repo to handle ErrNoRows cleanly.
 		return false, fmt.Errorf("check consent: %w", err)
 	}
-	
+
 	if entry == nil {
 		return false, nil
 	}

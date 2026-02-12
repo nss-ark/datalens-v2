@@ -96,7 +96,7 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 
 ---
 
-## Current Project State (as of February 11, 2026)
+## Current Project State (as of February 12, 2026)
 
 ### Completed ✅ — DO NOT Re-Assign
 
@@ -120,11 +120,31 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - **Encryption**: AES-GCM for sensitive tokens (`pkg/crypto`)
 - **Audit Logging**: Enterprise-grade immutable logs
 
+#### Automated Governance (Batch 13)
+- **DSR Automation**: Connector `Delete`/`Export` methods, auto-execution engine
+- **Data Lineage V2**: Field-level recursive tracing (depth 5)
+- **Smart Scheduler**: Tenant-aware cron-based scan triggering
+
+#### Consent Analytics & AI (Batch 14)
+- **Consent Analytics API**: JSONB aggregation, conversion rates, purpose stats
+- **Analytics Dashboard**: Recharts visualization with date filters
+- **Smart Purpose AI**: Industry context + sample data in prompts
+- **India Dark Pattern Detector**: 13 patterns from Guidelines 2023, clause citations
+- **Dark Pattern Lab UI**: Interactive testing tool in Control Centre
+
 ### Known Technical Debt ⚠️
-1.  **DSR Automation**: Access/Erasure DSRs are still manual. We have the *scanners* and *identity*, now we need to wire them for auto-execution.
-2.  **Consent Analytics**: We have the data but no dashboard for "Consent Conversion Rate".
-3.  **Data Lineage Visualization**: Basic graph exists, but deeper field-level lineage is needed.
-4.  **Integration Tests**: We have tests, but CI pipeline integration needs final polish for Docker-in-Docker.
+1.  **Consent Public APIs**: Widget Check, Withdraw, Config endpoints not yet live — blocks embeddable widget.
+2.  **Notice Management**: DPDPA-mandatory privacy notices not yet implemented.
+3.  **Consent Renewal**: Expiry detection and renewal reminders not built.
+4.  **Integration Tests**: CI pipeline integration needs final polish for Docker-in-Docker.
+
+### Deferred Items (Not Planned Yet) 📋
+- **RBAC / User Role Management** → SuperAdmin portal module (future)
+- **Data Retention Policy Config** → System admin feature (future)
+- **Translation Pipeline (HuggingFace)** → Batch 16
+- **Grievance Redressal** → Extends DPR/DSR flows (Batch 16)
+- **Consent Notifications (Email/SMS)** → Requires DevOps email service (Batch 16)
+- **Vanilla JS Widget Bundle** → Separate build toolchain (future)
 
 ### Domain Entities Already Defined (Not Yet Implemented) 📋
 The following entities exist in `internal/domain/consent/entities.go` with full field definitions and repository interfaces. They are **ready to be implemented** (repositories + services + handlers):
@@ -140,27 +160,32 @@ The following entities exist in `internal/domain/consent/entities.go` with full 
 
 ## Next Roadmap Batches
 
-### Batch 13: Automated Governance (DSR & Lineage)
-| Task | Agent | Priority | Notes |
-|------|-------|----------|-------|
-| DSR Automation Engine (Connect Scanners to Erasure/Access) | Backend | P0 | Use `ScannableConnector` interface |
-| Data Lineage V2 (Field-level tracking) | Backend | P1 | Enhance `DataFlow` entities |
-| Smart Discovery (Schedule scans based on activity) | Backend/AI | P2 | Variable scan frequency |
-| Automated DSR Tests (Mocked Connectors) | Test | P0 | Verify erasure logic safely |
+### Batch 13: Automated Governance (DSR & Lineage) ✅ COMPLETE
 
-### Batch 14: Consent Analytics & AI
-| Task | Agent | Priority | Notes |
-|------|-------|----------|-------|
-| Consent Analytics Dashboard (Conversion rates, A/B testing) | Frontend | P1 | Visualization of `ConsentSession` data |
-| Enhanced Purpose Classification (LLM-based) | AI/ML | P1 | Improve confidence of purpose suggestions |
-| Privacy UX "Dark Pattern" Detector | AI/ML | P2 | Analyze widget configs for compliance |
+### Batch 14: Consent Analytics & AI ✅ COMPLETE
 
-### Batch 15: Enterprise Scale (Event Mesh)
+### Batch 15: Consent Module Completion (DPDPA Lifecycle) ← CURRENT
 | Task | Agent | Priority | Notes |
 |------|-------|----------|-------|
-| Event Mesh Refactoring (Decouple Monolith) | Backend | P1 | Prepare for microservices split if needed |
-| Multi-Region Data Sovereignty | DevOps | P0 | Tenant pinning to regions |
-| Performance Optimization (Redis Caching) | Backend | P1 | Cache high-read endpoints |
+| Consent Public APIs + Widget Security | Backend | P0 | Check, Withdraw, Widget Config + API Key + CORS |
+| Notice Management (CRUD + Versioning) | Backend | P0 | DPDPA-mandatory privacy notices |
+| Consent Renewal & Expiry Engine | Backend | P1 | Daily expiry checks, renewal reminders |
+| Notice Management UI + Portal Withdrawal | Frontend | P1 | Admin notices + portal consent revocation |
+| Consent Lifecycle Integration Tests | Test | P1 | Grant→Check→Withdraw→Check, expiry |
+
+### Batch 16: Consent Notifications & Translation
+| Task | Agent | Priority | Notes |
+|------|-------|----------|-------|
+| Translation Pipeline (HuggingFace) | AI/ML | P1 | 22 languages for notices |
+| Consent Notifications (Email/SMS/Webhook) | Backend | P1 | Event-driven alerts |
+| Grievance Redressal Module | Backend | P1 | Extends DPR/DSR flows |
+
+### Batch 17+: Enterprise Scale
+| Task | Agent | Priority | Notes |
+|------|-------|----------|-------|
+| Event Mesh Refactoring | Backend | P1 | Decouple monolith |
+| Redis Consent Cache + Enforcement Middleware | Backend | P0 | <50ms consent checks |
+| SuperAdmin Portal (RBAC + Module Selection) | Full Stack | P1 | User/module management |
 
 ---
 
