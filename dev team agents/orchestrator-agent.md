@@ -100,51 +100,31 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 
 ### Completed ✅ — DO NOT Re-Assign
 
-#### Infrastructure (Sprints 0.1–0.5)
-- Monorepo structure, Go 1.24 module at project root (`github.com/complyark/datalens`)
-- PostgreSQL 16 + Redis 7 + NATS JetStream via `docker-compose.dev.yml`
-- Database migrations (append-only, in `internal/database/migrations/`)
-- Seed scripts for development data
-- Docker image builds (backend + frontend Dockerfiles)
-- `docker-compose.prod.yml` for production deployment
-- GitHub Actions CI workflow (`.github/workflows/ci.yml`) — lint, test, build, Docker push
-- `scripts/build.ps1` for Windows developers
-- Structured logging via `slog`
-- `.env.example` with all config variables
+#### Infrastructure & Core (Batches 0–7)
+- **Monorepo**: Go 1.24 + React/Vite + PostgreSQL + Redis + NATS
+- **Auth**: JWT, RBAC, API Keys, OTP
+- **Governance**: Policy Engine, Violation Tracking, Purpose Mapping
+- **Portal**: DSR Submission, Consent History
 
-#### Backend Core (Sprints 1–7A)
-- **Auth**: JWT + refresh tokens, API key generation, user registration/login, RBAC
-- **Tenant isolation**: `types.ContextKey("tenant_id")`
-- **Domain entities**: DataSource, DataInventory, ... DataPrincipalProfile, DPRRequest, Purpose, Policy, Violation, SectorTemplate
-- **Repositories**: PostgreSQL via pgx
-- **Services**: ..., ConsentService, PortalAuthService, DataPrincipalService, ContextEngine, PolicyService
-- **Handlers**: ..., consent_handler.go, portal_handler.go, governance_handler.go
-- **Connectors**: PostgreSQL, MySQL, MongoDB, S3 (CSV/JSON/JSONL)
-- **Governance**: Purpose Mapping (AI/Pattern), Policy Engine (Evaluation), Violation Tracking
-- **Portal**: OTP Auth, Profile, DPR Submission
+#### Scanners & Connectors (Batches 8, 10, 11)
+- **Shared FileScanner**: Reusable pattern for streaming/PII detection (`shared/file_scanner.go`)
+- **AWS**: S3 (CSV/JSON/JSONL scanning)
+- **M365**: Outlook (Email/Attachments), OneDrive (Files), SharePoint (Sites)
+- **Google Workspace**: Gmail (Body/Attachments), Drive (Files), OAuth2 Auth
+- **Connectors**: Pattern-matched implementation for all cloud sources
 
-#### Frontend (Sprints 3–7A)
-- **Pages**: ..., Portal/*, Governance/PurposeMapping, Governance/Policies, Governance/Violations
-- **Components**: ..., ProposalCard, PolicyForm, ErrorBoundary
-- **State**: Zustand auth store, React Query
-
-#### Tests (Batches 1–7A)
-- **E2E Tests**: Portal Flow (OTP->DPR), Governance Flow (Suggest->Policy->Violation)
-- **Unit Tests**: Core services, handlers, connectors
-- **Hardening**: Lint-free, standard error handling, structured logging
-
-#### Upcoming (Batch 8)
-- **Data Lineage**: Flow tracking, visualization API
-- **Cloud Connectors**: AWS (S3/RDS/DynamoDB), Azure (Blob/SQL)
-- **Audit Logging**: Enterprise-grade audit trail
+#### Security & Trust (Batch 9, 12)
+- **Breach Management**: Incident lifecycle, SLA tracking, Data Principal notification
+- **Identity Assurance**: IAL1 (Email) / IAL2 (DigiLocker) model
+- **DigiLocker**: OAuth2 + HMAC signing, document fetching
+- **Encryption**: AES-GCM for sensitive tokens (`pkg/crypto`)
+- **Audit Logging**: Enterprise-grade immutable logs
 
 ### Known Technical Debt ⚠️
-1. **DSR correction is a stub** — `DSRExecutor` returns "correction not yet implemented for connector", needs connector `Update()` method
-2. **Notes field not persisted** — Frontend DSR create modal has a "notes" field, but backend `CreateDSRRequest` struct doesn't include it
-3. **S3 connector not in registry** — `s3.go` exists but the TODO in `registry.go` to register it is still commented out
-4. **Integration tests untested** — All compile but haven't been executed (Docker Desktop unavailable)
-5. **No real LLM provider testing** — AI tests mock providers, haven't validated with live OpenAI/Anthropic
-6. **Scan scheduling no persistence** — Scheduler runs in-memory; no DB persistence of scheduled jobs across restarts
+1.  **DSR Automation**: Access/Erasure DSRs are still manual. We have the *scanners* and *identity*, now we need to wire them for auto-execution.
+2.  **Consent Analytics**: We have the data but no dashboard for "Consent Conversion Rate".
+3.  **Data Lineage Visualization**: Basic graph exists, but deeper field-level lineage is needed.
+4.  **Integration Tests**: We have tests, but CI pipeline integration needs final polish for Docker-in-Docker.
 
 ### Domain Entities Already Defined (Not Yet Implemented) 📋
 The following entities exist in `internal/domain/consent/entities.go` with full field definitions and repository interfaces. They are **ready to be implemented** (repositories + services + handlers):
@@ -158,43 +138,29 @@ The following entities exist in `internal/domain/consent/entities.go` with full 
 
 ## Next 4 Sprint Batches — Roadmap
 
-### Batch 5: Consent Engine Foundation (Backend + Frontend + Tests)
-| Task | Agent | Priority | Notes |
-|------|-------|----------|-------|
-| Consent Engine service + repository (widget CRUD, session capture, consent check) | Backend | P0 | Domain entities already defined in `internal/domain/consent/entities.go` |
-| Consent Management page (widget list, widget builder, consent analytics) | Frontend | P0 | After Backend provides /consent/widgets endpoints |
-| Embeddable consent widget (JS snippet, ~15KB gzipped, framework-agnostic) | Frontend/DevOps | P1 | PUBLIC API — no JWT auth, uses widget API key + CORS validation |
-| Tests for Batch 4 code (DSR executor, S3 connector, scheduler, scan service) | Test | P0 | Can run in parallel |
-| Fix S3 connector registry registration | Backend | P2 | Quick fix: uncomment + wire in `registry.go` |
+## Next Roadmap Batches
 
-### Batch 6: Data Principal Portal (Backend + Frontend)
+### Batch 13: Automated Governance (DSR & Lineage)
 | Task | Agent | Priority | Notes |
 |------|-------|----------|-------|
-| DataPrincipalProfile service + OTP verification | Backend | P0 | Entity defined, needs email/SMS OTP integration |
-| Portal public APIs (`/api/public/portal/*`) | Backend | P0 | PUBLIC — short-lived JWT, no tenant JWT |
-| DPR submission + tracking + download | Backend | P0 | Links DPR → internal DSR on creation |
-| Portal UI (consent dashboard, history timeline, DPR submission) | Frontend | P0 | Standalone page, different layout (no sidebar) |
-| Guardian consent flow (DPDPA Section 9) | Backend | P1 | Minor flag, guardian OTP verification |
-| Tests for Batch 5 | Test | P0 | |
+| DSR Automation Engine (Connect Scanners to Erasure/Access) | Backend | P0 | Use `ScannableConnector` interface |
+| Data Lineage V2 (Field-level tracking) | Backend | P1 | Enhance `DataFlow` entities |
+| Smart Discovery (Schedule scans based on activity) | Backend/AI | P2 | Variable scan frequency |
+| Automated DSR Tests (Mocked Connectors) | Test | P0 | Verify erasure logic safely |
 
-### Batch 7: Purpose Mapping & Governance (Backend + AI/ML + Frontend)
+### Batch 14: Consent Analytics & AI
 | Task | Agent | Priority | Notes |
 |------|-------|----------|-------|
-| AI-powered purpose suggestion engine | AI/ML | P0 | Context analysis (table + column patterns), sector templates |
-| Purpose mapping UI (one-click confirm, batch review) | Frontend | P0 | After AI/ML provides suggestion API |
-| Governance Policy engine (entity, rule evaluation, violation detection) | Backend | P1 | Scheduled job for violation checks |
-| Data lineage API | Backend | P1 | Track purpose across data flows |
-| Tests for Batch 6 | Test | P0 | |
+| Consent Analytics Dashboard (Conversion rates, A/B testing) | Frontend | P1 | Visualization of `ConsentSession` data |
+| Enhanced Purpose Classification (LLM-based) | AI/ML | P1 | Improve confidence of purpose suggestions |
+| Privacy UX "Dark Pattern" Detector | AI/ML | P2 | Analyze widget configs for compliance |
 
-### Batch 8: Polish, DSR Verification, & Enterprise Prep (All)
+### Batch 15: Enterprise Scale (Event Mesh)
 | Task | Agent | Priority | Notes |
 |------|-------|----------|-------|
-| DSR auto-verification (post-execution re-query, evidence package) | Backend | P0 | |
-| DSR identity verification (Aadhaar/PAN matching, AI-assisted) | Backend/AI | P1 | |
-| Appeal flow implementation (DPDPA Section 18) | Backend | P1 | |
-| Observability (Prometheus metrics, Grafana dashboards) | DevOps | P1 | |
-| Comprehensive E2E tests (consent → DPR → DSR pipeline) | Test | P0 | |
-| UI polish pass (dark mode, mobile responsive, keyboard shortcuts) | Frontend | P2 | |
+| Event Mesh Refactoring (Decouple Monolith) | Backend | P1 | Prepare for microservices split if needed |
+| Multi-Region Data Sovereignty | DevOps | P0 | Tenant pinning to regions |
+| Performance Optimization (Redis Caching) | Backend | P1 | Cache high-read endpoints |
 
 ---
 
