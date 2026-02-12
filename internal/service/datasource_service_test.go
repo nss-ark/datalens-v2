@@ -6,6 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/complyark/datalens/internal/config"
+	"github.com/complyark/datalens/internal/infrastructure/connector"
+	"github.com/complyark/datalens/internal/service/detection"
 	"github.com/complyark/datalens/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +18,11 @@ func newTestDataSourceService() (*DataSourceService, *mockDataSourceRepo, *mockE
 	repo := newMockDataSourceRepo()
 	eb := newMockEventBus()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	svc := NewDataSourceService(repo, eb, logger)
+
+	detector := detection.NewDefaultDetector(nil)
+	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
+
+	svc := NewDataSourceService(repo, registry, eb, logger)
 	return svc, repo, eb
 }
 

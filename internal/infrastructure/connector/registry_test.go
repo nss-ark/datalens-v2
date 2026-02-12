@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/complyark/datalens/internal/config"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -47,7 +48,8 @@ func (m *MockConnector) Close() error {
 }
 
 func TestConnectorRegistry_RegisterAndGet(t *testing.T) {
-	registry := NewConnectorRegistry()
+	cfg := &config.Config{}
+	registry := NewConnectorRegistry(cfg, nil)
 
 	// Verify built-in connectors are registered
 	pgConn, err := registry.GetConnector(types.DataSourcePostgreSQL)
@@ -68,7 +70,19 @@ func TestConnectorRegistry_RegisterAndGet(t *testing.T) {
 }
 
 func TestConnectorRegistry_UnknownType(t *testing.T) {
-	registry := NewConnectorRegistry()
+	// Mock config
+	cfg := &config.Config{
+		App: config.AppConfig{SecretKey: "test-secret-key-32-chars-long-must-be"},
+	}
+	// Mock detector (can be nil for this test as we don't invoke connectors that need it?)
+	// But NewConnectorRegistry passes it to constructors.
+	// Let's create a dummy detector if needed, or nil.
+	// NewDefaultDetector needs AIGateway.
+	// Let's pass nil for detector for now, assuming factories don't crash immediately?
+	// The factories like `NewM365Connector` take detector.
+	// `NewM365Connector` stores it.
+
+	registry := NewConnectorRegistry(cfg, nil)
 
 	_, err := registry.GetConnector("UNKNOWN_TYPE")
 	assert.Error(t, err)
@@ -76,7 +90,8 @@ func TestConnectorRegistry_UnknownType(t *testing.T) {
 }
 
 func TestConnectorRegistry_SupportedTypes(t *testing.T) {
-	registry := NewConnectorRegistry()
+	cfg := &config.Config{}
+	registry := NewConnectorRegistry(cfg, nil)
 
 	supportedTypes := registry.SupportedTypes()
 	assert.Greater(t, len(supportedTypes), 0)

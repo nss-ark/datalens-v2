@@ -1,6 +1,6 @@
 import type { ID, BaseEntity } from './common';
 
-export type DataSourceType = 'postgresql' | 'mysql' | 'mongodb' | 'mssql' | 'oracle' | 'sqlite' | 's3' | 'gcs' | 'azure_blob';
+export type DataSourceType = 'postgresql' | 'mysql' | 'mongodb' | 'mssql' | 'oracle' | 'sqlite' | 's3' | 'gcs' | 'azure_blob' | 'google_workspace' | 'onedrive' | 'sharepoint' | 'outlook' | 'm365';
 
 export type ConnectionStatus = 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'TESTING';
 
@@ -15,6 +15,7 @@ export interface DataSource extends BaseEntity {
     status: ConnectionStatus;
     last_sync_at: string | null;
     error_message?: string | null;
+    config?: string; // JSON string for scope configuration
 }
 
 export type ScanStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
@@ -82,4 +83,11 @@ export interface M365ScopeConfig {
     excludedExtensions?: string[];
     scanAllUsers?: boolean; // If true, automatically scan new users
     scanAllSites?: boolean; // If true, automatically scan new sites
+}
+
+export interface GoogleScopeConfig {
+    scanMyDrive: boolean;
+    scanSharedDrives: boolean;
+    scanGmail: boolean;
+    excludedExtensions?: string[];
 }

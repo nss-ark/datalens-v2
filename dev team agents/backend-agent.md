@@ -14,24 +14,26 @@ You receive task specifications from an Orchestrator agent and implement them pr
 | `internal/domain/` | Domain entities and value objects (DDD) |
 | `internal/domain/compliance/` | DSR, DSRTask entities and repository interfaces |
 | `internal/domain/consent/` | ConsentWidget, ConsentSession, DataPrincipalProfile, DPRRequest entities — **already defined, ready to implement** |
-| `internal/domain/discovery/` | DataField, PIIClassification, Connector interface, detection entities |
-| `internal/domain/governance/` | Policy, retention entities (future) |
+| `internal/domain/discovery/` | DataField, PIIClassification, Connector interface, detection entities, `ScannableConnector` interface |
+| `internal/domain/governance/` | Policy, retention entities, data lineage |
 | `internal/domain/breach/` | BreachIncident entity, repository interface (Batch 9) |
+| `internal/domain/audit/` | AuditLog entity, repository interface (Batch 8) |
 | `internal/domain/evidence/` | Evidence package entities (future) |
 | `internal/handler/` | HTTP handlers (chi v5 router with sub-routes) |
 | `internal/service/` | Business logic services |
 | `internal/repository/` | Database access (PostgreSQL via pgx) |
-| `internal/middleware/` | Auth (`auth_middleware.go`), rate limiting (`ratelimit_middleware.go`), tenant isolation (`tenant_middleware.go`) |
+| `internal/middleware/` | Auth, rate limiting, tenant isolation, **audit logging** |
 | `internal/config/` | Configuration loading |
-| `internal/infrastructure/connector/` | Data source connectors (PostgreSQL, MySQL, MongoDB, S3) + connector registry |
-| `internal/infrastructure/queue/` | NATS JetStream queue implementations (scan queue, DSR queue) |
+| `internal/infrastructure/connector/` | Data source connectors + `shared/file_scanner.go` (Reusable Scanner) |
+| `internal/infrastructure/queue/` | NATS JetStream queue implementations |
 | `internal/adapter/dpdpa/` | DPDPA compliance adapter |
 | `internal/subscriber/` | NATS event subscribers |
-| `pkg/httputil/` | HTTP response helpers (`JSON`, `ErrorResponse`, `ErrorFromDomain`, `ParseID`, `ParsePagination`, `DecodeJSON`) |
-| `pkg/types/` | Shared types (`ID`, `ContextKey`, `Pagination`, `PaginatedResult`, `DomainError`, error sentinels) |
+| `pkg/httputil/` | HTTP response helpers |
+| `pkg/types/` | Shared types |
 | `pkg/eventbus/` | NATS event bus abstraction |
 | `pkg/database/` | Database + Redis connection helpers |
 | `pkg/logging/` | Structured logging setup |
+| `pkg/crypto/` | AES-GCM encryption helpers (Batch 8) |
 | `internal/database/migrations/` | SQL migration files (append-only) |
 
 ---
@@ -43,43 +45,39 @@ You receive task specifications from an Orchestrator agent and implement them pr
 |----------|------|-------------------|
 | Architecture Overview | `documentation/02_Architecture_Overview.md` | System topology, component responsibilities |
 | Strategic Architecture | `documentation/20_Strategic_Architecture.md` | Design patterns, plugin architecture, event system |
-| Domain Model | `documentation/21_Domain_Model.md` | Entity design, bounded contexts, aggregates, repositories |
-| Database Schema | `documentation/09_Database_Schema.md` | Table structure, relationships, indexes — includes consent module tables |
-| API Reference | `documentation/10_API_Reference.md` | Endpoint specs — includes notice management, consent notification, and DigiLocker APIs |
+| Domain Model | `documentation/21_Domain_Model.md` | Entity design, bounded contexts |
+| Database Schema | `documentation/09_Database_Schema.md` | Table structure, relationships |
+| API Reference | `documentation/10_API_Reference.md` | Endpoint specs |
 
 ### Feature-Specific References
 | Document | Path | Use When |
 |----------|------|----------|
-| Consent Management | `documentation/08_Consent_Management.md` | **CRITICAL — Batches 5-6**: consent lifecycle (BRD § 4.1), multi-language (22 langs), notifications, enforcement middleware |
-| Notice Management | `documentation/25_Notice_Management.md` | **NEW** — notice lifecycle, HuggingFace translation integration, widget binding, audit trail |
-| DigiLocker Integration | `documentation/24_DigiLocker_Integration.md` | **NEW** — OAuth 2.0 + PKCE, identity/age verification (DPDPA § 9), consent artifact push |
-| DSR Management | `documentation/07_DSR_Management.md` | DSR workflow, task decomposition, execution |
-| Data Source Scanners | `documentation/06_Data_Source_Scanners.md` | Connector implementation, scan lifecycle |
-| Security & Compliance | `documentation/12_Security_Compliance.md` | Auth, RBAC, encryption — includes MeITY BRD compliance matrix, WCAG 2.1, immutable audit logging |
-| Architecture Enhancements | `documentation/18_Architecture_Enhancements.md` | Event bus, caching, async patterns |
+| Breach Management | `documentation/26_Breach_Management_Design.md` | **Batch 9**: Incident response, DPDPA/CERT-In reporting |
+| Data Source Scanners | `documentation/06_Data_Source_Scanners.md` | **Batch 8/10/11**: Connector implementation, `FileScanner` usage |
+| Consent Management | `documentation/08_Consent_Management.md` | Consent lifecycle, notifications |
+| Notice Management | `documentation/25_Notice_Management.md` | Notice lifecycle, translation |
+| Security & Compliance | `documentation/12_Security_Compliance.md` | Auth, RBAC, encryption, audit logging |
 
 ---
 
 ### Workflow
-1.  **Start Environment**: Run `.\scripts\setup_local_dev.ps1` to spin up App Infra, Target DBs, and Seed 10k mock rows.
-    -   *Do not manually start docker containers unless debugging.*
+1.  **Start Environment**: Run `.\scripts\setup_local_dev.ps1`.
 2.  **Development**:
     -   Write tests in `internal/service/`.
     -   Run `go test ./...`.
-    -   Run `go run cmd/api/main.go` (if not using the script's terminal).
+    -   Run `go run cmd/api/main.go`.
 
 ### Existing Services (in `internal/service/`)
-### Existing Services (in `internal/service/`)
-`auth_service.go`, `tenant_service.go`, `datasource_service.go`, `discovery_service.go`, `scan_service.go`, `feedback_service.go`, `purpose_service.go`, `dashboard_service.go`, `dsr_service.go`, `dsr_executor.go`, `scheduler.go`, `apikey_service.go`, `consent_service.go`, `portal_auth_service.go`, `data_principal_service.go` (Batch 6), `context_engine.go` (Batch 7), `policy_service.go` (Batch 7), `breach_service.go` (Batch 9)
+`auth_service.go`, `tenant_service.go`, `datasource_service.go`, `discovery_service.go`, `scan_service.go`, `feedback_service.go`, `purpose_service.go`, `dashboard_service.go`, `dsr_service.go`, `dsr_executor.go`, `scheduler.go`, `apikey_service.go`, `consent_service.go`, `portal_auth_service.go`, `data_principal_service.go`, `context_engine.go`, `policy_service.go`, `breach_service.go`, `audit_service.go`, `m365_auth_service.go`, `google_auth_service.go`
 
 ### Existing Handlers (in `internal/handler/`)
-`auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`, `portal_handler.go` (Batch 6), `governance_handler.go` (Batch 7)
+`auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`, `portal_handler.go`, `governance_handler.go`, `breach_handler.go`, `m365_handler.go`, `google_handler.go`
 
 ### Existing Connectors (in `internal/infrastructure/connector/`)
-`postgres.go`, `mysql.go`, `mongodb.go`, `s3.go`, `registry.go` — all implement `discovery.Connector` interface
+`postgres.go`, `mysql.go`, `mongodb.go`, `s3.go`, `m365/` (OneDrive/SharePoint/Outlook), `google/` (Drive/Gmail), `shared/file_scanner.go`
 
 ### Existing Domain Entities - Focus Areas
-`internal/domain/governance/entities.go` contains definitions for: `Policy`, `Violation`, `SectorTemplate`, `PurposeSuggestion`, `DataFlow` (Batch 8). **Implemented**: `DataPrincipalProfile`, `DPRRequest` (Batch 6), `ConsentWidget` (Batch 5), `Policy`, `Violation`, `AuditLog` (Batch 8), `BreachIncident` (Batch 9).
+`internal/domain/governance/entities.go` contains definitions for: `Policy`, `Violation`, `SectorTemplate`, `PurposeSuggestion`, `DataFlow`. **Implemented**: `DataPrincipalProfile`, `DPRRequest`, `ConsentWidget`, `Policy`, `Violation`, `AuditLog`, `BreachIncident`, `User`, `Site`.
 
 ---
 
@@ -275,9 +273,33 @@ func (r *PostgresConsentWidgetRepository) GetByTenant(ctx context.Context, tenan
 r.Register(types.DataSourceS3, func() discovery.Connector {
     return NewS3Connector()
 })
+// For M365/Google, inject the scannable connector:
+r.Register(types.DataSourceGoogleWorkspace, func() discovery.Connector {
+    return google.NewGoogleConnector(cfg)
+})
 
 // Any service needing a connector gets it via:
 connector, err := registry.GetConnector(dataSource.Type)
+```
+
+### Shared File Scanner Pattern (internal/infrastructure/connector/shared/file_scanner.go)
+```go
+// Use this for any file-based connector (S3, OneDrive, Drive, etc.)
+// It handles streaming, PII detection, and error handling.
+scanner := shared.NewFileScanner(detector, logger)
+
+// In your connector's Scan method:
+err := scanner.ScanFile(ctx, contentStream, filename, fileID, func(finding discovery.Finding) {
+    // Handle finding (e.g. send to channel or save)
+})
+```
+
+### Encryption Pattern (pkg/crypto/aes.go)
+```go
+// ALWAYS encrypt sensitive credentials (refresh tokens, secrets) before storing:
+encrypted, err := crypto.Encrypt(ctx, refreshToken)
+// Decrypt when using:
+decrypted, err := crypto.Decrypt(ctx, encrypted)
 ```
 
 ### Domain Error Pattern (pkg/types/errors.go)

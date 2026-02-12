@@ -132,7 +132,70 @@ func main() {
 	// Audit Service (Core dependency for others)
 	auditSvc := service.NewAuditService(auditRepo, slog.Default())
 
-	dsSvc := service.NewDataSourceService(dsRepo, eb, slog.Default())
+	// Connector Registry (Initialized below, but needed for dsSvc? Move initialization up!)
+	// Wait, connRegistry is initialized at line 229. We need to move it UP.
+	// See below.
+
+	// Temporarily: we can't just change the line here without moving the registry init block.
+	// I will do a multi-replace or two steps.
+	// Actually, connRegistry depends on detection service (detector).
+	// Detector depends on AI Gateway.
+	// This dependency chain is deep.
+	// We need to initialize registry BEFORE dsSvc.
+
+	// STRATEGY:
+	// 1. Move Connector Registry initialization UP, before `dsSvc` init.
+	// 2. But it needs `detector`. So move `detector` up too.
+	// 3. `detector` needs `aiGateway`. Move `aiGateway` up too.
+
+	// This is a big reorder in main.go.
+	// Instead of reordering everything which is risky with replace_file_content,
+	// I will just use `nil` for now and set it later? No, that's hacky.
+	// Go doesn't support that easily for struct fields unless we use setters.
+	// `NewDataSourceService` expects it.
+
+	// Let's reorder:
+	// AI Gateway -> Detector -> Connector Registry -> Service Init.
+
+	// Current order:
+	// 1. Repos
+	// 2. Services (including dsSvc)
+	// 3. AI Gateway
+	// 4. Detector
+	// 5. Connector Registry
+	// 6. Discovery Service
+
+	// I need to Move 3, 4, 5 BEFORE 2.
+
+	// This is too complex for a single replace block if lines are far apart.
+	// I will just change the `New` call here to use `connRegistry` (assuming I move it).
+	// But `connRegistry` variable won't exist yet.
+
+	// I'll leave this Block for now and use MultiReplace to reorder `main.go` chunks.
+	// OR use `task_boundary` to do it carefully.
+
+	// Actually, I can just initialize `dsSvc` LATER.
+	// Does anything depend on `dsSvc` before line 229?
+	// `schedulerSvc` (line 295) -> OK
+	// `dsHandler` (line 343) -> OK
+	// `policySvc` uses `dsRepo` not `dsSvc`.
+	// `scanSvc` uses `dsRepo`.
+	// `dsrSvc` uses `dsRepo`.
+
+	// So `dsSvc` is NOT a dependency for other SERVICES?
+	// `m365AuthSvc`? uses `dsRepo`.
+
+	// Wait, `tenantSvc` uses `authSvc`.
+	// `dsSvc` seems independent.
+
+	// So I can move `dsSvc` initialization down to after `connRegistry`.
+
+	// Let's check `service.NewDataSourceService` call site again.
+	// It is at line 135.
+	// I will DELETE it from here and ADD it after `connRegistry` init (line 232).
+
+	// Step 1: DELETE from here.
+
 	purposeSvc := service.NewPurposeService(purposeRepo, eb, slog.Default())
 	authSvc := service.NewAuthService(
 		userRepo,
@@ -148,6 +211,7 @@ func main() {
 	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
 	feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
 	m365AuthSvc := service.NewM365AuthService(cfg, dsRepo, eb, slog.Default())
+	googleAuthSvc := service.NewGoogleAuthService(cfg, dsRepo, eb, slog.Default())
 	var dsrSvc *service.DSRService // Will be initialized after DSR queue is created
 	consentSvc := service.NewConsentService(
 		consentWidgetRepo,
@@ -226,11 +290,16 @@ func main() {
 	detector := detection.NewDefaultDetector(aiGateway) // aiGateway is ai.Gateway interface (CachedGateway implements it)
 
 	// Connector Registry (Initialized above)
-	connRegistry := connector.NewConnectorRegistry(cfg)
+	connRegistry := connector.NewConnectorRegistry(cfg, detector)
+	// dataSourceMicrosoft365 is now registered in NewConnectorRegistry, or we can keep override if needed.
+	// But since we updated registry.go to include M365 with detector, we don't need manual registration here unless we want to be explicit.
+	// Leaving it for safety but registry.go has it now.
 	connRegistry.Register(types.DataSourceMicrosoft365, func() discovery.Connector {
 		return connector.NewM365Connector(detector)
 	})
 	log.Info("Connector registry initialized", "supported_types", connRegistry.SupportedTypes())
+
+	dsSvc := service.NewDataSourceService(dsRepo, connRegistry, eb, slog.Default())
 
 	// 7. Discovery Service
 	discoverySvc := service.NewDiscoveryService(
@@ -351,6 +420,7 @@ func main() {
 	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
 	breachHandler := handler.NewBreachHandler(breachSvc)
 	m365Handler := handler.NewM365Handler(m365AuthSvc)
+	googleHandler := handler.NewGoogleHandler(googleAuthSvc)
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(
@@ -442,6 +512,7 @@ func main() {
 
 			// OAuth2 Connectors
 			r.Mount("/auth/m365", m365Handler.Routes())
+			r.Mount("/auth/google", googleHandler.Routes())
 
 			// Discovery (inventories, entities, fields)
 			r.Mount("/discovery", discoveryHandler.Routes())

@@ -22,6 +22,7 @@ const DS_TYPE_OPTIONS: { value: DataSourceType; label: string }[] = [
     { value: 's3', label: 'Amazon S3' },
     { value: 'gcs', label: 'Google Cloud Storage' },
     { value: 'azure_blob', label: 'Azure Blob' },
+    { value: 'google_workspace', label: 'Google Workspace' },
 ];
 
 const INITIAL_FORM = {

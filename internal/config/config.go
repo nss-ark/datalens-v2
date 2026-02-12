@@ -21,6 +21,14 @@ type Config struct {
 	Consent   ConsentConfig
 	Portal    PortalConfig
 	Microsoft MicrosoftConfig
+	Google    GoogleConfig
+}
+
+// GoogleConfig holds Google Workspace integration settings.
+type GoogleConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
 }
 
 // MicrosoftConfig holds Microsoft 365 integration settings.
@@ -199,6 +207,11 @@ func Load() (*Config, error) {
 			ClientSecret: getEnv("MICROSOFT_CLIENT_SECRET", ""),
 			RedirectURL:  getEnv("MICROSOFT_REDIRECT_URL", "http://localhost:8080/api/v2/auth/m365/callback"),
 			TenantID:     getEnv("MICROSOFT_TENANT_ID", "common"),
+		},
+		Google: GoogleConfig{
+			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+			RedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v2/auth/google/callback"),
 		},
 	}
 

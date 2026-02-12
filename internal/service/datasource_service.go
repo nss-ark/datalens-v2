@@ -6,6 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/internal/infrastructure/connector"
+	m365 "github.com/complyark/datalens/internal/infrastructure/connector/m365"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -13,14 +15,16 @@ import (
 // DataSourceService handles data source lifecycle operations.
 type DataSourceService struct {
 	repo     discovery.DataSourceRepository
+	registry *connector.ConnectorRegistry
 	eventBus eventbus.EventBus
 	logger   *slog.Logger
 }
 
 // NewDataSourceService creates a new DataSourceService.
-func NewDataSourceService(repo discovery.DataSourceRepository, eb eventbus.EventBus, logger *slog.Logger) *DataSourceService {
+func NewDataSourceService(repo discovery.DataSourceRepository, registry *connector.ConnectorRegistry, eb eventbus.EventBus, logger *slog.Logger) *DataSourceService {
 	return &DataSourceService{
 		repo:     repo,
+		registry: registry,
 		eventBus: eb,
 		logger:   logger.With("service", "data_source"),
 	}
@@ -189,4 +193,73 @@ func (s *DataSourceService) Delete(ctx context.Context, id types.ID) error {
 
 	s.logger.InfoContext(ctx, "data source deleted", "id", id)
 	return nil
+}
+
+// ListM365Users retrieves a list of users from an M365 data source.
+// It requires the data source to be of type Microsoft365 (or OneDrive/Outlook).
+func (s *DataSourceService) ListM365Users(ctx context.Context, id types.ID) ([]m365.User, error) {
+	ds, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	if ds.Type != types.DataSourceMicrosoft365 && ds.Type != types.DataSourceOneDrive && ds.Type != types.DataSourceOutlook {
+		return nil, types.NewValidationError("data source is not M365", nil)
+	}
+
+	conn, err := s.registry.GetConnector(ds.Type)
+	if err != nil {
+		return nil, fmt.Errorf("get connector: %w", err)
+	}
+
+	// Check if connector supports listing users
+	// We need to type assert to *connector.M365Connector specifically, OR define an interface.
+	// Since M365Connector is in `connector` package (as `M365Connector`), we can assert.
+	// NOTE: m365.go is in `connector` package.
+	// So we import "github.com/complyark/datalens/internal/infrastructure/connector" (which is self if we were in connector)
+	// But we are in `service`.
+	// We imported `github.com/complyark/datalens/internal/infrastructure/connector` above.
+	// But wait, `M365Connector` is defined in `connector` package?
+	// Yes, `m365.go` says `package connector`.
+	// So we can assertion using `connector.M365Connector`.
+
+	m365Conn, ok := conn.(*connector.M365Connector)
+	if !ok {
+		return nil, fmt.Errorf("connector does not support user listing")
+	}
+
+	if err := m365Conn.Connect(ctx, ds); err != nil {
+		return nil, fmt.Errorf("connect: %w", err)
+	}
+
+	return m365Conn.ListUsers(ctx)
+}
+
+// ListM365Sites retrieves a list of sites from an M365 data source.
+func (s *DataSourceService) ListM365Sites(ctx context.Context, id types.ID) ([]m365.Site, error) {
+	ds, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if ds.Type != types.DataSourceMicrosoft365 && ds.Type != types.DataSourceOneDrive {
+		return nil, types.NewValidationError("data source is not M365/OneDrive", nil)
+	}
+
+	conn, err := s.registry.GetConnector(ds.Type)
+	if err != nil {
+		return nil, fmt.Errorf("get connector: %w", err)
+	}
+
+	m365Conn, ok := conn.(*connector.M365Connector)
+	if !ok {
+		return nil, fmt.Errorf("connector does not support site listing")
+	}
+
+	if err := m365Conn.Connect(ctx, ds); err != nil {
+		return nil, fmt.Errorf("connect: %w", err)
+	}
+
+	return m365Conn.ListSites(ctx)
 }

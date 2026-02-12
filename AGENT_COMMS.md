@@ -6,13 +6,13 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 10: M365 Deep Scanning)
+## Current Sprint Goals (Batch 11: Google Workspace & M365 Polish)
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **OneDrive Scan** | Backend | [ ] | Implement file scanning integration with M365 Graph API. |
-| **SharePoint Scan** | Backend | [ ] | Implement site and document library discovery. |
-| **Outlook Scan** | Backend | [ ] | Implement email body and attachment analysis. |
-| **Scan UI** | Frontend | [ ] | UI to configure scan scopes (Users/Sites). |
+| **M365 APIs** | Backend | [x] | Implement `GET /users` and `GET /sites` for M365. |
+| **Google Auth** | Backend | [x] | Google OAuth2 and Token Storage. |
+| **Google Scan** | Backend | [x] | Drive and Gmail scanning logic. |
+| **Google UI** | Frontend | [x] | Google Source Card and Config UI. |
 
 ## Active Messages
 *(Newest on top)*

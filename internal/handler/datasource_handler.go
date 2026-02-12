@@ -37,6 +37,10 @@ func (h *DataSourceHandler) Routes() chi.Router {
 	r.Put("/{id}/scan/schedule", h.SetSchedule)
 	r.Delete("/{id}/scan/schedule", h.ClearSchedule)
 
+	// M365 specific routes
+	r.Get("/{id}/m365/users", h.ListM365Users)
+	r.Get("/{id}/m365/sites", h.ListM365Sites)
+
 	return r
 }
 
@@ -218,4 +222,38 @@ func (h *DataSourceHandler) ClearSchedule(w http.ResponseWriter, r *http.Request
 	}
 
 	httputil.JSON(w, http.StatusNoContent, nil)
+}
+
+// ListM365Users lists users from M365.
+func (h *DataSourceHandler) ListM365Users(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	users, err := h.svc.ListM365Users(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, users)
+}
+
+// ListM365Sites lists sites from M365.
+func (h *DataSourceHandler) ListM365Sites(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	sites, err := h.svc.ListM365Sites(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, sites)
 }

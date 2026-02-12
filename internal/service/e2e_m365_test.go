@@ -155,13 +155,13 @@ func TestM365_E2E_Mock(t *testing.T) {
 			TenantID:     "mock-tenant-id",
 		},
 	}
-	// Need to register with config that supports M365 (via SecretKey in AppConfig)
-	registry := connector.NewConnectorRegistry(cfg)
-
 	// Setup Detection Service
 	// Use PatternStrategy to detect the email
 	patternStrategy := detection.NewPatternStrategy()
 	detector := detection.NewComposableDetector(patternStrategy)
+
+	// Need to register with config that supports M365 (via SecretKey in AppConfig)
+	registry := connector.NewConnectorRegistry(cfg, detector)
 
 	// Setup Discovery Service
 	// Signature: (dsRepo, invRepo, entityRepo, fieldRepo, piiRepo, scanRunRepo, registry, detector, eb, logger)

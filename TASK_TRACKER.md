@@ -309,13 +309,13 @@
 - [x] Outlook email scanning (Batch 10)
 - [x] Teams message scanning (if applicable)
 - [x] OAuth2 authentication flow (Batch 9)
-- [ ] **GAP**: M365 Discovery APIs (Users/Sites list) for UI (Batch 11)
+- [x] **GAP**: M365 Discovery APIs (Users/Sites list) for UI (Batch 11)
 
 #### 3.2 Google Workspace Connector (Batch 11)
-- [ ] Google Drive scanning
-- [ ] Gmail scanning
+- [x] Google Drive scanning (Batch 11)
+- [x] Gmail scanning (Batch 11)
 - [ ] Google Calendar (PII in events)
-- [ ] OAuth2 authentication flow
+- [x] OAuth2 authentication flow (Batch 11)
 
 #### 3.3 Enhanced Connectors (Batch 8)
 - [x] Hardening AWS S3 Connector (JSON/CSV handling)

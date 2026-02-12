@@ -104,6 +104,10 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | Purpose Mapping | `pages/Governance/PurposeMapping.tsx` | `/governance/purposes` | ✅ Complete (Batch 7) |
 | Policy Manager | `pages/Governance/PolicyManager.tsx` | `/governance/policies` | ✅ Complete (Batch 7) |
 | Violations | `pages/Governance/Violations.tsx` | `/governance/violations` | ✅ Complete (Batch 7) |
+| Lineage | `pages/Governance/Lineage.tsx` | `/governance/lineage` | ✅ Complete (Batch 8) |
+| Breach List | `pages/Breach/BreachList.tsx` | `/breach` | ✅ Complete (Batch 9) |
+| Breach Detail | `pages/Breach/BreachDetail.tsx` | `/breach/:id` | ✅ Complete (Batch 9) |
+| Breach Report | `pages/Breach/BreachReport.tsx` | `/breach/:id/report` | ✅ Complete (Batch 9) |
 
 ### Existing Components (20)
 | Component | File | Purpose |

@@ -7,12 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/complyark/datalens/internal/config"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/pkg/types"
 )
 
 func TestConnectors_ConnectSafety(t *testing.T) {
-	registry := NewConnectorRegistry()
+	cfg := &config.Config{}
+	registry := NewConnectorRegistry(cfg, nil)
 	supportedTypes := registry.SupportedTypes()
 
 	for _, dsType := range supportedTypes {

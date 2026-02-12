@@ -44,3 +44,11 @@ type Identity struct {
 		Email       string `json:"email"`
 	} `json:"user"`
 }
+
+// User represents an M365 user.
+type User struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	Mail        string `json:"mail"`
+	JobTitle    string `json:"jobTitle"`
+}

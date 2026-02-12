@@ -16,6 +16,7 @@ import (
 	"github.com/complyark/datalens/internal/domain/compliance"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/infrastructure/connector"
+	"github.com/complyark/datalens/internal/service/detection"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -72,7 +73,8 @@ func setupExecutorTest(t *testing.T) (*DSRExecutor, *mockDSRRepository, *mockDat
 
 	// Registry & Mock Connector
 	mockConn := new(DSRExecutorMockConnector)
-	registry := connector.NewConnectorRegistry(&config.Config{})
+	detector := detection.NewDefaultDetector(nil) // nil gateway is fine for tests that don't use AI
+	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
 	registry.Register(types.DataSourcePostgreSQL, func() discovery.Connector {
 		return mockConn
 	})

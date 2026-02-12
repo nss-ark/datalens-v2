@@ -89,15 +89,16 @@ func TestDiscoveryService_ScanDataSource_Success(t *testing.T) {
 	connectorMock := new(MockConnector)
 	eb := newMockEventBus()
 
-	// Setup Registry with Mock Connector
-	registry := connector.NewConnectorRegistry(&config.Config{})
-	registry.Register(types.DataSourcePostgreSQL, func() discovery.Connector {
-		return connectorMock
-	})
-
 	// Setup Detector with Mock Strategy
 	mockStrategy := new(MockStrategy)
 	detector := detection.NewComposableDetector(mockStrategy)
+
+	// Setup Registry with Mock Connector
+	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
+	testDSType := types.DataSourceType("TEST_MOCK")
+	registry.Register(testDSType, func() discovery.Connector {
+		return connectorMock
+	})
 
 	// Setup Service
 	scanRunRepo := newMockScanRunRepo()
@@ -115,7 +116,7 @@ func TestDiscoveryService_ScanDataSource_Success(t *testing.T) {
 			TenantID: tenantID,
 		},
 		Name: "Test DB",
-		Type: types.DataSourcePostgreSQL,
+		Type: types.DataSourceType("TEST_MOCK"),
 	}
 	require.NoError(t, dsRepo.Create(ctx, ds))
 

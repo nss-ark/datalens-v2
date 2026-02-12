@@ -18,6 +18,58 @@ const (
 	DefaultPageSize = 100
 )
 
+// ListUsers returns a list of users in the tenant.
+func (c *GraphClient) ListUsers(ctx context.Context) ([]User, error) {
+	var users []User
+	nextLink := "/users?$top=100&$select=id,displayName,mail,jobTitle"
+
+	for nextLink != "" {
+		var response struct {
+			Value    []User `json:"value"`
+			NextLink string `json:"@odata.nextLink"`
+		}
+
+		if err := c.get(ctx, nextLink, &response); err != nil {
+			return nil, err
+		}
+
+		users = append(users, response.Value...)
+		nextLink = response.NextLink
+
+		// Cap for now
+		if len(users) >= 1000 {
+			break
+		}
+	}
+	return users, nil
+}
+
+// ListSites returns a list of SharePoint sites in the tenant.
+func (c *GraphClient) ListSites(ctx context.Context) ([]Site, error) {
+	var sites []Site
+	// Search=* is required to list all sites via Search API, distinct from /sites endpoint behavior
+	nextLink := "/sites?search=*"
+
+	for nextLink != "" {
+		var response struct {
+			Value    []Site `json:"value"`
+			NextLink string `json:"@odata.nextLink"`
+		}
+
+		if err := c.get(ctx, nextLink, &response); err != nil {
+			return nil, err
+		}
+
+		sites = append(sites, response.Value...)
+		nextLink = response.NextLink
+
+		if len(sites) >= 1000 {
+			break
+		}
+	}
+	return sites, nil
+}
+
 // GraphClient wraps the HTTP client for Microsoft Graph API.
 type GraphClient struct {
 	client  *http.Client
@@ -65,6 +117,14 @@ func NewGraphClient(ctx context.Context, refreshToken string, configJSON string)
 		client:  conf.Client(ctx, token),
 		BaseURL: baseURL,
 	}, nil
+}
+
+// NewClient creates a GraphClient from an existing HTTP client.
+func NewClient(client *http.Client) *GraphClient {
+	return &GraphClient{
+		client:  client,
+		BaseURL: GraphAPI,
+	}
 }
 
 // GetRootDrive returns the user's default drive (OneDrive).

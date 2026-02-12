@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dataSourceService } from '../services/datasource';
-import type { CreateDataSourceInput, UpdateDataSourceInput, M365ScopeConfig } from '../types/datasource';
+import type { CreateDataSourceInput, UpdateDataSourceInput, M365ScopeConfig, GoogleScopeConfig } from '../types/datasource';
 import type { ID } from '../types/common';
 
 const QUERY_KEY = ['dataSources'];
@@ -106,9 +106,9 @@ export function useUpdateScope() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, config }: { id: ID; config: M365ScopeConfig }) =>
+        mutationFn: ({ id, config }: { id: ID; config: M365ScopeConfig | GoogleScopeConfig }) =>
             dataSourceService.updateScope(id, config),
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: [...QUERY_KEY, variables.id] });
             queryClient.invalidateQueries({ queryKey: ['m365Users', variables.id] });
             queryClient.invalidateQueries({ queryKey: ['sharePointSites', variables.id] });

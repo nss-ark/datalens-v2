@@ -13,6 +13,7 @@ import (
 
 	"github.com/complyark/datalens/internal/config"
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/internal/infrastructure/connector/m365"
 	"github.com/complyark/datalens/internal/infrastructure/connector/shared"
 	"github.com/complyark/datalens/internal/service/detection"
 	"github.com/complyark/datalens/pkg/crypto"
@@ -354,4 +355,23 @@ func (c *M365Connector) scanFile(ctx context.Context, itemID, name string, size 
 }
 
 // Compile-time check
+// ListUsers lists all users in the tenant.
+func (c *M365Connector) ListUsers(ctx context.Context) ([]m365.User, error) {
+	if c.client == nil {
+		return nil, fmt.Errorf("not connected")
+	}
+
+	gc := m365.NewClient(c.client)
+	return gc.ListUsers(ctx)
+}
+
+// ListSites lists all SharePoint sites.
+func (c *M365Connector) ListSites(ctx context.Context) ([]m365.Site, error) {
+	if c.client == nil {
+		return nil, fmt.Errorf("not connected")
+	}
+	gc := m365.NewClient(c.client)
+	return gc.ListSites(ctx)
+}
+
 var _ ScannableConnector = (*M365Connector)(nil)
