@@ -47,6 +47,15 @@ type Connector interface {
 	// Capabilities returns what operations this connector supports.
 	Capabilities() ConnectorCapabilities
 
+	// Delete deletes entities matching the filter.
+	// Returns the number of deleted records.
+	// filter is a map of field name -> value. All conditions must match (AND).
+	Delete(ctx context.Context, entity string, filter map[string]string) (int64, error)
+
+	// Export retrieves all data for entities matching the filter.
+	// Returns a slice of maps, where each map represents a record/row.
+	Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error)
+
 	// Close releases the connection.
 	Close() error
 }

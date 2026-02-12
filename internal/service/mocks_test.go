@@ -14,6 +14,7 @@ import (
 	"github.com/complyark/datalens/internal/domain/identity"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
+	"github.com/stretchr/testify/mock"
 )
 
 // =============================================================================
@@ -799,4 +800,64 @@ func (r *mockAuditRepo) GetByTenant(_ context.Context, tenantID types.ID, limit 
 		}
 	}
 	return result, nil
+}
+
+// =============================================================================
+// Mock Connector (Testify)
+// =============================================================================
+
+type MockConnector struct {
+	mock.Mock
+}
+
+func (m *MockConnector) Connect(ctx context.Context, ds *discovery.DataSource) error {
+	args := m.Called(ctx, ds)
+	return args.Error(0)
+}
+
+func (m *MockConnector) DiscoverSchema(ctx context.Context, input discovery.DiscoveryInput) (*discovery.DataInventory, []discovery.DataEntity, error) {
+	args := m.Called(ctx, input)
+	if args.Get(0) == nil {
+		return nil, nil, args.Error(2)
+	}
+	return args.Get(0).(*discovery.DataInventory), args.Get(1).([]discovery.DataEntity), args.Error(2)
+}
+
+func (m *MockConnector) GetFields(ctx context.Context, entityID string) ([]discovery.DataField, error) {
+	args := m.Called(ctx, entityID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]discovery.DataField), args.Error(1)
+}
+
+func (m *MockConnector) SampleData(ctx context.Context, entity, field string, limit int) ([]string, error) {
+	args := m.Called(ctx, entity, field, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
+}
+
+func (m *MockConnector) Capabilities() discovery.ConnectorCapabilities {
+	args := m.Called()
+	return args.Get(0).(discovery.ConnectorCapabilities)
+}
+
+func (m *MockConnector) Close() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	args := m.Called(ctx, entity, filter)
+	return int64(args.Int(0)), args.Error(1)
+}
+
+func (m *MockConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	args := m.Called(ctx, entity, filter)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]map[string]interface{}), args.Error(1)
 }

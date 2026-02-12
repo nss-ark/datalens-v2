@@ -76,20 +76,65 @@ func (s *SchedulerService) Stop() {
 
 // checkSchedules evaluates all data sources with schedules and enqueues scans if due.
 func (s *SchedulerService) checkSchedules(ctx context.Context) {
-	// Get all data sources (we'll need to filter by non-null scan_schedule in repo or here)
-	// For now, we'll list all tenant data sources and filter in-memory
-	// TODO: Add GetScheduledDataSources to repository
+	// 1. Iterate over all active tenants
+	tenants, err := s.tenantRepo.GetAll(ctx)
+	if err != nil {
+		s.logger.Error("failed to list tenants for scheduling", "error", err)
+		return
+	}
 
-	// Since we don't have tenant context here, we need to either:
-	// 1. List ALL data sources across all tenants (not ideal)
-	// 2. Store tenantID in scheduler (requires multi-tenant scheduler instances)
-	// For MVP, let's assume a single scheduler per tenant or list all
+	for _, tenant := range tenants {
+		if tenant.Status != identity.TenantActive {
+			continue
+		}
 
-	// This is a limitation - we need to iterate tenants or change architecture
-	// For now, let's skip this and assume the user will trigger scans manually
-	// In production, we'd need a better approach (e.g., one scheduler per tenant or global scheduler with tenant iteration)
+		func(t identity.Tenant) {
+			// 2. Get data sources for tenant
+			dataSources, err := s.dsRepo.GetByTenant(ctx, t.ID)
+			if err != nil {
+				s.logger.Error("failed to list data sources", "tenant_id", t.ID, "error", err)
+				return
+			}
 
-	s.logger.Warn("Scheduler checkSchedules not fully implemented - requires tenant iteration strategy")
+			// 3. Check schedules
+			for _, ds := range dataSources {
+				if ds.ScanSchedule == nil || *ds.ScanSchedule == "" {
+					continue
+				}
+
+				// Only schedule connected data sources
+				if ds.Status != discovery.ConnectionStatusConnected {
+					continue
+				}
+
+				// Check if due
+				isDue, err := s.IsDue(*ds.ScanSchedule, ds.LastSyncAt)
+				if err != nil {
+					s.logger.Error("invalid cron schedule",
+						"tenant_id", t.ID,
+						"ds_id", ds.ID,
+						"schedule", *ds.ScanSchedule,
+						"error", err)
+					continue
+				}
+
+				if isDue {
+					s.logger.Info("triggering scheduled scan",
+						"tenant_id", t.ID,
+						"ds_id", ds.ID,
+						"schedule", *ds.ScanSchedule)
+
+					// Trigger scan
+					if _, err := s.scanService.EnqueueScan(ctx, ds.ID, t.ID, discovery.ScanTypeFull); err != nil {
+						s.logger.Error("failed to enqueue scheduled scan",
+							"tenant_id", t.ID,
+							"ds_id", ds.ID,
+							"error", err)
+					}
+				}
+			}
+		}(tenant)
+	}
 }
 
 // schedulePolicyEvaluations triggers policy evaluation for all active tenants.

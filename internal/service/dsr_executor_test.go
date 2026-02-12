@@ -25,45 +25,13 @@ import (
 // Mock Connector
 // =============================================================================
 
-type DSRExecutorMockConnector struct {
-	mock.Mock
-}
-
-func (m *DSRExecutorMockConnector) Connect(ctx context.Context, ds *discovery.DataSource) error {
-	args := m.Called(ctx, ds)
-	return args.Error(0)
-}
-
-func (m *DSRExecutorMockConnector) DiscoverSchema(ctx context.Context, input discovery.DiscoveryInput) (*discovery.DataInventory, []discovery.DataEntity, error) {
-	args := m.Called(ctx, input)
-	return args.Get(0).(*discovery.DataInventory), args.Get(1).([]discovery.DataEntity), args.Error(2)
-}
-
-func (m *DSRExecutorMockConnector) GetFields(ctx context.Context, entityID string) ([]discovery.DataField, error) {
-	args := m.Called(ctx, entityID)
-	return args.Get(0).([]discovery.DataField), args.Error(1)
-}
-
-func (m *DSRExecutorMockConnector) SampleData(ctx context.Context, entity, field string, limit int) ([]string, error) {
-	args := m.Called(ctx, entity, field, limit)
-	return args.Get(0).([]string), args.Error(1)
-}
-
-func (m *DSRExecutorMockConnector) Capabilities() discovery.ConnectorCapabilities {
-	args := m.Called()
-	return args.Get(0).(discovery.ConnectorCapabilities)
-}
-
-func (m *DSRExecutorMockConnector) Close() error {
-	args := m.Called()
-	return args.Error(0)
-}
+// MockConnector is defined in mocks_test.go
 
 // =============================================================================
 // Settings
 // =============================================================================
 
-func setupExecutorTest(t *testing.T) (*DSRExecutor, *mockDSRRepository, *mockDataSourceRepo, *mockPIIClassificationRepo, *DSRExecutorMockConnector, *mockEventBus) {
+func setupExecutorTest(t *testing.T) (*DSRExecutor, *mockDSRRepository, *mockDataSourceRepo, *mockPIIClassificationRepo, *MockConnector, *mockEventBus) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	dsrRepo := newMockDSRRepository()
@@ -72,7 +40,7 @@ func setupExecutorTest(t *testing.T) (*DSRExecutor, *mockDSRRepository, *mockDat
 	eb := newMockEventBus()
 
 	// Registry & Mock Connector
-	mockConn := new(DSRExecutorMockConnector)
+	mockConn := new(MockConnector)
 	detector := detection.NewDefaultDetector(nil) // nil gateway is fine for tests that don't use AI
 	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
 	registry.Register(types.DataSourcePostgreSQL, func() discovery.Connector {
@@ -145,8 +113,11 @@ func TestExecuteDSR_Access(t *testing.T) {
 	// 5. Mock Interactions
 	// Connect
 	mockConn.On("Connect", ctx, mock.AnythingOfType("*discovery.DataSource")).Return(nil)
-	// Sample Data (Success match)
-	mockConn.On("SampleData", ctx, "users", "email", 100).Return([]string{"john@example.com", "jane@example.com"}, nil)
+	// Export Call (Expectation)
+	mockConn.On("Export", ctx, "users", map[string]string{"email": "john@example.com"}).
+		Return([]map[string]interface{}{
+			{"id": 1, "email": "john@example.com", "name": "John Doe"},
+		}, nil)
 	// Close
 	mockConn.On("Close").Return(nil)
 
@@ -169,18 +140,22 @@ func TestExecuteDSR_Access(t *testing.T) {
 	// Check Task Result
 	result, ok := tasks[0].Result.(map[string]interface{})
 	require.True(t, ok)
-	data, ok := result["data"].(map[string]interface{})
+	data, ok := result["data"].([]map[string]interface{}) // Array of entity results
 	require.True(t, ok)
-	users, ok := data["users"].(map[string]interface{})
-	require.True(t, ok)
-	emails, ok := users["email"].([]string)
-	require.True(t, ok)
-	assert.Contains(t, emails, "john@example.com")
-	assert.NotContains(t, emails, "jane@example.com") // Should be filtered out
+	assert.Len(t, data, 1)
+
+	entityResult := data[0]
+	assert.Equal(t, "users", entityResult["entity"])
+
+	records := entityResult["records"].([]map[string]interface{})
+	assert.Len(t, records, 1)
+	record := records[0]
+	assert.Equal(t, "John Doe", record["name"])
 
 	// Check Events
-	require.Len(t, eb.Events, 1)
-	assert.Equal(t, eventbus.EventDSRCompleted, eb.Events[0].Type)
+	require.Len(t, eb.Events, 2) // Accessed + Completed
+	assert.Equal(t, "dsr.data_accessed", eb.Events[0].Type)
+	assert.Equal(t, eventbus.EventDSRCompleted, eb.Events[1].Type)
 }
 
 func TestExecuteDSR_Erasure(t *testing.T) {
@@ -236,6 +211,8 @@ func TestExecuteDSR_Erasure(t *testing.T) {
 
 	// 5. Mock Interactions
 	mockConn.On("Connect", ctx, mock.AnythingOfType("*discovery.DataSource")).Return(nil)
+	// Expect Delete call
+	mockConn.On("Delete", ctx, "users", map[string]string{"email": "john@example.com"}).Return(1, nil)
 	mockConn.On("Close").Return(nil)
 
 	// Execute
@@ -257,13 +234,14 @@ func TestExecuteDSR_Erasure(t *testing.T) {
 	require.True(t, ok)
 	assert.Len(t, deletions, 1)
 	assert.Equal(t, "users", deletions[0]["entity"])
+	assert.Equal(t, "DELETED", deletions[0]["status"])
 
 	// Check Events (Should emit dsr.data_deleted)
-	// DSRExecutor emits DSRCompleted at end, AND custom "dsr.data_deleted" inside executeErasureRequest
-	// So we expect 2 events?
-	// Looking at code: executeErasureRequest publishes "dsr.data_deleted". ExecuteDSR publishes "DSRCompleted".
 	require.Len(t, eb.Events, 2)
 	assert.Equal(t, "dsr.data_deleted", eb.Events[0].Type)
+	data, ok := eb.Events[0].Data.(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, int64(1), data["total_deleted"])
 	assert.Equal(t, eventbus.EventDSRCompleted, eb.Events[1].Type)
 }
 
@@ -367,7 +345,8 @@ func TestExecuteDSR_MultipleSources(t *testing.T) {
 
 	// Mock Expect calls (3 times)
 	mockConn.On("Connect", ctx, mock.Anything).Return(nil).Times(3)
-	mockConn.On("SampleData", ctx, "users", "email", 100).Return([]string{"john@example.com"}, nil).Times(3)
+	mockConn.On("Export", ctx, "users", map[string]string{"email": "john@example.com"}).
+		Return([]map[string]interface{}{{"email": "john@example.com"}}, nil).Times(3)
 	mockConn.On("Close").Return(nil).Times(3)
 
 	// Execute
@@ -415,7 +394,8 @@ func TestExecuteDSR_PartialFailure(t *testing.T) {
 	// Mock Expects
 	// Task 1 calls
 	mockConn.On("Connect", ctx, mock.MatchedBy(func(ds *discovery.DataSource) bool { return ds.ID == dsID1 })).Return(nil)
-	mockConn.On("SampleData", ctx, "users", "email", 100).Return([]string{"john@example.com"}, nil)
+	mockConn.On("Export", ctx, "users", map[string]string{"email": "john@example.com"}).
+		Return([]map[string]interface{}{{"email": "john@example.com"}}, nil)
 	mockConn.On("Close").Return(nil)
 
 	// Task 2 calls (Fail connect)
@@ -444,5 +424,81 @@ func TestExecuteDSR_PartialFailure(t *testing.T) {
 	}
 
 	// Check Events (DSRFailed)
-	assert.Equal(t, eventbus.EventDSRFailed, eb.Events[0].Type)
+	foundFailed := false
+	for _, e := range eb.Events {
+		if e.Type == eventbus.EventDSRFailed {
+			foundFailed = true
+			break
+		}
+	}
+	assert.True(t, foundFailed, "Expected DSRFailed event")
+}
+
+func TestExecuteDSR_Erasure_Manual(t *testing.T) {
+	// Setup
+	executor, dsrRepo, dsRepo, _, _, eb := setupExecutorTest(t)
+	ctx := context.Background()
+
+	tenantID := types.NewID()
+	dsID := types.NewID()
+	dsrID := types.NewID()
+	taskID := types.NewID()
+
+	// 1. Create DSR
+	dsr := &compliance.DSR{
+		ID:                 dsrID,
+		TenantID:           tenantID,
+		RequestType:        compliance.RequestTypeErasure,
+		Status:             compliance.DSRStatusApproved,
+		SubjectIdentifiers: map[string]string{"email": "john@example.com"},
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
+	}
+	dsrRepo.Create(ctx, dsr)
+
+	// 2. Create Task
+	task := &compliance.DSRTask{
+		ID:           taskID,
+		DSRID:        dsrID,
+		DataSourceID: dsID,
+		TenantID:     tenantID,
+		TaskType:     compliance.RequestTypeErasure,
+		Status:       compliance.TaskStatusPending,
+		CreatedAt:    time.Now(),
+	}
+	dsrRepo.CreateTask(ctx, task)
+
+	// 3. Create Data Source with Manual Deletion
+	ds := &discovery.DataSource{
+		TenantEntity: types.TenantEntity{BaseEntity: types.BaseEntity{ID: dsID}, TenantID: tenantID},
+		Name:         "Manual DB",
+		Type:         types.DataSourcePostgreSQL,
+		DeletionMode: discovery.DeletionModeManual,
+	}
+	dsRepo.Create(ctx, ds)
+
+	// Execute
+	err := executor.ExecuteDSR(ctx, dsrID)
+
+	// Verify
+	require.NoError(t, err)
+
+	// Check Task Status
+	tasks, _ := dsrRepo.GetTasksByDSR(ctx, dsrID)
+	require.Len(t, tasks, 1)
+	assert.Equal(t, compliance.TaskStatusManualActionRequired, tasks[0].Status)
+
+	// Check Events
+	require.True(t, len(eb.Events) >= 1)
+	foundManualEvent := false
+	for _, e := range eb.Events {
+		if e.Type == "dsr.manual_deletion_required" {
+			foundManualEvent = true
+			data, ok := e.Data.(map[string]any)
+			require.True(t, ok)
+			assert.Equal(t, dsrID, data["dsr_id"])
+			assert.Equal(t, dsID, data["data_source_id"])
+		}
+	}
+	assert.True(t, foundManualEvent, "Expected dsr.manual_deletion_required event")
 }

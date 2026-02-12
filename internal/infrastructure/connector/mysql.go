@@ -199,6 +199,18 @@ func (c *MySQLConnector) Close() error {
 	return nil
 }
 
+// Delete is a stub for MySQL (placeholder until full impl).
+func (c *MySQLConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	// MySQL could implement this similarly to Postgres, but for now we stub it to pass compilation.
+	c.db.Ping() // harmless usage
+	return 0, fmt.Errorf("delete not supported for mysql yet")
+}
+
+// Export is a stub for MySQL.
+func (c *MySQLConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for mysql yet")
+}
+
 // =============================================================================
 // Helpers
 // =============================================================================

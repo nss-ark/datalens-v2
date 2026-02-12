@@ -105,7 +105,7 @@ func (c *MongoDBConnector) DiscoverSchema(ctx context.Context, input discovery.D
 	for _, name := range collections {
 		entities = append(entities, discovery.DataEntity{
 			Name:   name,
-			Schema: c.dbName, // MongoDB doesn't have "schemas" like SQL, use DB name
+			Schema: c.dbName,                  // MongoDB doesn't have "schemas" like SQL, use DB name
 			Type:   discovery.EntityTypeTable, // Collection ~ Table
 		})
 	}
@@ -281,4 +281,14 @@ func (c *MongoDBConnector) Close() error {
 		return c.client.Disconnect(context.Background())
 	}
 	return nil
+}
+
+// Delete is a stub for MongoDB.
+func (c *MongoDBConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	return 0, fmt.Errorf("delete not supported for mongodb yet")
+}
+
+// Export is a stub for MongoDB.
+func (c *MongoDBConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for mongodb yet")
 }

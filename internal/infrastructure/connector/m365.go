@@ -354,6 +354,17 @@ func (c *M365Connector) scanFile(ctx context.Context, itemID, name string, size 
 	return nil
 }
 
+// Delete is a stub for M365.
+func (c *M365Connector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	c.logger.Warn("delete requested but not supported for m365", "entity", entity)
+	return 0, fmt.Errorf("delete not supported for m365")
+}
+
+// Export is a stub for M365.
+func (c *M365Connector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for m365")
+}
+
 // Compile-time check
 // ListUsers lists all users in the tenant.
 func (c *M365Connector) ListUsers(ctx context.Context) ([]m365.User, error) {

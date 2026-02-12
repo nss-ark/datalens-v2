@@ -109,6 +109,16 @@ func (c *RDSConnector) Capabilities() discovery.ConnectorCapabilities {
 	}
 }
 
+// Delete is a stub for RDS.
+func (c *RDSConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	return 0, fmt.Errorf("delete not supported for rds")
+}
+
+// Export is a stub for RDS.
+func (c *RDSConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for rds")
+}
+
 func (c *RDSConnector) Close() error {
 	return nil
 }

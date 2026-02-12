@@ -145,3 +145,59 @@ func (s *LineageService) GetGraph(ctx context.Context, tenantID types.ID) (*gove
 
 	return graph, nil
 }
+
+// TraceField returns a connected chain of data flows for a given field ID.
+// It traverses the graph up to a depth of 5.
+func (s *LineageService) TraceField(ctx context.Context, fieldID types.ID, direction string) ([]governance.DataFlow, error) {
+	if direction != "UPSTREAM" && direction != "DOWNSTREAM" {
+		direction = "UPSTREAM" // Default
+	}
+
+	visited := make(map[string]bool)
+	var chain []governance.DataFlow
+
+	// Helper for recursion
+	var traverse func(currentID types.ID, depth int) error
+	traverse = func(currentID types.ID, depth int) error {
+		if depth > 5 {
+			return nil
+		}
+		if visited[currentID.String()] {
+			return nil
+		}
+		visited[currentID.String()] = true
+
+		var flows []governance.DataFlow
+		var err error
+
+		if direction == "UPSTREAM" {
+			// Find flows where Destination == currentID (Who fed this?)
+			flows, err = s.repo.GetByDestination(ctx, currentID)
+		} else {
+			// Find flows where Source == currentID (Where did this go?)
+			flows, err = s.repo.GetBySource(ctx, currentID)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		for _, flow := range flows {
+			chain = append(chain, flow)
+			nextID := flow.SourceID
+			if direction == "DOWNSTREAM" {
+				nextID = flow.DestinationID
+			}
+			if err := traverse(nextID, depth+1); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	if err := traverse(fieldID, 0); err != nil {
+		return nil, fmt.Errorf("trace lineage: %w", err)
+	}
+
+	return chain, nil
+}

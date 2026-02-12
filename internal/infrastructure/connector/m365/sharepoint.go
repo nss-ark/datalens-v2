@@ -232,6 +232,16 @@ func (c *Microsoft365Connector) Capabilities() discovery.ConnectorCapabilities {
 	}
 }
 
+// Delete is a stub.
+func (c *Microsoft365Connector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	return 0, fmt.Errorf("delete not supported for m365")
+}
+
+// Export is a stub.
+func (c *Microsoft365Connector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for m365")
+}
+
 func (c *Microsoft365Connector) Close() error {
 	return nil
 }

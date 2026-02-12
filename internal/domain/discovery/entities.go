@@ -30,9 +30,18 @@ type DataSource struct {
 	Config       string               `json:"config" db:"config"`                         // JSON config specific to connector type
 	ScanSchedule *string              `json:"scan_schedule,omitempty" db:"scan_schedule"` // Cron expression for automated scans
 	Status       ConnectionStatus     `json:"status" db:"status"`
+	DeletionMode DeletionMode         `json:"deletion_mode" db:"deletion_mode"`
 	LastSyncAt   *time.Time           `json:"last_sync_at" db:"last_sync_at"`
 	ErrorMessage *string              `json:"error_message,omitempty" db:"error_message"`
 }
+
+// DeletionMode determines how erasure requests are handled.
+type DeletionMode string
+
+const (
+	DeletionModeAuto   DeletionMode = "AUTO"
+	DeletionModeManual DeletionMode = "MANUAL"
+)
 
 // ConnectionStatus tracks the data source connection state.
 type ConnectionStatus string

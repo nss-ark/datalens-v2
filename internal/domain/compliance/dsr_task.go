@@ -10,11 +10,12 @@ import (
 type DSRTaskStatus string
 
 const (
-	TaskStatusPending   DSRTaskStatus = "PENDING"
-	TaskStatusRunning   DSRTaskStatus = "RUNNING"
-	TaskStatusCompleted DSRTaskStatus = "COMPLETED"
-	TaskStatusVerified  DSRTaskStatus = "VERIFIED"
-	TaskStatusFailed    DSRTaskStatus = "FAILED"
+	TaskStatusPending              DSRTaskStatus = "PENDING"
+	TaskStatusRunning              DSRTaskStatus = "RUNNING"
+	TaskStatusCompleted            DSRTaskStatus = "COMPLETED"
+	TaskStatusVerified             DSRTaskStatus = "VERIFIED"
+	TaskStatusFailed               DSRTaskStatus = "FAILED"
+	TaskStatusManualActionRequired DSRTaskStatus = "MANUAL_ACTION_REQUIRED"
 )
 
 // DSRTask represents a unit of work for a DSR against a specific Data Source.

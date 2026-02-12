@@ -376,4 +376,15 @@ func extractBody(payload *gmail.MessagePart) string {
 	return sb.String()
 }
 
+// Delete is a stub for Google Drive/Gmail.
+func (c *GoogleConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	c.logger.WarnContext(ctx, "delete requested but not supported for google", "entity", entity)
+	return 0, fmt.Errorf("delete not supported for google")
+}
+
+// Export is a stub for Google Drive/Gmail.
+func (c *GoogleConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for google")
+}
+
 var _ ScannableConnector = (*GoogleConnector)(nil)

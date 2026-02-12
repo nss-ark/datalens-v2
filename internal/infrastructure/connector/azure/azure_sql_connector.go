@@ -206,6 +206,16 @@ func (c *AzureSQLConnector) Capabilities() discovery.ConnectorCapabilities {
 	}
 }
 
+// Delete is a stub for Azure SQL.
+func (c *AzureSQLConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	return 0, fmt.Errorf("delete not supported for azure sql")
+}
+
+// Export is a stub for Azure SQL.
+func (c *AzureSQLConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for azure sql")
+}
+
 func (c *AzureSQLConnector) Close() error {
 	if c.db != nil {
 		return c.db.Close()

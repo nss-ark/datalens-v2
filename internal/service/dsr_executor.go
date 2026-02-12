@@ -155,11 +155,15 @@ func (e *DSRExecutor) executeTask(ctx context.Context, dsr *compliance.DSR, task
 	if execErr != nil {
 		task.Status = compliance.TaskStatusFailed
 		task.Error = execErr.Error()
-	} else {
+	} else if task.Status == compliance.TaskStatusRunning {
+		// Only mark completed if still running (sub-functions might set other statuses like MANUAL_ACTION_REQUIRED)
 		task.Status = compliance.TaskStatusCompleted
 		task.Result = result
 		completedAt := time.Now().UTC()
 		task.CompletedAt = &completedAt
+	} else {
+		// Result might be partial if status was changed
+		task.Result = result
 	}
 
 	if err := e.dsrRepo.UpdateTask(ctx, task); err != nil {
@@ -189,7 +193,7 @@ func (e *DSRExecutor) executeAccessRequest(ctx context.Context, dsr *compliance.
 	}
 	defer conn.Close()
 
-	// 4. Find PII fields for this data source
+	// 4. Find PII fields for retrieval
 	pagination := types.Pagination{Page: 1, PageSize: 1000}
 	piiResult, err := e.piiRepo.GetByDataSource(ctx, ds.ID, pagination)
 	if err != nil {
@@ -197,39 +201,59 @@ func (e *DSRExecutor) executeAccessRequest(ctx context.Context, dsr *compliance.
 	}
 
 	// 5. Group by entity
-	entityFields := make(map[string][]discovery.PIIClassification)
+	entityFields := make(map[string][]string)
 	for _, pii := range piiResult.Items {
-		entityFields[pii.EntityName] = append(entityFields[pii.EntityName], pii)
+		entityFields[pii.EntityName] = append(entityFields[pii.EntityName], pii.FieldName)
 	}
 
-	// 6. Sample data for each entity/field combination
-	exportData := make(map[string]interface{})
+	// 6. Execute Export
+	accessResults := make([]map[string]interface{}, 0)
+	var totalRecords int64
+
 	for entityName, fields := range entityFields {
-		entityData := make(map[string]interface{})
+		filter := make(map[string]string)
 		for _, field := range fields {
-			samples, err := conn.SampleData(ctx, entityName, field.FieldName, 100)
-			if err != nil {
-				e.logger.WarnContext(ctx, "failed to sample field", "entity", entityName, "field", field.FieldName, "error", err)
-				continue
-			}
-			// Filter samples by subject identifiers (basic implementation)
-			filtered := e.filterSamplesBySubject(samples, dsr.SubjectIdentifiers)
-			if len(filtered) > 0 {
-				entityData[field.FieldName] = filtered
+			for idKey, idVal := range dsr.SubjectIdentifiers {
+				if strings.EqualFold(idKey, field) {
+					filter[field] = idVal
+				}
 			}
 		}
-		if len(entityData) > 0 {
-			exportData[entityName] = entityData
+
+		if len(filter) == 0 {
+			// e.logger.WarnContext(ctx, "no matching identifiers", "entity", entityName)
+			continue
+		}
+
+		records, err := conn.Export(ctx, entityName, filter)
+		if err != nil {
+			e.logger.ErrorContext(ctx, "export failed", "entity", entityName, "error", err)
+			continue
+		}
+
+		if len(records) > 0 {
+			totalRecords += int64(len(records))
+			accessResults = append(accessResults, map[string]interface{}{
+				"entity":  entityName,
+				"records": records,
+			})
 		}
 	}
+
+	// Emit event
+	e.eventBus.Publish(ctx, eventbus.NewEvent("dsr.data_accessed", "dsr_executor", dsr.TenantID, map[string]any{
+		"dsr_id":         dsr.ID,
+		"data_source_id": ds.ID,
+		"entities_count": len(accessResults),
+		"total_records":  totalRecords,
+	}))
 
 	result := map[string]interface{}{
-		"subject_name":   dsr.SubjectName,
-		"subject_email":  dsr.SubjectEmail,
 		"data_source_id": ds.ID,
 		"data_source":    ds.Name,
-		"exported_at":    time.Now().UTC(),
-		"data":           exportData,
+		"accessed_at":    time.Now().UTC(),
+		"data":           accessResults,
+		"total_records":  totalRecords,
 	}
 
 	return result, nil
@@ -241,6 +265,24 @@ func (e *DSRExecutor) executeErasureRequest(ctx context.Context, dsr *compliance
 	ds, err := e.dsRepo.GetByID(ctx, task.DataSourceID)
 	if err != nil {
 		return nil, fmt.Errorf("fetch data source: %w", err)
+	}
+
+	// CHECK DELETION MODE
+	if ds.DeletionMode == discovery.DeletionModeManual {
+		e.logger.InfoContext(ctx, "manual deletion required", "dsr_id", dsr.ID, "data_source_id", ds.ID)
+
+		// Emit event
+		e.eventBus.Publish(ctx, eventbus.NewEvent("dsr.manual_deletion_required", "dsr_executor", dsr.TenantID, map[string]any{
+			"dsr_id":         dsr.ID,
+			"data_source_id": ds.ID,
+			"reason":         "Data Source configured for manual deletion",
+		}))
+
+		task.Status = compliance.TaskStatusManualActionRequired
+		return map[string]interface{}{
+			"status":  "MANUAL_ACTION_REQUIRED",
+			"message": "Manual deletion verification required by configuration.",
+		}, nil
 	}
 
 	// 2. Get connector
@@ -268,18 +310,42 @@ func (e *DSRExecutor) executeErasureRequest(ctx context.Context, dsr *compliance
 		entityFields[pii.EntityName] = append(entityFields[pii.EntityName], pii.FieldName)
 	}
 
-	// 6. Execute deletion (using raw SQL via connector framework)
-	// NOTE: This is a simplified implementation. Real implementation would need
-	// connector-specific erasure capabilities or direct DB access with proper WHERE clauses
+	// 6. Execute deletion
 	deletionLog := make([]map[string]interface{}, 0)
+	var totalDeleted int64
 
-	for entityName := range entityFields {
-		// For MVP, we'll log what would be deleted
-		// Real implementation needs connector.Delete() method or direct DB access
+	for entityName, fields := range entityFields {
+		filter := make(map[string]string)
+		for _, field := range fields {
+			for idKey, idVal := range dsr.SubjectIdentifiers {
+				if strings.EqualFold(idKey, field) {
+					filter[field] = idVal
+				}
+			}
+		}
+
+		if len(filter) == 0 {
+			e.logger.WarnContext(ctx, "no matching identifiers for entity deletion", "entity", entityName)
+			continue
+		}
+
+		count, err := conn.Delete(ctx, entityName, filter)
+		if err != nil {
+			e.logger.ErrorContext(ctx, "failed to delete entity", "entity", entityName, "error", err)
+			deletionLog = append(deletionLog, map[string]interface{}{
+				"entity": entityName,
+				"status": "FAILED",
+				"error":  err.Error(),
+			})
+			continue
+		}
+
+		totalDeleted += count
 		deletionLog = append(deletionLog, map[string]interface{}{
-			"entity": entityName,
-			"action": "DELETE_SIMULATED",
-			"note":   "Connector framework needs Delete capability for production",
+			"entity":  entityName,
+			"status":  "DELETED",
+			"count":   count,
+			"filters": filter,
 		})
 	}
 
@@ -288,6 +354,7 @@ func (e *DSRExecutor) executeErasureRequest(ctx context.Context, dsr *compliance
 		"dsr_id":         dsr.ID,
 		"data_source_id": ds.ID,
 		"entities_count": len(entityFields),
+		"total_deleted":  totalDeleted,
 	}))
 
 	result := map[string]interface{}{
@@ -295,6 +362,7 @@ func (e *DSRExecutor) executeErasureRequest(ctx context.Context, dsr *compliance
 		"data_source":    ds.Name,
 		"deleted_at":     time.Now().UTC(),
 		"deletions":      deletionLog,
+		"total_deleted":  totalDeleted,
 	}
 
 	return result, nil

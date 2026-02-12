@@ -273,6 +273,16 @@ func (c *BlobConnector) Capabilities() discovery.ConnectorCapabilities {
 	}
 }
 
+// Delete is a stub for Azure Blob.
+func (c *BlobConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	return 0, fmt.Errorf("delete not supported for azure blob")
+}
+
+// Export is a stub for Azure Blob.
+func (c *BlobConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for azure blob")
+}
+
 func (c *BlobConnector) Close() error {
 	return nil
 }

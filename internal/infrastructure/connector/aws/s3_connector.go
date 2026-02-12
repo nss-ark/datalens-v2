@@ -276,3 +276,17 @@ func (c *S3Connector) Capabilities() discovery.ConnectorCapabilities {
 func (c *S3Connector) Close() error {
 	return nil
 }
+
+// Delete is a stub for S3.
+func (c *S3Connector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	// For S3, we probably don't want to delete files based on a simple filter yet.
+	// We need a more sophisticated approach (e.g. creating a deletion masking file, or rewriting the file).
+	// For now, return error.
+	c.logger.WarnContext(ctx, "delete requested but not supported for s3", "entity", entity)
+	return 0, fmt.Errorf("delete not supported for s3")
+}
+
+// Export is a stub for S3.
+func (c *S3Connector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for s3")
+}

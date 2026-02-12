@@ -19,12 +19,13 @@ func NewPostgresLineageRepository(db *pgxpool.Pool) *PostgresLineageRepository {
 
 func (r *PostgresLineageRepository) Create(ctx context.Context, flow *governance.DataFlow) error {
 	query := `
-		INSERT INTO data_flows (id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO data_flows (id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, transformation, confidence, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 	_, err := r.db.Exec(ctx, query,
 		flow.ID, flow.TenantID, flow.SourceID, flow.DestinationID,
 		flow.DataType, flow.DataPath, flow.PurposeID, flow.Status, flow.Description,
+		flow.Transformation, flow.Confidence,
 		flow.CreatedAt, flow.UpdatedAt,
 	)
 	if err != nil {
@@ -35,7 +36,7 @@ func (r *PostgresLineageRepository) Create(ctx context.Context, flow *governance
 
 func (r *PostgresLineageRepository) GetByTenant(ctx context.Context, tenantID types.ID) ([]governance.DataFlow, error) {
 	query := `
-		SELECT id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, created_at, updated_at
+		SELECT id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, transformation, confidence, created_at, updated_at
 		FROM data_flows
 		WHERE tenant_id = $1
 		ORDER BY created_at DESC
@@ -52,6 +53,7 @@ func (r *PostgresLineageRepository) GetByTenant(ctx context.Context, tenantID ty
 		if err := rows.Scan(
 			&f.ID, &f.TenantID, &f.SourceID, &f.DestinationID,
 			&f.DataType, &f.DataPath, &f.PurposeID, &f.Status, &f.Description,
+			&f.Transformation, &f.Confidence,
 			&f.CreatedAt, &f.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan data flow: %w", err)
@@ -63,7 +65,7 @@ func (r *PostgresLineageRepository) GetByTenant(ctx context.Context, tenantID ty
 
 func (r *PostgresLineageRepository) GetBySource(ctx context.Context, sourceID types.ID) ([]governance.DataFlow, error) {
 	query := `
-		SELECT id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, created_at, updated_at
+		SELECT id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, transformation, confidence, created_at, updated_at
 		FROM data_flows
 		WHERE source_id = $1
 		ORDER BY created_at DESC
@@ -80,6 +82,7 @@ func (r *PostgresLineageRepository) GetBySource(ctx context.Context, sourceID ty
 		if err := rows.Scan(
 			&f.ID, &f.TenantID, &f.SourceID, &f.DestinationID,
 			&f.DataType, &f.DataPath, &f.PurposeID, &f.Status, &f.Description,
+			&f.Transformation, &f.Confidence,
 			&f.CreatedAt, &f.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan data flow: %w", err)
@@ -91,7 +94,7 @@ func (r *PostgresLineageRepository) GetBySource(ctx context.Context, sourceID ty
 
 func (r *PostgresLineageRepository) GetByDestination(ctx context.Context, destID types.ID) ([]governance.DataFlow, error) {
 	query := `
-		SELECT id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, created_at, updated_at
+		SELECT id, tenant_id, source_id, destination_id, data_type, data_path, purpose_id, status, description, transformation, confidence, created_at, updated_at
 		FROM data_flows
 		WHERE destination_id = $1
 		ORDER BY created_at DESC
@@ -108,6 +111,7 @@ func (r *PostgresLineageRepository) GetByDestination(ctx context.Context, destID
 		if err := rows.Scan(
 			&f.ID, &f.TenantID, &f.SourceID, &f.DestinationID,
 			&f.DataType, &f.DataPath, &f.PurposeID, &f.Status, &f.Description,
+			&f.Transformation, &f.Confidence,
 			&f.CreatedAt, &f.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan data flow: %w", err)

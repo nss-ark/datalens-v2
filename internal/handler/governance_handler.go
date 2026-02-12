@@ -44,6 +44,7 @@ func (h *GovernanceHandler) Routes() chi.Router {
 	// Lineage Routes
 	r.Get("/lineage", h.GetLineageGraph)
 	r.Post("/lineage", h.TrackFlow)
+	r.Get("/lineage/trace", h.TraceField)
 
 	return r
 }
@@ -196,4 +197,30 @@ func (h *GovernanceHandler) TrackFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusCreated, flow)
+}
+
+// TraceField traces data lineage for a specific field.
+// GET /api/v2/governance/lineage/trace?field_id=X&direction=UPSTREAM
+func (h *GovernanceHandler) TraceField(w http.ResponseWriter, r *http.Request) {
+	fieldIDStr := r.URL.Query().Get("field_id")
+	if fieldIDStr == "" {
+		httputil.ErrorFromDomain(w, types.NewValidationError("field_id is required", nil))
+		return
+	}
+
+	fieldID, err := types.ParseID(fieldIDStr)
+	if err != nil {
+		httputil.ErrorFromDomain(w, types.NewValidationError("invalid field_id", nil))
+		return
+	}
+
+	direction := r.URL.Query().Get("direction")
+
+	chain, err := h.lineageService.TraceField(r.Context(), fieldID, direction)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, chain)
 }

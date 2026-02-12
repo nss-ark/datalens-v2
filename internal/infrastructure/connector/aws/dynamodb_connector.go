@@ -198,6 +198,16 @@ func (c *DynamoDBConnector) Capabilities() discovery.ConnectorCapabilities {
 	}
 }
 
+// Delete is a stub for DynamoDB.
+func (c *DynamoDBConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	return 0, fmt.Errorf("delete not supported for dynamodb")
+}
+
+// Export is a stub for DynamoDB.
+func (c *DynamoDBConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for dynamodb")
+}
+
 func (c *DynamoDBConnector) Close() error {
 	return nil
 }

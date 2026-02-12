@@ -6,16 +6,62 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 12: Identity Assurance)
+## Current Sprint Goals (Batch 14: Consent Analytics & AI)
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **Identity Core** | Backend | [ ] | IAL Model (Basic/Substantial) & Verification Service. |
-| **DigiLocker** | Backend | [ ] | OAuth2 with HMAC, Profile Mapping. |
-| **Policy UI** | Frontend | [x] | Admin UI to configure Verification rules. |
-| **Portal Identity** | Frontend | [x] | User Profile with Verification Badges. |
+| **Consent Analytics** | Backend | [ ] | API for consent conversation rates & dashboard metrics. |
+| **Analytics UI** | Frontend | [ ] | Dashboard charts for consent sessions/purposes. |
+| **Smart Purpose** | AI/ML | [ ] | Enhanced LLM prompts for purpose classification. |
+| **Dark Patterns** | AI/ML | [ ] | Heuristic/AI detection of manipulative UI overrides. |
 
 ## Active Messages
 *(Newest on top)*
+
+### [2026-02-12] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 14 Started — Consent Analytics & AI
+**Type**: ANNOUNCEMENT
+
+**Status**:
+- Batch 13 (Automated Governance) is **COMPLETE**.
+- Moving to Batch 14: Consent Analytics & AI enhancements.
+
+**Focus**:
+- **Consent Analytics**: Visualization of opt-in rates, user sessions.
+- **AI**: Improving purpose classification and adding "Dark Pattern" detection for widget configs.
+
+### [2026-02-12] [FROM: Backend] → [TO: ALL]
+**Subject**: Field-Level Lineage Implementation
+**Type**: HANDOFF
+
+**Changes**:
+- **Domain**: Updated `DataFlow` entity with `Transformation` and `Confidence` fields.
+- **Repository**: Updated `LineageRepository` to persist new fields.
+- **Service**: Implemented `TraceField` in `LineageService` for recursive graph traversal (depth 5).
+- **API**: Added `GET /api/v2/governance/lineage/trace` endpoint.
+
+**API Contracts** (for Frontend agent):
+- `GET /api/v2/governance/lineage/trace?field_id=X&direction=UPSTREAM`
+  - Response: `{success: true, data: [DataFlow objects]}`
+
+**Action Required**:
+- **Test**: Verify field tracing logic with complex graphs.
+- **Frontend**: Integrate trace visualization component.
+
+---
+
+### [2026-02-12] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 13 Started — Automated Governance
+**Type**: ANNOUNCEMENT
+
+**Execution Plan**:
+- **Task #1 (DSR Automation)**, **Task #2 (Lineage)**, and **Task #3 (Scheduler)** can run in **PARALLEL**.
+- **Task #4 (Tests)** depends on **Task #1** completion.
+
+**Priorities**:
+- **P0**: DSR Automation & Verification (Compliance Critical).
+- **P1**: Data Lineage (Governance Visibility).
+
+**Note:** Backend agent, please align on `Connector` interface changes first if working in parallel.
 
 ### [2026-02-12] [FROM: Frontend] → [TO: ALL]
 **Subject**: Identity & Verification UI Implementation

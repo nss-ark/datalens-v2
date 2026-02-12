@@ -25,12 +25,14 @@ func NewPostgresConnector() *PostgresConnector {
 var _ discovery.Connector = (*PostgresConnector)(nil)
 
 // Capabilities returns the supported operations.
+// Capabilities returns the supported operations.
 func (c *PostgresConnector) Capabilities() discovery.ConnectorCapabilities {
 	return discovery.ConnectorCapabilities{
 		CanDiscover:             true,
 		CanSample:               true,
-		CanDelete:               false, // Read-only for now
+		CanDelete:               true,
 		CanUpdate:               false,
+		CanExport:               true,
 		SupportsStreaming:       true,
 		SupportsIncremental:     false,
 		SupportsSchemaDiscovery: true,
@@ -213,4 +215,128 @@ func (c *PostgresConnector) Close() error {
 		c.conn.Close()
 	}
 	return nil
+}
+
+// Delete deletes entities matching the filter.
+func (c *PostgresConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	if c.conn == nil {
+		return 0, fmt.Errorf("not connected")
+	}
+
+	if len(filter) == 0 {
+		return 0, fmt.Errorf("refusing to delete with empty filter")
+	}
+
+	// 1. Sanitize Table Name
+	// We assume entity is "schema.table" or just "table"
+	parts := strings.Split(entity, ".")
+	var safeTable string
+	if len(parts) == 2 {
+		safeTable = pgx.Identifier{parts[0], parts[1]}.Sanitize()
+	} else {
+		safeTable = pgx.Identifier{entity}.Sanitize()
+	}
+
+	// 2. Build WHERE clause dynamically
+	var conditions []string
+	var args []interface{}
+	argIdx := 1
+
+	// Sort keys for deterministic order (good for testing/logging, not strictly needed for SQL)
+	// But map iteration is random.
+	// For now, simple iteration.
+	for col, val := range filter {
+		safeCol := pgx.Identifier{col}.Sanitize()
+		conditions = append(conditions, fmt.Sprintf("%s = $%d", safeCol, argIdx))
+		args = append(args, val)
+		argIdx++
+	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s", safeTable, strings.Join(conditions, " AND "))
+
+	// 3. Execute
+	tag, err := c.conn.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("delete failed: %w", err)
+	}
+
+	return tag.RowsAffected(), nil
+}
+
+// Export retrieves all data for entities matching the filter.
+func (c *PostgresConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	if c.conn == nil {
+		return nil, fmt.Errorf("not connected")
+	}
+
+	// 1. Sanitize Table Name
+	parts := strings.Split(entity, ".")
+	var safeTable string
+	if len(parts) == 2 {
+		safeTable = pgx.Identifier{parts[0], parts[1]}.Sanitize()
+	} else {
+		safeTable = pgx.Identifier{entity}.Sanitize()
+	}
+
+	// 2. Build WHERE clause dynamically
+	var conditions []string
+	var args []interface{}
+	argIdx := 1
+
+	for col, val := range filter {
+		conditions = append(conditions, fmt.Sprintf("%s = $%d", pgx.Identifier{col}.Sanitize(), argIdx))
+		args = append(args, val)
+		argIdx++
+	}
+
+	var query string
+	if len(conditions) > 0 {
+		query = fmt.Sprintf("SELECT * FROM %s WHERE %s", safeTable, strings.Join(conditions, " AND "))
+	} else {
+		// If no filter, return everything? Or error? Connector interface implies filter is for narrowing.
+		// DSR access usually means "exported data for THIS user".
+		// But if filter is empty, maybe it means all data?
+		// Let's allow empty filter for now, but in practice DSR executor should provide one.
+		query = fmt.Sprintf("SELECT * FROM %s", safeTable)
+	}
+
+	// 3. Execute
+	rows, err := c.conn.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("export query failed: %w", err)
+	}
+	defer rows.Close()
+
+	// 4. Parse results into maps
+	var results []map[string]interface{}
+	fields := rows.FieldDescriptions()
+	columnNames := make([]string, len(fields))
+	for i, fd := range fields {
+		columnNames[i] = string(fd.Name)
+	}
+
+	for rows.Next() {
+		// Create a slice of interface{} to hold values
+		values := make([]interface{}, len(columnNames))
+		valuePtrs := make([]interface{}, len(columnNames))
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+
+		// Convert to map
+		rowMap := make(map[string]interface{})
+		for i, col := range columnNames {
+			val := values[i]
+			// Handle []byte for text? pgx handles many types.
+			// DSR export usually creates JSON, so we rely on json.Marshal handling these types.
+			rowMap[col] = val
+		}
+		results = append(results, rowMap)
+	}
+
+	return results, nil
 }

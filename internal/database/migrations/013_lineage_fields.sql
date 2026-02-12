@@ -1,0 +1,2 @@
+ALTER TABLE data_flows ADD COLUMN transformation TEXT;
+ALTER TABLE data_flows ADD COLUMN confidence DOUBLE PRECISION DEFAULT 1.0;

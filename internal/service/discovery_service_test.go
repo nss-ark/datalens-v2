@@ -20,41 +20,7 @@ import (
 // Mock Connector
 // =============================================================================
 
-type MockConnector struct {
-	mock.Mock
-}
-
-func (m *MockConnector) Connect(ctx context.Context, ds *discovery.DataSource) error {
-	args := m.Called(ctx, ds)
-	return args.Error(0)
-}
-func (m *MockConnector) DiscoverSchema(ctx context.Context, input discovery.DiscoveryInput) (*discovery.DataInventory, []discovery.DataEntity, error) {
-	args := m.Called(ctx, input)
-	if args.Get(0) == nil {
-		return nil, nil, args.Error(2)
-	}
-	return args.Get(0).(*discovery.DataInventory), args.Get(1).([]discovery.DataEntity), args.Error(2)
-}
-func (m *MockConnector) GetFields(ctx context.Context, entityID string) ([]discovery.DataField, error) {
-	args := m.Called(ctx, entityID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]discovery.DataField), args.Error(1)
-}
-func (m *MockConnector) SampleData(ctx context.Context, entity, field string, limit int) ([]string, error) {
-	args := m.Called(ctx, entity, field, limit)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]string), args.Error(1)
-}
-func (m *MockConnector) Capabilities() discovery.ConnectorCapabilities {
-	return discovery.ConnectorCapabilities{CanDiscover: true, CanSample: true}
-}
-func (m *MockConnector) Close() error {
-	return m.Called().Error(0)
-}
+// MockConnector is defined in mocks_test.go
 
 // =============================================================================
 // Mock Strategy

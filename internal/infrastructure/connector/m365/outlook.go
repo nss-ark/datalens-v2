@@ -414,6 +414,16 @@ func isTextType(contentType, name string) bool {
 	return false
 }
 
+// Export is a stub.
+func (c *OutlookConnector) Export(ctx context.Context, entity string, filter map[string]string) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("export not supported for outlook")
+}
+
+// Delete is a stub.
+func (c *OutlookConnector) Delete(ctx context.Context, entity string, filter map[string]string) (int64, error) {
+	return 0, fmt.Errorf("delete not supported for outlook")
+}
+
 func (c *OutlookConnector) Close() error {
 	// Client doesn't need closing
 	return nil

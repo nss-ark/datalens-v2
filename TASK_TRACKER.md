@@ -158,6 +158,7 @@
 - [x] Create progress tracking (polling) — `GET /data-sources/{id}/scan/status`
 - [ ] Create real-time progress tracking (WebSocket)
 - [x] Implement scan scheduling (cron-like) — `internal/service/scheduler.go`, cron via `robfig/cron/v3` (Batch 4)
+- [x] Smart Discovery / Scheduler Logic Implementation (Batch 13)
 - [ ] Write scan performance benchmarks (target: 5x v1 speed)
 
 ### Phase 1 Milestone: `v2.1-alpha`
@@ -182,8 +183,8 @@
 - [ ] Implement task assignment and routing
 
 #### 2.2 DSR Execution
-- [x] Implement access request execution (data export) — `dsr_executor.go`, samples PII fields per data source (Batch 4)
-- [x] Implement erasure request execution (data deletion) — identifies PII locations, emits `dsr.data_deleted` event (Batch 4)
+- [x] Implement access request execution (data export) — `dsr_executor.go`, `Connector.Export()` (Batch 13 - Automation Complete)
+- [x] Implement erasure request execution (data deletion) — `Connector.Delete()` (Batch 13 - Automation Complete)
 - [x] Implement correction request execution (data update) — stub for MVP, needs connector `Update()` method (Batch 4)
 - [ ] Implement portability request (structured export)
 - [/] Implement nomination request execution (DPDPA Requirement) (Batch 5)
@@ -283,6 +284,7 @@
 - [x] Implement data flow tracking (Batch 8)
 - [x] Create data lineage visualization API (Batch 8 Backend + Frontend UI)
 - [x] Track purpose across data flows (DataFlow entity)
+- [x] Field-level lineage tracking (Column A -> Column B) (Batch 13)
 - [ ] Cross-border transfer documentation
 
 ### Phase 2 Milestone: `v2.2-beta`

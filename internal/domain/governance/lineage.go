@@ -13,13 +13,15 @@ import (
 // DataFlow represents a movement of data from a source to a description.
 type DataFlow struct {
 	types.TenantEntity
-	SourceID      types.ID   `json:"source_id" db:"source_id"`           // DataSource ID
-	DestinationID types.ID   `json:"destination_id" db:"destination_id"` // DataSource ID
-	DataType      string     `json:"data_type" db:"data_type"`           // "TABLE", "COLUMN", "FILE"
-	DataPath      string     `json:"data_path" db:"data_path"`           // "schema.table" or "bucket/key"
-	PurposeID     *types.ID  `json:"purpose_id,omitempty" db:"purpose_id"`
-	Status        FlowStatus `json:"status" db:"status"`
-	Description   string     `json:"description" db:"description"`
+	SourceID       types.ID   `json:"source_id" db:"source_id"`           // DataSource ID
+	DestinationID  types.ID   `json:"destination_id" db:"destination_id"` // DataSource ID
+	DataType       string     `json:"data_type" db:"data_type"`           // "TABLE", "COLUMN", "FILE"
+	DataPath       string     `json:"data_path" db:"data_path"`           // "schema.table" or "bucket/key"
+	PurposeID      *types.ID  `json:"purpose_id,omitempty" db:"purpose_id"`
+	Status         FlowStatus `json:"status" db:"status"`
+	Description    string     `json:"description" db:"description"`
+	Transformation string     `json:"transformation,omitempty" db:"transformation"` // Logic used to derive data
+	Confidence     float64    `json:"confidence,omitempty" db:"confidence"`         // 0.0 to 1.0
 }
 
 type FlowStatus string
