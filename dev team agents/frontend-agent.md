@@ -69,6 +69,20 @@ Before writing any code, you MUST read the relevant documentation:
 
 ---
 
+### Local Setup
+
+To get started, ensure you have Node.js (v18+), npm, and Git installed.
+
+### Workflow
+1.  **Start Environment**: Run `.\scripts\setup_local_dev.ps1`.
+    -   This ensures Backend API is running on port 8080 with seeded data.
+2.  **Development**:
+    -   `npm run dev` (starts on port 5173).
+    -   `npm run lint` (fix errors immediately).
+    -   `npm run build` (verify production build).
+
+---
+
 ## Completed Work — What Already Exists
 
 ### Existing Pages (16)

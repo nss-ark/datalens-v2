@@ -133,13 +133,13 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*TokenPair, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password)); err != nil {
-		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, map[string]any{"reason": "invalid password"}, in.TenantID)
+		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, nil, map[string]any{"reason": "invalid password"}, in.TenantID)
 		return nil, types.NewUnauthorizedError("invalid email or password")
 	}
 
 	pair, err := s.generateTokenPair(user)
 	if err != nil {
-		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, map[string]any{"reason": err.Error()}, in.TenantID)
+		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, nil, map[string]any{"reason": err.Error()}, in.TenantID)
 		return nil, err
 	}
 
@@ -148,7 +148,7 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*TokenPair, err
 	user.LastLoginAt = &now
 	_ = s.userRepo.Update(ctx, user)
 
-	s.auditService.Log(ctx, user.ID, "LOGIN", "USER", user.ID, nil, in.TenantID)
+	s.auditService.Log(ctx, user.ID, "LOGIN", "USER", user.ID, nil, nil, in.TenantID)
 
 	s.logger.InfoContext(ctx, "user logged in",
 		slog.String("tenant_id", in.TenantID.String()),

@@ -425,8 +425,14 @@ Go module is at the project root. There is NO separate `backend/` directory. Mod
 2. Read the task spec completely
 3. **Read the existing test inventory above** — don't duplicate existing tests
 4. Read the source code being tested — understand the contracts
-5. Read `internal/service/mocks_test.go` for the established mock pattern
-6. Write tests following the patterns above
-7. Run `go test ./... -short` to verify
-8. **Post in `AGENT_COMMS.md`** — results, issues found
+5. Read `internal/service/mocks_test.go`
+### Workflow
+1.  **Start Environment**: Run `.\scripts\setup_local_dev.ps1`.
+    -   This guarantees a known state with seeded PII data for E2E tests.
+2.  **Run Tests**:
+    -   Unit: `go test ./...`
+    -   Integration: `go test ./internal/service/... -tags=integration`
+    -   E2E: `go test ./internal/e2e/...`
+
+### Completed Tests in `AGENT_COMMS.md`** — results, issues found
 9. Report back with: new test files, pass/fail counts, any bugs found

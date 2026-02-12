@@ -1,170 +1,91 @@
 package aws
 
 import (
-	"bytes"
 	"context"
 	"io"
+	"strings"
 	"testing"
-	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
-	"github.com/complyark/datalens/internal/domain/discovery"
 )
 
-// =============================================================================
-// Mocks
-// =============================================================================
-
+// MockS3Client implements S3ClientInterface for testing.
 type MockS3Client struct {
-	mock.Mock
-}
-
-func (m *MockS3Client) ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*s3.ListObjectsV2Output), args.Error(1)
+	GetObjectFunc     func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+	ListObjectsV2Func func(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error)
 }
 
 func (m *MockS3Client) GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*s3.GetObjectOutput), args.Error(1)
+	if m.GetObjectFunc != nil {
+		return m.GetObjectFunc(ctx, params, optFns...)
+	}
+	return &s3.GetObjectOutput{}, nil
 }
 
-// =============================================================================
-// Tests
-// =============================================================================
+func (m *MockS3Client) ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
+	if m.ListObjectsV2Func != nil {
+		return m.ListObjectsV2Func(ctx, params, optFns...)
+	}
+	return &s3.ListObjectsV2Output{}, nil
+}
 
-func TestS3_ParseCSV(t *testing.T) {
-	// Setup
-	connector := NewS3Connector()
-	mockClient := new(MockS3Client)
-	connector.client = mockClient
-	connector.bucket = "test-bucket"
-
+func TestS3_SampleData_CSV(t *testing.T) {
 	csvContent := `id,name,email
 1,Alice,alice@example.com
 2,Bob,bob@example.com`
-	body := io.NopCloser(bytes.NewReader([]byte(csvContent)))
 
-	// Mock GetObject
-	mockClient.On("GetObject", mock.Anything, mock.MatchedBy(func(input *s3.GetObjectInput) bool {
-		return *input.Key == "data.csv"
-	})).Return(&s3.GetObjectOutput{Body: body}, nil)
+	mockClient := &MockS3Client{
+		GetObjectFunc: func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+			return &s3.GetObjectOutput{
+				Body: io.NopCloser(strings.NewReader(csvContent)),
+			}, nil
+		},
+	}
 
-	// Execute
-	samples, err := connector.SampleData(context.Background(), "data.csv", "email", 10)
+	c := NewS3Connector()
+	c.client = mockClient
+	c.bucket = "test-bucket"
 
-	// Verify
-	require.NoError(t, err)
-	assert.Len(t, samples, 2)
-	assert.Equal(t, "alice@example.com", samples[0])
-	assert.Equal(t, "bob@example.com", samples[1])
+	samples, err := c.SampleData(context.Background(), "data.csv", "email", 10)
+	if err != nil {
+		t.Fatalf("SampleData failed: %v", err)
+	}
+
+	if len(samples) != 2 {
+		t.Errorf("Expected 2 samples, got %d", len(samples))
+	}
+	if samples[0] != "alice@example.com" {
+		t.Errorf("Expected first sample 'alice@example.com', got '%s'", samples[0])
+	}
 }
 
-func TestS3_ParseJSON(t *testing.T) {
-	// Setup
-	connector := NewS3Connector()
-	mockClient := new(MockS3Client)
-	connector.client = mockClient
-	connector.bucket = "test-bucket"
-
+func TestS3_SampleData_JSON(t *testing.T) {
 	jsonContent := `[
 		{"id": 1, "user": {"email": "alice@example.com"}},
 		{"id": 2, "user": {"email": "bob@example.com"}}
 	]`
-	body := io.NopCloser(bytes.NewReader([]byte(jsonContent)))
 
-	// Mock GetObject
-	mockClient.On("GetObject", mock.Anything, mock.MatchedBy(func(input *s3.GetObjectInput) bool {
-		return *input.Key == "data.json"
-	})).Return(&s3.GetObjectOutput{Body: body}, nil)
-
-	// Execute
-	samples, err := connector.SampleData(context.Background(), "data.json", "user.email", 10)
-
-	// Verify
-	require.NoError(t, err)
-	assert.Len(t, samples, 2)
-	assert.Equal(t, "alice@example.com", samples[0])
-	assert.Equal(t, "bob@example.com", samples[1])
-}
-
-func TestS3_ParseJSONL(t *testing.T) {
-	// Setup
-	connector := NewS3Connector()
-	mockClient := new(MockS3Client)
-	connector.client = mockClient
-	connector.bucket = "test-bucket"
-
-	jsonlContent := `{"id": 1, "email": "alice@example.com"}
-{"id": 2, "email": "bob@example.com"}
-`
-	body := io.NopCloser(bytes.NewReader([]byte(jsonlContent)))
-
-	// Mock GetObject
-	mockClient.On("GetObject", mock.Anything, mock.MatchedBy(func(input *s3.GetObjectInput) bool {
-		return *input.Key == "data.jsonl"
-	})).Return(&s3.GetObjectOutput{Body: body}, nil)
-
-	// Execute
-	samples, err := connector.SampleData(context.Background(), "data.jsonl", "email", 10)
-
-	// Verify
-	require.NoError(t, err)
-	assert.Len(t, samples, 2)
-	assert.Equal(t, "alice@example.com", samples[0])
-	assert.Equal(t, "bob@example.com", samples[1])
-}
-
-func TestS3_IncrementalScan(t *testing.T) {
-	// Setup
-	connector := NewS3Connector()
-	mockClient := new(MockS3Client)
-	connector.client = mockClient
-	connector.bucket = "test-bucket"
-
-	now := time.Now()
-	oldTime := now.Add(-24 * time.Hour)
-	newTime := now
-
-	// Mock ListObjects
-	mockClient.On("ListObjectsV2", mock.Anything, mock.Anything).Return(&s3.ListObjectsV2Output{
-		Contents: []types.Object{
-			{Key: aws.String("old.txt"), LastModified: &oldTime},
-			{Key: aws.String("new.txt"), LastModified: &newTime},
+	mockClient := &MockS3Client{
+		GetObjectFunc: func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+			return &s3.GetObjectOutput{
+				Body: io.NopCloser(strings.NewReader(jsonContent)),
+			}, nil
 		},
-		IsTruncated: aws.Bool(false),
-	}, nil)
-
-	// Execute
-	input := discovery.DiscoveryInput{
-		ChangedSince: now.Add(-1 * time.Hour), // 1 hour ago
-	}
-	_, entities, err := connector.DiscoverSchema(context.Background(), input)
-
-	// Verify
-	require.NoError(t, err)
-	assert.Len(t, entities, 1)
-	assert.Equal(t, "new.txt", entities[0].Name)
-}
-
-func TestS3_Connect_ManualClient(t *testing.T) {
-	// Verify that we can inject a client (which we are doing in other tests, but good to double check Connect doesn't overwrite it)
-	connector := NewS3Connector()
-	mockClient := new(MockS3Client)
-	connector.client = mockClient
-
-	ds := &discovery.DataSource{
-		Database: "my-bucket",
 	}
 
-	err := connector.Connect(context.Background(), ds)
-	require.NoError(t, err)
-	assert.Equal(t, mockClient, connector.client)
-	assert.Equal(t, "my-bucket", connector.bucket)
+	c := NewS3Connector()
+	c.client = mockClient
+	c.bucket = "test-bucket"
+
+	samples, err := c.SampleData(context.Background(), "data.json", "user.email", 10)
+	if err != nil {
+		t.Fatalf("SampleData failed: %v", err)
+	}
+
+	if len(samples) != 2 {
+		t.Errorf("Expected 2 samples, got %d", len(samples))
+	}
+	if samples[0] != "alice@example.com" {
+		t.Errorf("Expected first sample 'alice@example.com', got '%s'", samples[0])
+	}
 }

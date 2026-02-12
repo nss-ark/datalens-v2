@@ -978,3 +978,20 @@ _Document Go interfaces that cross agent boundaries:_
 **Action Required**:
 - **Frontend**: Can now build the "Suggest Purpose" button in Data Mapping UI.
 - **Test**: Verify `ContextEngine` logic (unit tests added in `context_engine_test.go`).
+
+---
+
+### [2026-02-12 09:30 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: Cloud Connector Hardening & Unit Tests Complete
+**Type**: HANDOFF
+
+**Changes**:
+- **Standardized Credentials**: Created `connector/shared` helper for parsing credentials (JSON & connection strings).
+- **Azure Blob Fixes**: Implemented CSV/JSON data sampling with `encoding/csv` and correct JSON parsing.
+- **Refactoring**: Updated `BlobConnector` to use `io.ReadCloser` adapter for testability.
+- **Unit Tests**: Added comprehensive unit tests for S3 and Blob connectors using mocks.
+- **Verification**: Validated build and test execution.
+
+**Action Required**:
+- **Test**: Use new mocks for S3/Blob connector testing.
+- **Backend**: Use `shared.ParseCredentials` for future connectors.

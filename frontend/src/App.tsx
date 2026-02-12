@@ -17,6 +17,7 @@ import WidgetDetail from './pages/WidgetDetail';
 import PurposeMapping from './pages/Governance/PurposeMapping';
 import PolicyManager from './pages/Governance/PolicyManager';
 import Violations from './pages/Governance/Violations';
+import DataLineage from './pages/Governance/DataLineage';
 
 // Portal Components
 import { PortalLayout } from './components/Layout/PortalLayout';
@@ -103,7 +104,7 @@ function App() {
             {/* Placeholder routes */}
             <Route path="/agents" element={<PlaceholderPage title="Agents" />} />
             <Route path="/pii/inventory" element={<PlaceholderPage title="PII Inventory" />} />
-            <Route path="/lineage" element={<PlaceholderPage title="Data Lineage" />} />
+            <Route path="/governance/lineage" element={<DataLineage />} />
             <Route path="/subjects" element={<PlaceholderPage title="Data Subjects" />} />
             <Route path="/consent" element={<PlaceholderPage title="Consent Records" />} />
             <Route path="/consent/analytics" element={<PlaceholderPage title="Consent Analytics" />} />

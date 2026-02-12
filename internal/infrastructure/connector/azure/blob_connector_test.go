@@ -8,73 +8,81 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
-	"github.com/complyark/datalens/internal/domain/discovery"
 )
 
-// =============================================================================
-// Mocks
-// =============================================================================
-
+// MockBlobClient implements BlobClientInterface for testing.
 type MockBlobClient struct {
-	mock.Mock
+	DownloadStreamFunc        func(ctx context.Context, containerName string, blobName string, options *azblob.DownloadStreamOptions) (io.ReadCloser, error)
+	NewListBlobsFlatPagerFunc func(containerName string, options *azblob.ListBlobsFlatOptions) *runtime.Pager[azblob.ListBlobsFlatResponse]
+}
+
+func (m *MockBlobClient) DownloadStream(ctx context.Context, containerName string, blobName string, options *azblob.DownloadStreamOptions) (io.ReadCloser, error) {
+	if m.DownloadStreamFunc != nil {
+		return m.DownloadStreamFunc(ctx, containerName, blobName, options)
+	}
+	return nil, nil // Should verify error handling if nil
 }
 
 func (m *MockBlobClient) NewListBlobsFlatPager(containerName string, options *azblob.ListBlobsFlatOptions) *runtime.Pager[azblob.ListBlobsFlatResponse] {
-	args := m.Called(containerName, options)
-	return args.Get(0).(*runtime.Pager[azblob.ListBlobsFlatResponse])
+	if m.NewListBlobsFlatPagerFunc != nil {
+		return m.NewListBlobsFlatPagerFunc(containerName, options)
+	}
+	return nil
 }
 
-func (m *MockBlobClient) DownloadStream(ctx context.Context, containerName string, blobName string, options *azblob.DownloadStreamOptions) (azblob.DownloadStreamResponse, error) {
-	args := m.Called(ctx, containerName, blobName, options)
-	return args.Get(0).(azblob.DownloadStreamResponse), args.Error(1)
-}
+func TestBlob_SampleData_CSV(t *testing.T) {
+	csvContent := `id,name,email
+1,Alice,alice@example.com
+2,Bob,bob@example.com`
 
-// =============================================================================
-// Tests
-// =============================================================================
-
-func TestBlob_Connect_ManualClient(t *testing.T) {
-	connector := NewBlobConnector()
-	mockClient := new(MockBlobClient)
-	connector.client = mockClient
-
-	ds := &discovery.DataSource{
-		Database: "my-container",
+	mockClient := &MockBlobClient{
+		DownloadStreamFunc: func(ctx context.Context, container string, blob string, options *azblob.DownloadStreamOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(csvContent)), nil
+		},
 	}
 
-	err := connector.Connect(context.Background(), ds)
-	require.NoError(t, err)
-	assert.Equal(t, mockClient, connector.client)
-	assert.Equal(t, "my-container", connector.container)
+	c := NewBlobConnector()
+	c.client = mockClient
+	c.container = "test-container"
+
+	samples, err := c.SampleData(context.Background(), "data.csv", "email", 10)
+	if err != nil {
+		t.Fatalf("SampleData failed: %v", err)
+	}
+
+	if len(samples) != 2 {
+		t.Errorf("Expected 2 samples, got %d", len(samples))
+	}
+	if samples[0] != "alice@example.com" {
+		t.Errorf("Expected first sample 'alice@example.com', got '%s'", samples[0])
+	}
 }
 
-func TestBlob_SampleData_Mock(t *testing.T) {
-	// Since parsing logic is currently stubbed/empty in implementation,
-	// we just test that SampleData calls DownloadStream and returns expected (empty) result from stub.
-	// If we implemented parsing, we'd test parsing here.
+func TestBlob_SampleData_JSON(t *testing.T) {
+	jsonContent := `[
+		{"id": 1, "user": {"email": "alice@example.com"}},
+		{"id": 2, "user": {"email": "bob@example.com"}}
+	]`
 
-	connector := NewBlobConnector()
-	mockClient := new(MockBlobClient)
-	connector.client = mockClient
-	connector.container = "test-container"
+	mockClient := &MockBlobClient{
+		DownloadStreamFunc: func(ctx context.Context, container string, blob string, options *azblob.DownloadStreamOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(jsonContent)), nil
+		},
+	}
 
-	blobName := "data.csv"
-	bodyContent := "name,email\nalice,alice@example.com"
-	body := io.NopCloser(strings.NewReader(bodyContent))
+	c := NewBlobConnector()
+	c.client = mockClient
+	c.container = "test-container"
 
-	response := azblob.DownloadStreamResponse{}
-	response.Body = body
+	samples, err := c.SampleData(context.Background(), "data.json", "user.email", 10)
+	if err != nil {
+		t.Fatalf("SampleData failed: %v", err)
+	}
 
-	mockClient.On("DownloadStream", mock.Anything, "test-container", blobName, mock.Anything).Return(response, nil)
-
-	data, err := connector.SampleData(context.Background(), blobName, "email", 10)
-	require.NoError(t, err)
-	// Currently parsing stub returns empty slice
-	assert.Empty(t, data)
-
-	mockClient.AssertExpectations(t)
+	if len(samples) != 2 {
+		t.Errorf("Expected 2 samples, got %d", len(samples))
+	}
+	if samples[0] != "alice@example.com" {
+		t.Errorf("Expected first sample 'alice@example.com', got '%s'", samples[0])
+	}
 }

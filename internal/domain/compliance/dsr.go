@@ -45,7 +45,8 @@ type DSR struct {
 	SLADeadline        time.Time         `json:"sla_deadline"`
 	AssignedTo         *types.ID         `json:"assigned_to,omitempty"`
 	Reason             string            `json:"reason,omitempty"` // For rejection or specific context
-	Notes              string            `json:"notes,omitempty"`  // Added back
+	Notes              string            `json:"notes,omitempty"`
+	Metadata           types.Metadata    `json:"metadata,omitempty"` // Added back
 	CreatedAt          time.Time         `json:"created_at"`
 	UpdatedAt          time.Time         `json:"updated_at"`
 	CompletedAt        *time.Time        `json:"completed_at,omitempty"`

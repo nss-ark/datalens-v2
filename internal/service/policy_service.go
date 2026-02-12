@@ -66,7 +66,9 @@ func (s *PolicyService) CreatePolicy(ctx context.Context, p *governance.Policy) 
 		return err
 	}
 
-	s.auditService.Log(ctx, tenantID, "POLICY_CREATE", "POLICY", p.ID, nil, tenantID)
+	userID, _ := types.UserIDFromContext(ctx)
+
+	s.auditService.Log(ctx, userID, "POLICY_CREATE", "POLICY", p.ID, nil, map[string]any{"name": p.Name, "type": p.Type}, tenantID)
 
 	event := eventbus.NewEvent("governance.policy_created", "governance", tenantID, p)
 	if err := s.eventBus.Publish(ctx, event); err != nil {

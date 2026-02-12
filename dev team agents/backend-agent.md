@@ -59,9 +59,13 @@ You receive task specifications from an Orchestrator agent and implement them pr
 
 ---
 
-## Completed Work — What Already Exists
-
-Before writing any code, understand what's already built so you extend (not duplicate) existing patterns.
+### Workflow
+1.  **Start Environment**: Run `.\scripts\setup_local_dev.ps1` to spin up App Infra, Target DBs, and Seed 10k mock rows.
+    -   *Do not manually start docker containers unless debugging.*
+2.  **Development**:
+    -   Write tests in `internal/service/`.
+    -   Run `go test ./...`.
+    -   Run `go run cmd/api/main.go` (if not using the script's terminal).
 
 ### Existing Services (in `internal/service/`)
 `auth_service.go`, `tenant_service.go`, `datasource_service.go`, `discovery_service.go`, `scan_service.go`, `feedback_service.go`, `purpose_service.go`, `dashboard_service.go`, `dsr_service.go`, `dsr_executor.go`, `scheduler.go`, `apikey_service.go`, `consent_service.go`, `portal_auth_service.go`, `data_principal_service.go` (Batch 6), `context_engine.go` (Batch 7), `policy_service.go` (Batch 7)

@@ -21,11 +21,12 @@ func NewPostgresAuditRepository(db *pgxpool.Pool) *PostgresAuditRepository {
 
 // Create persists a new audit log entry.
 func (r *PostgresAuditRepository) Create(ctx context.Context, log *audit.AuditLog) error {
-	query := `INSERT INTO audit_logs (id, tenant_id, actor_id, action, resource_type, resource_id, changes, ip_address, user_agent, created_at)
-			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	// Map TenantID -> client_id, UserID -> user_id
+	query := `INSERT INTO audit_logs (id, client_id, user_id, action, resource_type, resource_id, old_values, new_values, ip_address, user_agent, created_at)
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 	_, err := r.db.Exec(ctx, query,
-		log.ID, log.TenantID, log.ActorID, log.Action,
-		log.ResourceType, log.ResourceID, log.Changes,
+		log.ID, log.TenantID, log.UserID, log.Action,
+		log.ResourceType, log.ResourceID, log.OldValues, log.NewValues,
 		log.IPAddress, log.UserAgent, log.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("create audit log: %w", err)
@@ -34,11 +35,10 @@ func (r *PostgresAuditRepository) Create(ctx context.Context, log *audit.AuditLo
 }
 
 // GetByTenant retrieves audit logs for a tenant.
-// TODO: Add pagination and filters in future iteration.
 func (r *PostgresAuditRepository) GetByTenant(ctx context.Context, tenantID types.ID, limit int) ([]audit.AuditLog, error) {
-	query := `SELECT id, tenant_id, actor_id, action, resource_type, resource_id, changes, ip_address, user_agent, created_at
+	query := `SELECT id, client_id, user_id, action, resource_type, resource_id, old_values, new_values, ip_address, user_agent, created_at
 			  FROM audit_logs
-			  WHERE tenant_id = $1
+			  WHERE client_id = $1
 			  ORDER BY created_at DESC
 			  LIMIT $2`
 
@@ -52,8 +52,8 @@ func (r *PostgresAuditRepository) GetByTenant(ctx context.Context, tenantID type
 	for rows.Next() {
 		var l audit.AuditLog
 		if err := rows.Scan(
-			&l.ID, &l.TenantID, &l.ActorID, &l.Action,
-			&l.ResourceType, &l.ResourceID, &l.Changes,
+			&l.ID, &l.TenantID, &l.UserID, &l.Action,
+			&l.ResourceType, &l.ResourceID, &l.OldValues, &l.NewValues,
 			&l.IPAddress, &l.UserAgent, &l.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan audit log: %w", err)

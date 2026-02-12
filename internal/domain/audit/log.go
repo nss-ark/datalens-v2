@@ -10,12 +10,13 @@ import (
 // AuditLog represents a single audit entry for a sensitive action.
 type AuditLog struct {
 	ID           types.ID       `json:"id"`
-	TenantID     types.ID       `json:"tenant_id"`
-	ActorID      types.ID       `json:"actor_id"`
+	TenantID     types.ID       `json:"tenant_id"` // Maps to client_id in DB
+	UserID       types.ID       `json:"user_id"`   // Maps to user_id in DB
 	Action       string         `json:"action"`
 	ResourceType string         `json:"resource_type"`
 	ResourceID   types.ID       `json:"resource_id"`
-	Changes      map[string]any `json:"changes,omitempty"`
+	OldValues    map[string]any `json:"old_values,omitempty"`
+	NewValues    map[string]any `json:"new_values,omitempty"`
 	IPAddress    string         `json:"ip_address,omitempty"`
 	UserAgent    string         `json:"user_agent,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"`

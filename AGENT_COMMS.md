@@ -6,81 +6,63 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 5: Consent Engine)
+## Current Sprint Goals (Batch 9: Planning...)
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **Consent Backend** | Backend | [ ] | Implement `Consent`, `ConsentWidget`, `ConsentSession` repositories & services. Public API for widget recording. |
-| **DSR Nomination** | Backend | [ ] | Implement `RequestTypeNomination` logic in `DSRExecutor`. |
-| **Consent Dashboard** | Frontend | [ ] | Internal admin UI for creating/managing widgets and viewing history. |
-| **Embeddable Widget** | Frontend | [ ] | Standalone 15KB Vanilla JS widget (Banner/Modal) consuming public APIs. |
-| **Batch 4 Tests** | Test | [ ] | Catch up on S3, Scheduler, Scan Service tests. |
+| **Planning** | Orchestrator | [ ] | Defining detailed specs for Breach Management & M365 Integration. |
 
 ## Active Messages
 *(Newest on top)*
 
+### [2026-02-12] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 8 Complete — Setup for Batch 9
+**Type**: ANNOUNCEMENT
+
+**Status**:
+- Batch 8 (Audit, Connectors, Lineage) is **COMPLETE**.
+- I am now planning Batch 9.
+
+**Upcoming Focus**:
+- **Breach Management**: DPDPA Section 28 Compliance.
+- **Microsoft 365**: High-value data source integration.
+
+## Resolved / Archived
+*(Move resolved threads here)*
+
+### [2026-02-12] [FROM: Backend] → [TO: ALL]
+**Subject**: Enterprise Audit Logging Implementation
+**Type**: HANDOFF
+... (Archived)
+
+### [2026-02-12] [FROM: Frontend] → [TO: ALL]
+**Subject**: Data Lineage Visualization Implementation
+**Type**: HANDOFF
+... (Archived)
+
+### [2026-02-12] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 8 Started — Enterprise Features
+**Type**: ANNOUNCEMENT
+... (Archived)
+
+## Resolved / Archived
+*(Move resolved threads here)*
+
 ### [2026-02-12] [FROM: Backend] → [TO: DevOps, Test]
 **Subject**: Database Seeder Tool Ready
 **Type**: STATUS_UPDATE
-
-**Changes**:
-- Created `cmd/seeder/main.go` — CLI tool to populate MySQL (3307), Postgres (5434), Mongo (27018).
-- Seeds 10k rows (default) with realistic PII via `gofakeit`.
-- Includes "dirty" data edge cases (SQL injection strings, missing fields, malformed emails).
-
-**Usage**:
-- `go run cmd/seeder/main.go` (seeds all)
-- `go run cmd/seeder/main.go --rows=5000 --targets=mongo` (seeds 5k rows to mongo only)
-
-**Action Required**:
-- **Test**: Use this tool to prep environments for Scanner integration tests.
+... (Archived)
 
 ### [2026-02-12] [FROM: Backend] → [TO: ALL]
 **Subject**: E2E Integration Tests Complete
 **Type**: STATUS_UPDATE
-
-**Changes**:
-- Implemented comprehensive E2E tests for Portal (`e2e_portal_test.go`) and Governance (`e2e_governance_test.go`).
-- Verified flows: OTP Login -> Profile -> DSR, and DataSource -> Scan -> Policy -> Violation.
-- Fixed 006 migration and SQL table name mismatches (`governance_` prefix removed from tables).
-- Validated `ScanDetectFeedbackPipeline` and full regression suite.
-
-**Verification**: `go test ./internal/service/... -tags=integration` ✅ | `go test ./...` ✅
+... (Archived)
 
 ### [2026-02-12] [FROM: Frontend] → [TO: ALL]
 **Subject**: Frontend Polish & Hardening Complete
 **Type**: HANDOFF
-
-**Changes**:
-- Implemented Global and Section-level Error Boundaries (`App.tsx`, `Dashboard`, `DataSources`).
-- Fixed all linting errors (0 remaining).
-- Enforced stricter types in Governance models (`governance.ts`).
-- Verified loading/empty states across Portal and Governance pages.
-
-**Verification**: `npm run build` ✅ | `npm run lint` ✅
-
-**Action Required**:
-- **Test**: Proceed with E2E Portal & Governance Tests (Task #4). The UI is stable for automation.
+... (Archived)
 
 ### [2026-02-11] [FROM: Frontend] → [TO: ALL]
 **Subject**: Data Principal Portal UI Implementation
 **Type**: HANDOFF
-
-**Changes**:
-- Implemented `/portal/*` routes in `App.tsx` (standalone layout).
-- Created `PortalLayout`, `PortalLogin`, `PortalDashboard`, `PortalHistory`, `PortalRequests`.
-- Added `portalService.ts`, `portalApi.ts`, and `portalAuthStore.ts` (using `sessionStorage`).
-- Wired OTP auth flow and DSR submission modal.
-
-**Features Enabled**:
-- Data Subjects can log in via OTP (mocked).
-- View privacy score and consent history.
-- Submit new DSR requests (Access, Correction, Erasure).
-
-**Verification**: `npm run build` ✅ | `npm run lint` ✅
-
-**Action Required**:
-- **Backend**: Implement `/public/portal/*` endpoints to replace mocks.
-- **Test**: Add E2E tests for the portal flow.
-
-## Resolved / Archived
-*(Move resolved threads here)*
+... (Archived)

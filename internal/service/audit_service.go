@@ -37,19 +37,15 @@ func NewAuditService(repo audit.Repository, logger *slog.Logger) *AuditService {
 //   - tenantID: tenant ID
 func (s *AuditService) Log(
 	ctx context.Context,
-	actorID types.ID,
+	userID types.ID,
 	action string,
 	resourceType string,
 	resourceID types.ID,
-	changes map[string]any,
+	oldValues map[string]any,
+	newValues map[string]any,
 	tenantID types.ID,
 ) {
-	// Extract IP and UserAgent from context if available, or rely on caller to pass them?
-	// For now, let's keep the signature simple and assume we might want to add IP/UA later or extract from context here.
-	// But `context` values are not automatically passed to the goroutine if we use `context.Background()`.
-	// So we should extract them BEFORE launching the goroutine.
-
-	// Helper to safe extract string from context
+	// Extract IP and UserAgent from context if available
 	ip, _ := ctx.Value(types.ContextKeyIP).(string)
 	ua, _ := ctx.Value(types.ContextKeyUserAgent).(string)
 
@@ -62,11 +58,12 @@ func (s *AuditService) Log(
 		logEntry := &audit.AuditLog{
 			ID:           types.NewID(),
 			TenantID:     tenantID,
-			ActorID:      actorID,
+			UserID:       userID,
 			Action:       action,
 			ResourceType: resourceType,
 			ResourceID:   resourceID,
-			Changes:      changes,
+			OldValues:    oldValues,
+			NewValues:    newValues,
 			IPAddress:    ip,
 			UserAgent:    ua,
 			CreatedAt:    time.Now().UTC(),

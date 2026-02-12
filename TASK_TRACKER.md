@@ -316,47 +316,24 @@
 - [ ] Google Calendar (PII in events)
 - [ ] OAuth2 authentication flow
 
-#### 3.3 Additional Connectors
-- [ ] Snowflake data warehouse connector
-- [ ] Enhanced Salesforce connector (full CRM)
-- [ ] SAP connector (basic)
+#### 3.3 Enhanced Connectors (Batch 8)
+- [x] Hardening AWS S3 Connector (JSON/CSV handling)
+- [x] Hardening RDS & DynamoDB Connectors
+- [x] Hardening Azure Blob & SQL Connectors
+- [x] Standardized Credential Handling
 
-#### 3.4 Webhook & Integration System
-- [ ] Outbound webhook framework
-- [ ] Configurable event triggers
-- [ ] Retry logic with exponential backoff
-- [ ] Webhook management UI
-- [ ] Pre-built integrations (Slack, Teams, Jira)
-
-### Sprint 15-16: Breach Management (Weeks 31-34)
+### Sprint 15-16: Breach Management & Audit (Weeks 31-34)
 
 #### 3.5 Breach Module
 - [ ] Implement `Breach` entity with lifecycle
 - [ ] Create breach detection (manual + automated triggers)
 - [ ] AI-powered impact assessment
-- [ ] CERT-In incident checklists (21 categories)
-- [ ] Implement response workflow (detect → contain → investigate → resolve)
 
-#### 3.6 Breach Notifications
-- [ ] Authority notification system (CERT-In, DPA)
-- [ ] Subject notification system (email/portal)
-- [ ] Notification templates per regulation
-- [ ] Evidence package for breach response
-- [ ] SLA tracking for notification deadlines
+#### 3.8 Audit & Evidence (Batch 8)
+- [x] Implement Enterprise Audit Log (Entity + Repository)
+- [x] Implement Audit Service (Async logging)
+- [x] Implement Hash Chaining (Integrity Check)
 
-### Sprint 17-18: Security Enhancements (Weeks 35-38)
-
-#### 3.7 Enterprise Authentication
-- [ ] SSO/SAML integration
-- [ ] Multi-factor authentication
-- [ ] Device fingerprinting for agents
-- [ ] Session management enhancements
-
-#### 3.8 Audit & Evidence
-- [ ] Implement hash-chained audit log (tamper-proof)
-- [ ] Digital signature for evidence records
-- [ ] Evidence package export (PDF, JSON)
-- [ ] Evidence retention and archival
 
 #### 3.9 Advanced Security
 - [ ] ML-based anomaly detection for access patterns

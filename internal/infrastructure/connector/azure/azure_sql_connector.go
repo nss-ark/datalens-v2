@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/internal/infrastructure/connector/shared"
 	_ "github.com/microsoft/go-mssqldb" // SQL Server driver
 )
 
@@ -28,13 +29,14 @@ func (c *AzureSQLConnector) Connect(ctx context.Context, ds *discovery.DataSourc
 	}
 
 	// ds.Credentials should contain connection string or components as JSON
-	// ds.Credentials is a string. We assume it's a connection string.
-	connStr := ds.Credentials
-	if connStr == "" {
-		// If credentials are empty, try to build from Host/Port/Database if we had user/pass separately...
-		// But ds.Credentials IS the place for user/pass too.
-		// Let's assume ds.Credentials contains the full connection string for Azure SQL.
-		return fmt.Errorf("credentials (connection string) required")
+	creds, err := shared.ParseCredentials(ds.Credentials)
+	if err != nil {
+		return fmt.Errorf("parse credentials: %w", err)
+	}
+
+	connStr, ok := creds["connection_string"].(string)
+	if !ok || connStr == "" {
+		return fmt.Errorf("credentials (connection_string) required")
 	}
 
 	db, err := sql.Open("sqlserver", connStr)

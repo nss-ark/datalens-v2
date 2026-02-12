@@ -2,6 +2,7 @@ package azure
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,12 +12,30 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/complyark/datalens/internal/domain/discovery"
+	"github.com/complyark/datalens/internal/infrastructure/connector/shared"
 )
 
 // BlobClientInterface defines the subset of Blob operations we need.
 type BlobClientInterface interface {
 	NewListBlobsFlatPager(containerName string, options *azblob.ListBlobsFlatOptions) *runtime.Pager[azblob.ListBlobsFlatResponse]
-	DownloadStream(ctx context.Context, containerName string, blobName string, options *azblob.DownloadStreamOptions) (azblob.DownloadStreamResponse, error)
+	DownloadStream(ctx context.Context, containerName string, blobName string, options *azblob.DownloadStreamOptions) (io.ReadCloser, error)
+}
+
+// azBlobClientAdapter adapts the official Generic Client to our interface
+type azBlobClientAdapter struct {
+	client *azblob.Client
+}
+
+func (a *azBlobClientAdapter) NewListBlobsFlatPager(containerName string, options *azblob.ListBlobsFlatOptions) *runtime.Pager[azblob.ListBlobsFlatResponse] {
+	return a.client.NewListBlobsFlatPager(containerName, options)
+}
+
+func (a *azBlobClientAdapter) DownloadStream(ctx context.Context, containerName string, blobName string, options *azblob.DownloadStreamOptions) (io.ReadCloser, error) {
+	resp, err := a.client.DownloadStream(ctx, containerName, blobName, options)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
 }
 
 // BlobConnector implements the Connector interface for Azure Blob Storage.
@@ -42,21 +61,19 @@ func (c *BlobConnector) Connect(ctx context.Context, ds *discovery.DataSource) e
 		return nil
 	}
 
-	var creds map[string]any
-	if ds.Credentials != "" {
-		if err := json.Unmarshal([]byte(ds.Credentials), &creds); err != nil {
-			return fmt.Errorf("parse credentials: %w", err)
-		}
+	// ds.Credentials should contain connection string or components as JSON
+	creds, err := shared.ParseCredentials(ds.Credentials)
+	if err != nil {
+		return fmt.Errorf("parse credentials: %w", err)
 	}
 
-	// Assuming ds.Credentials has the connection string
-	connStr, ok := creds["connection_string"].(string)
-	if ok && connStr != "" {
+	// Connection string takes precedence
+	if connStr, ok := creds["connection_string"].(string); ok && connStr != "" {
 		client, err := azblob.NewClientFromConnectionString(connStr, nil)
 		if err != nil {
 			return fmt.Errorf("create client from connection string: %w", err)
 		}
-		c.client = client
+		c.client = &azBlobClientAdapter{client: client}
 		return nil
 	}
 
@@ -73,7 +90,7 @@ func (c *BlobConnector) Connect(ctx context.Context, ds *discovery.DataSource) e
 		if err != nil {
 			return fmt.Errorf("create client: %w", err)
 		}
-		c.client = client
+		c.client = &azBlobClientAdapter{client: client}
 		c.url = url
 		return nil
 	}
@@ -149,16 +166,16 @@ func (c *BlobConnector) SampleData(ctx context.Context, entity, field string, li
 	}
 
 	// Download blob
-	resp, err := c.client.DownloadStream(ctx, c.container, entity, nil)
+	body, err := c.client.DownloadStream(ctx, c.container, entity, nil)
 	if err != nil {
 		return nil, fmt.Errorf("download blob: %w", err)
 	}
-	defer resp.Body.Close()
+	defer body.Close()
 
 	if strings.HasSuffix(strings.ToLower(entity), ".csv") {
-		return parseCSV(resp.Body, field, limit)
+		return parseCSV(body, field, limit)
 	} else if strings.HasSuffix(strings.ToLower(entity), ".json") {
-		return parseJSON(resp.Body, field, limit)
+		return parseJSON(body, field, limit)
 	}
 
 	return nil, fmt.Errorf("unsupported file type: %s", entity)
@@ -167,21 +184,85 @@ func (c *BlobConnector) SampleData(ctx context.Context, entity, field string, li
 // Helper functions (implemented similarly to S3)
 
 func parseCSV(r io.Reader, field string, limit int) ([]string, error) {
-	// Simple CSV implementation
-	// Note: In real production code, use encoding/csv
-	// But since I cannot import encoding/csv here without adding import,
-	// I'll assume it's imported (Wait, I need to check imports!)
-	// I'll add imports in a separate step or assume they are there.
-	// Oh wait, prior file content didn't have encoding/csv.
-	// I should implement using basic string split or something simple?
-	// No, I should add correct imports.
-	// For now I'll return empty to avoid compilation error until I fix imports.
-	// Or I can just check if imports are present.
-	return []string{}, nil
+	reader := csv.NewReader(r)
+
+	// Read header
+	headers, err := reader.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	colIdx := -1
+	for i, h := range headers {
+		if strings.EqualFold(h, field) {
+			colIdx = i
+			break
+		}
+	}
+
+	if colIdx == -1 {
+		return nil, fmt.Errorf("field %s not found in CSV headers", field)
+	}
+
+	var samples []string
+	for len(samples) < limit {
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if colIdx < len(row) {
+			samples = append(samples, row[colIdx])
+		}
+	}
+	return samples, nil
 }
 
 func parseJSON(r io.Reader, field string, limit int) ([]string, error) {
-	return []string{}, nil
+	decoder := json.NewDecoder(r)
+
+	// Read opening bracket '['
+	t, err := decoder.Token()
+	if err != nil {
+		return nil, err
+	}
+	if delim, ok := t.(json.Delim); !ok || delim != '[' {
+		return nil, fmt.Errorf("expected JSON array")
+	}
+
+	var samples []string
+	for decoder.More() && len(samples) < limit {
+		var obj map[string]interface{}
+		if err := decoder.Decode(&obj); err != nil {
+			return nil, err
+		}
+
+		val, found := getJSONValue(obj, field)
+		if found {
+			samples = append(samples, fmt.Sprintf("%v", val))
+		}
+	}
+	return samples, nil
+}
+
+func getJSONValue(obj map[string]interface{}, path string) (interface{}, bool) {
+	keys := strings.Split(path, ".")
+	var current interface{} = obj
+
+	for _, k := range keys {
+		m, ok := current.(map[string]interface{})
+		if !ok {
+			return nil, false
+		}
+		val, ok := m[k]
+		if !ok {
+			return nil, false
+		}
+		current = val
+	}
+	return current, true
 }
 
 func (c *BlobConnector) Capabilities() discovery.ConnectorCapabilities {

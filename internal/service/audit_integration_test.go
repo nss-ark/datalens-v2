@@ -97,7 +97,7 @@ func TestAudit_Login(t *testing.T) {
 
 	var foundLogin bool
 	for _, l := range logs {
-		if l.Action == "LOGIN" && l.ActorID == registeredUser.ID {
+		if l.Action == "LOGIN" && l.UserID == registeredUser.ID {
 			foundLogin = true
 			break
 		}
@@ -121,6 +121,7 @@ func TestAudit_PolicyCreate(t *testing.T) {
 	auditRepo := repository.NewPostgresAuditRepository(pool)
 	policyRepo := repository.NewPostgresPolicyRepository(pool)
 	tenantRepo := repository.NewTenantRepo(pool)
+	userRepo := repository.NewUserRepo(pool)
 
 	// Creates necessary but unused repos for PolicyService
 	violationRepo := repository.NewPostgresViolationRepository(pool)
@@ -154,8 +155,24 @@ func TestAudit_PolicyCreate(t *testing.T) {
 	}
 	require.NoError(t, tenantRepo.Create(ctx, tenant))
 
-	// Setup Context for Tenant
+	// Create User for Audit
+	user := &identity.User{
+		TenantEntity: types.TenantEntity{
+			BaseEntity: types.BaseEntity{
+				ID: types.NewID(),
+			},
+			TenantID: tenant.ID,
+		},
+		Email:    "policy_admin@test.com",
+		Name:     "Policy Admin",
+		Password: "hashed_password", // minimal
+		Status:   identity.UserActive,
+	}
+	require.NoError(t, userRepo.Create(ctx, user))
+
+	// Setup Context for Tenant and User
 	ctx = context.WithValue(ctx, types.ContextKeyTenantID, tenant.ID)
+	ctx = context.WithValue(ctx, types.ContextKeyUserID, user.ID)
 
 	// 3. Perform Action: Create Policy
 	policy := &governance.Policy{
@@ -185,7 +202,12 @@ func TestAudit_PolicyCreate(t *testing.T) {
 
 	var foundPolicy bool
 	for _, l := range logs {
-		if l.Action == "POLICY_CREATE" && l.ResourceID == policy.ID {
+		if l.Action == "POLICY_CREATE" && l.ResourceID == policy.ID && l.UserID == user.ID { // Assert UserID
+			// For creation, OldValues should be nil, NewValues should reflect the created policy
+			assert.Nil(t, l.OldValues, "OldValues should be nil for POLICY_CREATE")
+			assert.NotNil(t, l.NewValues, "NewValues should not be nil for POLICY_CREATE")
+			assert.Equal(t, policy.Name, l.NewValues["name"], "NewValues should contain policy name")
+			assert.Equal(t, string(policy.Type), l.NewValues["type"], "NewValues should contain policy type")
 			foundPolicy = true
 			break
 		}
