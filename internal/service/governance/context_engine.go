@@ -64,10 +64,11 @@ func (e *ContextEngine) SuggestPurposes(
 
 // PurposeSuggestionItem represents a single data element to analyze.
 type PurposeSuggestionItem struct {
-	TableName  string
-	ColumnName string
-	DataType   string
-	Industry   string // e.g. "E-Commerce", "Healthcare"
+	TableName    string
+	ColumnName   string
+	DataType     string
+	Industry     string // e.g. "E-Commerce", "Healthcare"
+	SampleValues []string
 }
 
 func (e *ContextEngine) runPatternStrategy(item PurposeSuggestionItem) (bool, governance.PurposeSuggestion) {
@@ -96,9 +97,10 @@ func (e *ContextEngine) runAIStrategy(ctx context.Context, item PurposeSuggestio
 	}
 
 	input := ai.PurposeSuggestionInput{
-		EntityName: item.TableName,
-		ColumnName: item.ColumnName,
-		// Industry: item.Industry, // Gateway input has Industry
+		EntityName:   item.TableName,
+		ColumnName:   item.ColumnName,
+		Industry:     item.Industry,
+		SampleValues: item.SampleValues,
 	}
 	// TODO: Pass industry if available in item
 

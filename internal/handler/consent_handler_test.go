@@ -227,6 +227,14 @@ func (m *mockConsentSessionRepo) GetBySubject(ctx context.Context, t, s types.ID
 	return nil, nil
 }
 
+func (m *mockConsentSessionRepo) GetConversionStats(_ context.Context, tenantID types.ID, from, to time.Time, interval string) ([]consent.ConversionStat, error) {
+	return nil, nil
+}
+
+func (m *mockConsentSessionRepo) GetPurposeStats(_ context.Context, tenantID types.ID, from, to time.Time) ([]consent.PurposeStat, error) {
+	return nil, nil
+}
+
 type mockConsentHistoryRepo struct{}
 
 func (m *mockConsentHistoryRepo) Create(ctx context.Context, h *consent.ConsentHistoryEntry) error {

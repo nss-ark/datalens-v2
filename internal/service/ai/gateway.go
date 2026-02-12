@@ -84,11 +84,12 @@ type PIIDetectionResult struct {
 
 // PurposeSuggestionInput provides context for purpose inference.
 type PurposeSuggestionInput struct {
-	DataSourceType string `json:"data_source_type"`
-	EntityName     string `json:"entity_name"`
-	ColumnName     string `json:"column_name"`
-	PIIType        string `json:"pii_type"`
-	Industry       string `json:"industry"`
+	DataSourceType string   `json:"data_source_type"`
+	EntityName     string   `json:"entity_name"`
+	ColumnName     string   `json:"column_name"`
+	PIIType        string   `json:"pii_type"`
+	Industry       string   `json:"industry"`
+	SampleValues   []string `json:"sample_values"` // 5-10 representative values (sanitized)
 }
 
 // PurposeSuggestion is a single suggested purpose with confidence.

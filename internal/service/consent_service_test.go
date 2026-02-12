@@ -322,6 +322,14 @@ func (r *mockConsentSessionRepo) GetBySubject(_ context.Context, tenantID, subje
 	return result, nil
 }
 
+func (r *mockConsentSessionRepo) GetConversionStats(_ context.Context, tenantID types.ID, from, to time.Time, interval string) ([]consent.ConversionStat, error) {
+	return nil, nil
+}
+
+func (r *mockConsentSessionRepo) GetPurposeStats(_ context.Context, tenantID types.ID, from, to time.Time) ([]consent.PurposeStat, error) {
+	return nil, nil
+}
+
 // Mock ConsentHistoryRepository
 type mockConsentHistoryRepo struct {
 	mu      sync.Mutex

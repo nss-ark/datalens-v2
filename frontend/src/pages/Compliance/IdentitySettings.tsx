@@ -25,10 +25,20 @@ const IdentitySettings = () => {
 
     useEffect(() => {
         if (settings) {
-            setFormData({
-                enable_digilocker: settings.enable_digilocker,
-                require_govt_id_for_dsr: settings.require_govt_id_for_dsr,
-                fallback_to_email_otp: settings.fallback_to_email_otp
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setFormData(prev => {
+                if (
+                    prev.enable_digilocker === settings.enable_digilocker &&
+                    prev.require_govt_id_for_dsr === settings.require_govt_id_for_dsr &&
+                    prev.fallback_to_email_otp === settings.fallback_to_email_otp
+                ) {
+                    return prev;
+                }
+                return {
+                    enable_digilocker: settings.enable_digilocker,
+                    require_govt_id_for_dsr: settings.require_govt_id_for_dsr,
+                    fallback_to_email_otp: settings.fallback_to_email_otp
+                };
             });
         }
     }, [settings]);

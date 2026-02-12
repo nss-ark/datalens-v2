@@ -24,6 +24,8 @@ import BreachDashboard from './pages/Breach/BreachDashboard';
 import CreateIncident from './pages/Breach/CreateIncident';
 import IncidentDetail from './pages/Breach/IncidentDetail';
 import IdentitySettings from './pages/Compliance/IdentitySettings';
+import Analytics from './pages/Compliance/Analytics';
+import DarkPatternLab from './pages/Compliance/DarkPatternLab';
 
 // Portal Components
 import { PortalLayout } from './components/Layout/PortalLayout';
@@ -118,7 +120,7 @@ function App() {
             <Route path="/governance/lineage" element={<DataLineage />} />
             <Route path="/subjects" element={<PlaceholderPage title="Data Subjects" />} />
             <Route path="/consent" element={<PlaceholderPage title="Consent Records" />} />
-            <Route path="/consent/analytics" element={<PlaceholderPage title="Consent Analytics" />} />
+            {/* Analytics moved to /compliance/analytics */}
             <Route path="/grievances" element={<PlaceholderPage title="Grievances" />} />
             <Route path="/nominations" element={<PlaceholderPage title="Nominations" />} />
             {/* Governance Routes */}
@@ -128,6 +130,8 @@ function App() {
 
             {/* Compliance Settings */}
             <Route path="/compliance/settings/identity" element={<IdentitySettings />} />
+            <Route path="/compliance/analytics" element={<Analytics />} />
+            <Route path="/compliance/lab" element={<DarkPatternLab />} />
 
             {/* Placeholder routes */}
             <Route path="/department" element={<PlaceholderPage title="Department" />} />

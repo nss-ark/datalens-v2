@@ -270,6 +270,24 @@ type ConsentWidgetRepository interface {
 type ConsentSessionRepository interface {
 	Create(ctx context.Context, s *ConsentSession) error
 	GetBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]ConsentSession, error)
+	GetConversionStats(ctx context.Context, tenantID types.ID, from, to time.Time, interval string) ([]ConversionStat, error)
+	GetPurposeStats(ctx context.Context, tenantID types.ID, from, to time.Time) ([]PurposeStat, error)
+}
+
+// ConversionStat represents consent conversion metrics over time.
+type ConversionStat struct {
+	Date           time.Time `json:"date"`
+	TotalSessions  int       `json:"total_sessions"`
+	OptInCount     int       `json:"opt_in_count"`
+	OptOutCount    int       `json:"opt_out_count"`
+	ConversionRate float64   `json:"conversion_rate"`
+}
+
+// PurposeStat represents grant/deny counts per purpose.
+type PurposeStat struct {
+	PurposeID    types.ID `json:"purpose_id"`
+	GrantedCount int      `json:"granted_count"`
+	DeniedCount  int      `json:"denied_count"`
 }
 
 // DataPrincipalProfileRepository defines persistence for portal profiles.

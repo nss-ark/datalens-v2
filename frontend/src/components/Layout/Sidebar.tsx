@@ -57,6 +57,7 @@ const NAV_GROUPS = [
             { to: '/consent/widgets', label: 'Consent Widgets', icon: ShieldCheck },
             { to: '/consent', label: 'Consent Records', icon: CheckSquare },
             { to: '/consent/analytics', label: 'Consent Analytics', icon: BarChart3 },
+            { to: '/compliance/lab', label: 'Dark Pattern Lab', icon: ShieldCheck },
             { to: '/grievances', label: 'Grievances', icon: AlertTriangle },
             { to: '/nominations', label: 'Nominations', icon: Award },
             { to: '/nominations', label: 'Nominations', icon: Award },

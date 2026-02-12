@@ -225,15 +225,21 @@ func parsePIIResponse(result *CompletionResult) (*PIIDetectionResult, error) {
 
 // SuggestPurposes recommends data processing purposes.
 func (g *DefaultGateway) SuggestPurposes(ctx context.Context, input PurposeSuggestionInput) ([]PurposeSuggestion, error) {
+	// Sanitize samples if present
+	sanitizedSamples := input.SampleValues
+	if len(sanitizedSamples) > 0 {
+		sanitizedSamples = g.sanitizer.SanitizeSamples(sanitizedSamples)
+	}
+
 	prompt := fmt.Sprintf(
 		"Suggest data processing purposes. Respond with JSON array:\n"+
 			"```json\n[{\"purpose_code\": \"string\", \"confidence\": 0.0-1.0,"+
 			" \"reasoning\": \"string\", \"legal_basis\": \"CONSENT|CONTRACT|...\","+
 			" \"requires_explicit_consent\": bool}]\n```\n\n"+
 			"Data Source Type: %s\nEntity: %s\nColumn: %s\n"+
-			"PII Type: %s\nIndustry: %s",
+			"PII Type: %s\nIndustry: %s\nSample Values: %v",
 		input.DataSourceType, input.EntityName, input.ColumnName,
-		input.PIIType, input.Industry,
+		input.PIIType, input.Industry, sanitizedSamples,
 	)
 
 	opts := CompletionOptions{

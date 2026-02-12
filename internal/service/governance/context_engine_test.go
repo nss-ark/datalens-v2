@@ -107,6 +107,38 @@ func TestContextEngine_SuggestPurposes(t *testing.T) {
 		}
 	})
 
+	t.Run("AI Strategy Passes Sample Values", func(t *testing.T) {
+		mockAI := &mockAIGateway{
+			suggestFunc: func(ctx context.Context, input ai.PurposeSuggestionInput) ([]ai.PurposeSuggestion, error) {
+				if len(input.SampleValues) != 2 {
+					t.Errorf("Expected 2 sample values, got %d", len(input.SampleValues))
+				}
+				if input.SampleValues[0] != "val1" {
+					t.Errorf("Expected sample val1, got %s", input.SampleValues[0])
+				}
+				if input.Industry != "Healthcare" {
+					t.Errorf("Expected Industry Healthcare, got %s", input.Industry)
+				}
+				return []ai.PurposeSuggestion{{PurposeCode: "TEST"}}, nil
+			},
+		}
+
+		engine := NewContextEngine(loader, mockAI, logger)
+		items := []PurposeSuggestionItem{
+			{
+				TableName:    "patients",
+				ColumnName:   "history",
+				Industry:     "Healthcare",
+				SampleValues: []string{"val1", "val2"},
+			},
+		}
+
+		_, err := engine.SuggestPurposes(context.Background(), items, true)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+	})
+
 	t.Run("AI Skipped When Disabled", func(t *testing.T) {
 		mockAI := &mockAIGateway{
 			suggestFunc: func(ctx context.Context, input ai.PurposeSuggestionInput) ([]ai.PurposeSuggestion, error) {

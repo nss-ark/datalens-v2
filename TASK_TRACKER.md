@@ -392,10 +392,10 @@
 - [ ] Notification center in UI
 
 #### 4.5 Analytics Dashboard
-- [ ] Compliance score dashboard
+- [x] Compliance score dashboard — Consent Analytics (Batch 14)
 - [ ] PII discovery trends
 - [ ] DSR completion metrics
-- [ ] Consent health metrics
+- [x] Consent health metrics — Conversion/Purpose stats (Batch 14)
 - [ ] Exportable reports (PDF, CSV)
 
 ### Sprint 23-24: Release Prep (Weeks 47-50)

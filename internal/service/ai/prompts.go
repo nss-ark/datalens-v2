@@ -67,9 +67,11 @@ CONTEXT:
 {{- if .Industry}}
 - Industry: {{.Industry}}
 {{- end}}
+- Sample Values (anonymized): {{range .SampleValues}}
+  • {{.}}{{end}}
 
 TASK:
-Suggest the most likely data processing purpose(s) for collecting this data.
+Determine the most likely data processing purpose(s) for collecting this data.
 
 LEGAL BASES (pick one per purpose):
 - CONSENT: Processing based on explicit user consent
@@ -93,4 +95,46 @@ Respond ONLY with valid JSON, no markdown:
   "legal_basis": "LEGAL_BASIS_FROM_LIST",
   "requires_explicit_consent": true/false,
   "retention_suggestion": "Suggested retention period (e.g., '3 years after account closure')"
+}`
+
+// DarkPatternPrompt instructs the LLM to detect dark patterns based on India's 2023 Guidelines.
+const DarkPatternPrompt = `You are a compliance officer enforcing the "Guidelines for Prevention and Regulation of Dark Patterns, 2023" (India).
+
+CONTEXT:
+- Content Type: {{.ContentType}} (TEXT, CODE, or HTML)
+
+TASK:
+Analyze the provided content for any of the 13 specified dark patterns.
+
+DEFINITIONS (Annexure 1):
+1. "False Urgency": Falsely implicating urgency/scarcity (e.g., "Only 2 left!" when untrue).
+2. "Basket Sneaking": Adding items/services without consent at checkout.
+3. "Confirm Shaming": Guilt-tripping users into compliance (e.g., "No, I like paying full price").
+4. "Forced Action": Forcing unrelated actions (sharing contacts, downloading other apps) to proceed.
+5. "Subscription Trap": Making cancellation difficult or hiding it.
+6. "Interface Interference": Manipulating UI to highlight/obscure info (e.g., tiny "X" button).
+7. "Bait and Switch": Advertising one outcome but serving another.
+8. "Drip Pricing": Hiding elements of price until checkout.
+9. "Disguised Advertisement": Masking ads as content/nav.
+10. "Nagging": Persistent disruption to effectuate a transaction.
+11. "Trick Question": Confusing wording to misdirect users.
+12. "SaaS Billing": Silent recurring billing without notice.
+13. "Rogue Malwares": Scareware/ransomware tactics.
+
+CONTENT TO ANALYZE:
+"""
+{{.Content}}
+"""
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "detected_patterns": [
+    "FALSE_URGENCY", "BASKET_SNEAKING", "CONFIRM_SHAMING", "FORCED_ACTION",
+    "SUBSCRIPTION_TRAP", "INTERFACE_INTERFERENCE", "BAIT_AND_SWITCH",
+    "DRIP_PRICING", "DISGUISED_ADVERTISEMENT", "NAGGING", "TRICK_QUESTION",
+    "SAAS_BILLING", "ROGUE_MALWARES"
+  ],
+  "confidence": 0.00-1.00,
+  "explanation": "Specific quote or element that violates the guideline",
+  "cited_clause": "Annexure 1(Clause Number) Pattern Name"
 }`

@@ -39,6 +39,8 @@ import (
 	"github.com/complyark/datalens/internal/service/detection"
 	govService "github.com/complyark/datalens/internal/service/governance"
 
+	"github.com/complyark/datalens/internal/service/analytics"
+
 	// Identity
 	"github.com/complyark/datalens/internal/domain/identity"
 	identityProvider "github.com/complyark/datalens/internal/infrastructure/identity/provider"
@@ -227,6 +229,7 @@ func main() {
 		slog.Default(),
 	)
 	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
+	analyticsSvc := analytics.NewConsentAnalyticsService(consentSessionRepo)
 
 	// --- AI Gateway Wiring ---
 	// 1. Build Provider Configs
@@ -436,6 +439,7 @@ func main() {
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
 	consentHandler := handler.NewConsentHandler(consentSvc)
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
 	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
 	breachHandler := handler.NewBreachHandler(breachSvc)
 	m365Handler := handler.NewM365Handler(m365AuthSvc)
@@ -567,6 +571,9 @@ func main() {
 
 			// Identity
 			r.Mount("/identity", identityHandler.Routes())
+
+			// Analytics
+			r.Mount("/analytics", analyticsHandler.Routes())
 
 		})
 	})
