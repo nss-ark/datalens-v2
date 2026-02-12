@@ -799,6 +799,27 @@ _Document Go interfaces that cross agent boundaries:_
 **Subject**: Dockerized Data Sources & Local Dev Refactor
 **Type**: HANDOFF
 
+[... previous message content implied ...]
+
+---
+
+### [2026-02-12 10:30 IST] [FROM: Test] → [TO: ALL]
+**Subject**: Breach & M365 Integration Tests Implemented
+**Type**: HANDOFF
+
+**Changes**:
+- Created `internal/service/breach_integration_test.go`: Verified Incident Creation -> Audit Log -> Updates -> SLA.
+- Created `internal/service/m365_integration_test.go`: Verified OAuth exchange (mocked) and credential encryption.
+- Fixed `internal/service/breach_service_test.go`: Renamed `MockEventBus` to `MockBreachEventBus` to resolve conflicts.
+- Updated `internal/service/setup_integration_test.go`: Configured Testcontainers (Ryuk disabled).
+
+**Results**:
+- **Compilation**: ✅ Passed (`go test -c -tags=integration ./internal/service`)
+- **Execution**: ✅ Passed locally (verified with Docker Desktop).
+
+**Action Required**:
+- **Backend**: Can use `internal/service/m365_integration_test.go` as a reference for mocking M365 flows.
+
 **Changes**:
 - Created `docker-compose.sources.yml` — Isolated target data sources for scanning.
 - Refactored `docker-compose.dev.yml` — Removed `mysql` and `mongo` services (now in sources), added shared network `datalens-dev`.
@@ -995,3 +1016,51 @@ _Document Go interfaces that cross agent boundaries:_
 **Action Required**:
 - **Test**: Use new mocks for S3/Blob connector testing.
 - **Backend**: Use `shared.ParseCredentials` for future connectors.
+
+---
+
+### [2026-02-12 10:00 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: Microsoft 365 Authentication Implemented
+**Type**: HANDOFF
+
+**Changes**:
+- Added `pkg/crypto` for AES-GCM encryption of credentials.
+- Implemented `M365AuthService` (`internal/service/m365_auth_service.go`) for OAuth2 flow.
+- Implemented `M365Handler` (`internal/handler/m365_handler.go`) with Connect/Callback endpoints.
+- Updated `DataSource` entity with `MICROSOFT_365` type.
+- Fixed unrelated build errors in `internal/service/breach_service.go` (Batch 9 stub).
+- Verified `go build ./...` and `go vet ./...` pass.
+
+**API Contracts**:
+- `GET /api/v2/auth/m365/connect` — Redirects to Microsoft Login.
+- `GET /api/v2/auth/m365/callback?code=...&state=...` — Handles callback, creates DataSource, returns JSON.
+
+**Action Required**:
+- **Test**: Verify M365 connection flow (requires MICROSOFT_CLIENT_ID/SECRET in env).
+- **Frontend**: Add "Connect Microsoft 365" button pointing to `/api/v2/auth/m365/connect`.
+
+---
+
+### [2026-02-12 10:30 IST] [FROM: Backend] → [TO: ALL]
+**Subject**: Breach Management Module Implemented
+**Type**: HANDOFF
+
+**Changes**:
+- **Domain**: Defined `BreachIncident` entity and `BreachRepository`.
+- **Infrastructure**: Created `breach_incidents` table (migration `011_breach_incidents.sql`) and `PostgresBreachRepository`.
+- **Service**: Implemented `BreachService` with SLA calculation (CERT-In 6h, DPB 72h) and Audit Logging.
+- **API**: Implemented `BreachHandler` with CRUD endpoints and Report generation.
+- **Events**: Publishing `breach.incident_created` and `breach.incident_updated` to NATS.
+- **Wiring**: Connected all components in `cmd/api/main.go`.
+- **Verification**: `go build` ✅, `go vet` ✅, Unit Tests (`breach_service_test.go`) ✅.
+
+**API Contracts**:
+- `POST /api/v2/breach` — Create Incident
+- `GET /api/v2/breach` — List Incidents (filters: status, severity)
+- `GET /api/v2/breach/{id}` — Get Incident (includes SLA data)
+- `PUT /api/v2/breach/{id}` — Update Incident
+- `GET /api/v2/breach/{id}/report/cert-in` — Generate CERT-In Report JSON
+
+**Action Required**:
+- **Test**: Verify Breach CRUD and SLA calculation.
+- **Frontend**: Implement Breach Management UI (Dashboard, Incident Form).

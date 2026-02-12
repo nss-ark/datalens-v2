@@ -1,4 +1,4 @@
-import { ID, TenantEntity } from './common';
+import type { ID, TenantEntity } from './common';
 
 export type NodeType = 'DATA_SOURCE' | 'PROCESS' | 'THIRD_PARTY';
 export type FlowStatus = 'ACTIVE' | 'INACTIVE' | 'PROPOSED';
@@ -7,7 +7,7 @@ export interface GraphNode {
     id: string;
     label: string;
     type: NodeType;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
 }
 
 export interface GraphEdge {

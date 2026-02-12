@@ -6,10 +6,13 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 9: Planning...)
+## Current Sprint Goals (Batch 9: Breach Management & M365)
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **Planning** | Orchestrator | [ ] | Defining detailed specs for Breach Management & M365 Integration. |
+| **Breach Backend** | Backend | [ ] | Implement `BreachIncident` entity, service, and API with audit logging. |
+| **M365 Auth** | Backend | [ ] | Implement OAuth2 flow to connect Microsoft 365 tenants. |
+| **Breach UI** | Frontend | [ ] | Dashboard, Incident Form, and SLA Countdowns. |
+| **Tests** | Test | [ ] | Integration tests for Breach lifecycle and SLA logic. |
 
 ## Active Messages
 *(Newest on top)*

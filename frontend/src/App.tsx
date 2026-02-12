@@ -18,6 +18,9 @@ import PurposeMapping from './pages/Governance/PurposeMapping';
 import PolicyManager from './pages/Governance/PolicyManager';
 import Violations from './pages/Governance/Violations';
 import DataLineage from './pages/Governance/DataLineage';
+import BreachDashboard from './pages/Breach/BreachDashboard';
+import CreateIncident from './pages/Breach/CreateIncident';
+import IncidentDetail from './pages/Breach/IncidentDetail';
 
 // Portal Components
 import { PortalLayout } from './components/Layout/PortalLayout';
@@ -100,6 +103,9 @@ function App() {
             <Route path="/dsr/:id" element={<DSRDetail />} />
             <Route path="/consent/widgets" element={<ConsentWidgets />} />
             <Route path="/consent/widgets/:id" element={<WidgetDetail />} />
+            <Route path="/breach" element={<BreachDashboard />} />
+            <Route path="/breach/new" element={<CreateIncident />} />
+            <Route path="/breach/:id" element={<IncidentDetail />} />
 
             {/* Placeholder routes */}
             <Route path="/agents" element={<PlaceholderPage title="Agents" />} />

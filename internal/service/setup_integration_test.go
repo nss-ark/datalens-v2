@@ -20,6 +20,7 @@ import (
 var testPool *pgxpool.Pool
 
 func TestMain(m *testing.M) {
+	os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 	ctx := context.Background()
 
 	var connStr string

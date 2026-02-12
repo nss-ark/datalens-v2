@@ -303,12 +303,12 @@
 
 ### Sprint 13-14: Cloud Integrations (Weeks 27-30)
 
-#### 3.1 Microsoft 365 Connector
+#### 3.1 Microsoft 365 Connector (Batch 9)
 - [ ] OneDrive file scanning
 - [ ] SharePoint document scanning
 - [ ] Outlook email scanning
 - [ ] Teams message scanning (if applicable)
-- [ ] OAuth2 authentication flow
+- [x] OAuth2 authentication flow (Batch 9)
 
 #### 3.2 Google Workspace Connector
 - [ ] Google Drive scanning
@@ -324,9 +324,9 @@
 
 ### Sprint 15-16: Breach Management & Audit (Weeks 31-34)
 
-#### 3.5 Breach Module
-- [ ] Implement `Breach` entity with lifecycle
-- [ ] Create breach detection (manual + automated triggers)
+#### 3.5 Breach Module (Batch 9)
+- [x] Implement `Breach` entity with lifecycle (Batch 9)
+- [x] Create breach detection (manual + automated triggers) (Batch 9 - Manual Only)
 - [ ] AI-powered impact assessment
 
 #### 3.8 Audit & Evidence (Batch 8)

@@ -41,16 +41,16 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node, onClose }) =>
                         <div>
                             <span className="text-xs text-gray-500 uppercase font-semibold">Risk Level</span>
                             <div className="mt-1">
-                                <StatusBadge label={data?.riskLevel || 'LOW'} />
+                                <StatusBadge label={(data?.riskLevel as string) || 'LOW'} />
                             </div>
                         </div>
                         <div>
                             <span className="text-xs text-gray-500 uppercase font-semibold">Owner</span>
-                            <p className="text-sm font-medium text-gray-900 mt-1">{data?.owner || 'Unknown'}</p>
+                            <p className="text-sm font-medium text-gray-900 mt-1">{(data?.owner as string) || 'Unknown'}</p>
                         </div>
                         <div>
                             <span className="text-xs text-gray-500 uppercase font-semibold">Last Verified</span>
-                            <p className="text-sm font-medium text-gray-900 mt-1">{data?.lastVerified || 'Never'}</p>
+                            <p className="text-sm font-medium text-gray-900 mt-1">{(data?.lastVerified as string) || 'Never'}</p>
                         </div>
                     </div>
 
@@ -61,7 +61,7 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node, onClose }) =>
                             Data Sensitivity
                         </h4>
                         <div className="flex flex-wrap gap-2">
-                            {data?.piiTypes?.map((tag: string) => (
+                            {(data?.piiTypes as string[])?.map((tag: string) => (
                                 <span key={tag} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full border border-purple-200">
                                     {tag}
                                 </span>
@@ -76,7 +76,7 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node, onClose }) =>
                             Processing Purpose
                         </h4>
                         <p className="text-sm text-gray-600 leading-relaxed">
-                            {data?.purpose || 'No extensive processing documented for this node.'}
+                            {(data?.purpose as string) || 'No extensive processing documented for this node.'}
                         </p>
                     </div>
 

@@ -10,7 +10,7 @@ const DataLineage = () => {
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [filters, setFilters] = useState({});
 
-    const { data, isLoading, isError } = useQuery({
+    const { data, isLoading, isError, error } = useQuery({
         queryKey: ['lineage-graph'],
         queryFn: lineageService.getGraph,
     });
@@ -19,7 +19,7 @@ const DataLineage = () => {
         setSelectedNode(node);
     };
 
-    const handleFilterChange = (newFilters: any) => {
+    const handleFilterChange = (newFilters: Record<string, unknown>) => {
         const updated = { ...filters, ...newFilters };
         setFilters(updated);
         console.log('Filters applied:', updated);
@@ -36,12 +36,7 @@ const DataLineage = () => {
     }
 
     if (isError) {
-        return (
-            <div className="p-8 text-center">
-                <h2 className="text-xl font-bold text-red-600">Failed to load Lineage Graph</h2>
-                <p className="text-gray-500 mt-2">Please try again later.</p>
-            </div>
-        );
+        return <div className="p-4 text-red-500">Error loading lineage: {error ? (error as Error).message : 'Unknown error'}</div>;
     }
 
     // Prepare data

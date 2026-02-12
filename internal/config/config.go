@@ -11,15 +11,24 @@ import (
 
 // Config holds the complete application configuration.
 type Config struct {
-	App     AppConfig
-	DB      DatabaseConfig
-	Redis   RedisConfig
-	NATS    NATSConfig
-	AI      AIConfig
-	JWT     JWTConfig
-	Agent   AgentConfig
-	Consent ConsentConfig
-	Portal  PortalConfig
+	App       AppConfig
+	DB        DatabaseConfig
+	Redis     RedisConfig
+	NATS      NATSConfig
+	AI        AIConfig
+	JWT       JWTConfig
+	Agent     AgentConfig
+	Consent   ConsentConfig
+	Portal    PortalConfig
+	Microsoft MicrosoftConfig
+}
+
+// MicrosoftConfig holds Microsoft 365 integration settings.
+type MicrosoftConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	TenantID     string // Common or specific tenant ID
 }
 
 // AppConfig holds application-level settings.
@@ -184,6 +193,12 @@ func Load() (*Config, error) {
 		Portal: PortalConfig{
 			JWTSecret: getEnv("PORTAL_JWT_SECRET", "portal-secret-key-change-me-in-prod-32chars"),
 			JWTExpiry: getEnvDuration("PORTAL_JWT_EXPIRY", 15*time.Minute),
+		},
+		Microsoft: MicrosoftConfig{
+			ClientID:     getEnv("MICROSOFT_CLIENT_ID", ""),
+			ClientSecret: getEnv("MICROSOFT_CLIENT_SECRET", ""),
+			RedirectURL:  getEnv("MICROSOFT_REDIRECT_URL", "http://localhost:8080/api/v2/auth/m365/callback"),
+			TenantID:     getEnv("MICROSOFT_TENANT_ID", "common"),
 		},
 	}
 

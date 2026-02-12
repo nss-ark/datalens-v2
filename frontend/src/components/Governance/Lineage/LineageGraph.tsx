@@ -1,20 +1,20 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import ReactFlow, {
     Background,
     Controls,
-    Edge,
-    Node,
     useNodesState,
     useEdgesState,
-    ConnectionLineType,
     Panel,
-    NodeTypes,
 } from 'reactflow';
+import type { Edge } from 'reactflow';
+import type { NodeTypes } from 'reactflow';
+import type { Node } from 'reactflow';
 import dagre from 'dagre';
 import 'reactflow/dist/style.css';
 
 import CustomNode from './CustomNode';
-import { GraphNode, GraphEdge } from '../../../types/lineage';
+import type { GraphNode, GraphEdge } from '../../../types/lineage';
+import { Position } from 'reactflow';
 
 // Define custom node types
 const nodeTypes: NodeTypes = {
@@ -48,8 +48,8 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 
     const layoutedNodes = nodes.map((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
-        node.targetPosition = 'left';
-        node.sourcePosition = 'right';
+        node.sourcePosition = Position.Right;
+        node.targetPosition = Position.Left;
 
         // We are shifting the dagre node position (anchor=center center) to the top left
         // so it matches the React Flow node anchor point (top left).

@@ -1,6 +1,6 @@
 import { api } from './api';
-import { ApiResponse } from '../types/common';
-import { LineageGraph, DataFlow } from '../types/lineage';
+import type { ApiResponse } from '../types/common';
+import type { LineageGraph, DataFlow } from '../types/lineage';
 
 export const lineageService = {
     async getGraph(): Promise<LineageGraph> {

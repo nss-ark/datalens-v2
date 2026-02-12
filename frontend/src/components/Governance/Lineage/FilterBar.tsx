@@ -2,7 +2,7 @@ import React from 'react';
 import { Filter } from 'lucide-react';
 
 interface FilterBarProps {
-    onFilterChange: (filters: any) => void;
+    onFilterChange: (filters: Record<string, unknown>) => void;
 }
 
 const FilterBar: React.FC<FilterBarProps> = ({ onFilterChange }) => {

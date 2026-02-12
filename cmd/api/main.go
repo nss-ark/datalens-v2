@@ -122,6 +122,7 @@ func main() {
 	violationRepo := repository.NewPostgresViolationRepository(dbPool)
 	mappingRepo := repository.NewPostgresDataMappingRepository(dbPool)
 	auditRepo := repository.NewPostgresAuditRepository(dbPool)
+	breachRepo := repository.NewPostgresBreachRepository(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -145,6 +146,7 @@ func main() {
 	tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
 	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
 	feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
+	m365AuthSvc := service.NewM365AuthService(cfg, dsRepo, eb, slog.Default())
 	var dsrSvc *service.DSRService // Will be initialized after DSR queue is created
 	consentSvc := service.NewConsentService(
 		consentWidgetRepo,
@@ -264,6 +266,9 @@ func main() {
 	lineageRepo := repository.NewPostgresLineageRepository(dbPool)
 	lineageSvc := service.NewLineageService(lineageRepo, dsRepo, eb, slog.Default())
 
+	// 7e. Breach Management
+	breachSvc := service.NewBreachService(breachRepo, auditSvc, eb, slog.Default())
+
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)
 	scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
@@ -340,6 +345,8 @@ func main() {
 	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor) // dsrExecutor was created earlier
 	consentHandler := handler.NewConsentHandler(consentSvc)
 	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
+	breachHandler := handler.NewBreachHandler(breachSvc)
+	m365Handler := handler.NewM365Handler(m365AuthSvc)
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(
@@ -429,6 +436,9 @@ func main() {
 			// Auth (protected: /me)
 			r.Mount("/users", authHandler.ProtectedRoutes())
 
+			// OAuth2 Connectors
+			r.Mount("/auth/m365", m365Handler.Routes())
+
 			// Discovery (inventories, entities, fields)
 			r.Mount("/discovery", discoveryHandler.Routes())
 
@@ -456,6 +466,9 @@ func main() {
 
 			// Governance
 			r.Mount("/governance", governanceHandler.Routes())
+
+			// Breach
+			r.Mount("/breach", breachHandler.Routes())
 
 		})
 	})
