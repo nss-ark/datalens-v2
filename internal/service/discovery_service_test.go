@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/complyark/datalens/internal/config"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/infrastructure/connector"
 	"github.com/complyark/datalens/internal/service/detection"
@@ -89,7 +90,7 @@ func TestDiscoveryService_ScanDataSource_Success(t *testing.T) {
 	eb := newMockEventBus()
 
 	// Setup Registry with Mock Connector
-	registry := connector.NewConnectorRegistry()
+	registry := connector.NewConnectorRegistry(&config.Config{})
 	registry.Register(types.DataSourcePostgreSQL, func() discovery.Connector {
 		return connectorMock
 	})

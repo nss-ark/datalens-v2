@@ -303,14 +303,15 @@
 
 ### Sprint 13-14: Cloud Integrations (Weeks 27-30)
 
-#### 3.1 Microsoft 365 Connector (Batch 9)
-- [ ] OneDrive file scanning
-- [ ] SharePoint document scanning
-- [ ] Outlook email scanning
-- [ ] Teams message scanning (if applicable)
+#### 3.1 Microsoft 365 Connector (Batch 9/10)
+- [x] OneDrive file scanning (Batch 10)
+- [x] SharePoint document scanning (Batch 10)
+- [x] Outlook email scanning (Batch 10)
+- [x] Teams message scanning (if applicable)
 - [x] OAuth2 authentication flow (Batch 9)
+- [ ] **GAP**: M365 Discovery APIs (Users/Sites list) for UI (Batch 11)
 
-#### 3.2 Google Workspace Connector
+#### 3.2 Google Workspace Connector (Batch 11)
 - [ ] Google Drive scanning
 - [ ] Gmail scanning
 - [ ] Google Calendar (PII in events)

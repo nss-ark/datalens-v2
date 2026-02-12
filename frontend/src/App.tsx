@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import DataSources from './pages/DataSources';
+import DataSourceDetail from './pages/DataSourceDetail';
+import DataSourceConfig from './pages/DataSourceConfig';
 import PIIDiscovery from './pages/PIIDiscovery';
 import DSRList from './pages/DSRList';
 import DSRDetail from './pages/DSRDetail';
@@ -94,6 +96,8 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/datasources" element={<DataSources />} />
+            <Route path="/datasources/:id" element={<DataSourceDetail />} />
+            <Route path="/datasources/:id/config" element={<DataSourceConfig />} />
 
             {/* Placeholder routes */}
             <Route path="/agents" element={<PlaceholderPage title="Agents" />} />

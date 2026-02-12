@@ -143,8 +143,120 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 		inventory = existingInv
 	}
 
-	// 6. Process Entities
+	// 6. Check for Scannable Connector (Custom Scan Logic / Streaming)
 	piiCount := 0
+	if scannable, ok := conn.(connector.ScannableConnector); ok {
+		s.logger.InfoContext(ctx, "using scannable connector", "data_source_id", ds.ID)
+
+		// Cache for entity ID lookup to reduce DB hits
+		entityCache := make(map[string]types.ID)
+
+		err := scannable.Scan(ctx, ds, func(finding discovery.PIIClassification) {
+			piiCount++
+
+			// 1. Resolve Entity ID
+			entityID, ok := entityCache[finding.EntityName]
+			if !ok {
+				// Check DB
+				// We assume inventory.ID is set
+				// For optimization, we could load all entities for inventory first, but that might be large.
+				// We'll look up by name:
+				// Note: EntityRepo doesn't have GetByNameAndInventory?
+				// We have GetByInventory. We can filter in memory or add method.
+				// For now, let's load all entities into cache once if not too big?
+				// Or just query.
+
+				// Using the existing pattern locally (looping existingEntities):
+				// We don't have existingEntities loaded here.
+				// Let's rely on Create (if it handles upsert) or we need to find it.
+				// For safety/speed in existing repo pattern (likely no unique constraint except ID?):
+				// We better look it up.
+
+				// Let's implement a simple lookup-or-create logic here.
+				// NOTE: This implementation assumes modest number of entities or acceptable N+1 for now.
+				// Better approach: Repo.Upsert.
+				existing, _ := s.entityRepo.GetByInventory(ctx, inventory.ID)
+				found := false
+				for _, e := range existing {
+					if e.Name == finding.EntityName {
+						entityID = e.ID
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					newEntity := &discovery.DataEntity{
+						BaseEntity:  types.BaseEntity{ID: types.NewID(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
+						InventoryID: inventory.ID,
+						Name:        finding.EntityName,
+						Type:        discovery.EntityTypeFile, // Assume file for M365
+						Schema:      "scanned",
+					}
+					if err := s.entityRepo.Create(ctx, newEntity); err != nil {
+						s.logError(ctx, ds.ID, "failed to create entity in callback", err)
+						return
+					}
+					entityID = newEntity.ID
+				}
+				entityCache[finding.EntityName] = entityID
+			}
+
+			// 2. Resolve Field ID
+			// Similar logic
+			existingFields, _ := s.fieldRepo.GetByEntity(ctx, entityID)
+			var fieldID types.ID
+			fFound := false
+			for _, f := range existingFields {
+				if f.Name == finding.FieldName {
+					fieldID = f.ID
+					fFound = true
+					break
+				}
+			}
+
+			if !fFound {
+				newField := &discovery.DataField{
+					BaseEntity: types.BaseEntity{ID: types.NewID(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
+					EntityID:   entityID,
+					Name:       finding.FieldName,
+					DataType:   "string", // Default
+				}
+				if err := s.fieldRepo.Create(ctx, newField); err != nil {
+					s.logError(ctx, ds.ID, "failed to create field in callback", err)
+					return
+				}
+				fieldID = newField.ID
+			}
+
+			// 3. Save Classification
+			finding.FieldID = fieldID
+			finding.BaseEntity = types.BaseEntity{ID: types.NewID(), CreatedAt: time.Now(), UpdatedAt: time.Now()}
+			// Status default
+			if finding.Status == "" {
+				finding.Status = types.VerificationPending
+			}
+
+			if err := s.piiRepo.Create(ctx, &finding); err != nil {
+				s.logError(ctx, ds.ID, "failed to save classification in callback", err)
+			}
+		})
+
+		if err != nil {
+			return fmt.Errorf("scan failed: %w", err)
+		}
+
+		// Update inventory stats
+		inventory.PIIFieldsCount = piiCount
+		s.inventoryRepo.Update(ctx, inventory)
+
+		duration := time.Since(start)
+		s.logger.InfoContext(ctx, "scan completed (scannable)", "duration", duration, "pii_count", piiCount)
+		return nil
+	}
+
+	// 6. Process Entities (Standard Loop)
+	// piiCount is already declared above
 	for _, entity := range entities {
 		entity.InventoryID = inventory.ID
 

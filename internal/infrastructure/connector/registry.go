@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/complyark/datalens/internal/config"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/infrastructure/connector/aws"
 	"github.com/complyark/datalens/internal/infrastructure/connector/azure"
+	"github.com/complyark/datalens/internal/infrastructure/connector/m365"
 	"github.com/complyark/datalens/pkg/types"
 )
 
@@ -22,7 +24,7 @@ type ConnectorRegistry struct {
 }
 
 // NewConnectorRegistry creates a registry pre-loaded with built-in connectors.
-func NewConnectorRegistry() *ConnectorRegistry {
+func NewConnectorRegistry(cfg *config.Config) *ConnectorRegistry {
 	r := &ConnectorRegistry{
 		factories: make(map[types.DataSourceType]ConnectorFactory),
 	}
@@ -55,6 +57,17 @@ func NewConnectorRegistry() *ConnectorRegistry {
 	})
 	r.Register(types.DataSourceAzureSQL, func() discovery.Connector {
 		return azure.NewAzureSQLConnector()
+	})
+
+	// Microsoft Connectors
+	r.Register(types.DataSourceOutlook, func() discovery.Connector {
+		return m365.NewOutlookConnector(cfg)
+	})
+	r.Register(types.DataSourceMicrosoft365, func() discovery.Connector {
+		return m365.NewMicrosoft365Connector(cfg.App.SecretKey)
+	})
+	r.Register(types.DataSourceOneDrive, func() discovery.Connector {
+		return m365.NewMicrosoft365Connector(cfg.App.SecretKey)
 	})
 
 	return r

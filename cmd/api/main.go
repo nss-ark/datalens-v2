@@ -21,6 +21,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/complyark/datalens/internal/config"
+	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/domain/governance/templates"
 	"github.com/complyark/datalens/internal/handler"
 	mw "github.com/complyark/datalens/internal/middleware"
@@ -158,10 +159,6 @@ func main() {
 	)
 	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
 
-	// Connector Registry (Postgres + MySQL built-in)
-	connRegistry := connector.NewConnectorRegistry()
-	log.Info("Connector registry initialized", "supported_types", connRegistry.SupportedTypes())
-
 	// --- AI Gateway Wiring ---
 	// 1. Build Provider Configs
 	var aiProviders []ai.ProviderConfig
@@ -227,6 +224,13 @@ func main() {
 	// We use the "Default" detector which includes Pattern + Heuristic.
 	// We add AI strategy if gateway is available.
 	detector := detection.NewDefaultDetector(aiGateway) // aiGateway is ai.Gateway interface (CachedGateway implements it)
+
+	// Connector Registry (Initialized above)
+	connRegistry := connector.NewConnectorRegistry(cfg)
+	connRegistry.Register(types.DataSourceMicrosoft365, func() discovery.Connector {
+		return connector.NewM365Connector(detector)
+	})
+	log.Info("Connector registry initialized", "supported_types", connRegistry.SupportedTypes())
 
 	// 7. Discovery Service
 	discoverySvc := service.NewDiscoveryService(

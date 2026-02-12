@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { dataSourceService } from '../services/datasources';
-import type { CreateDataSourceInput, UpdateDataSourceInput } from '../types/datasource';
+import { dataSourceService } from '../services/datasource';
+import type { CreateDataSourceInput, UpdateDataSourceInput, M365ScopeConfig } from '../types/datasource';
 import type { ID } from '../types/common';
 
 const QUERY_KEY = ['dataSources'];
@@ -9,7 +9,7 @@ export function useDataSources() {
     return useQuery({
         queryKey: QUERY_KEY,
         queryFn: () => dataSourceService.list(),
-        staleTime: 30 * 1000, // 30 seconds
+        staleTime: 30 * 1000,
     });
 }
 
@@ -37,7 +37,7 @@ export function useUpdateDataSource() {
 
     return useMutation({
         mutationFn: ({ id, data }: { id: ID; data: UpdateDataSourceInput }) =>
-            dataSourceService.update(id, data),
+            dataSourceService.update({ ...data, id }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: QUERY_KEY });
         },
@@ -48,7 +48,7 @@ export function useDeleteDataSource() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: ID) => dataSourceService.remove(id),
+        mutationFn: (id: ID) => dataSourceService.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: QUERY_KEY });
         },
@@ -56,13 +56,8 @@ export function useDeleteDataSource() {
 }
 
 export function useScanDataSource() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: (id: ID) => dataSourceService.scan(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-        },
     });
 }
 
@@ -76,7 +71,7 @@ export function useScanStatus(id: ID, enabled: boolean = false) {
             if (status === 'COMPLETED' || status === 'FAILED') {
                 return false;
             }
-            return 3000; // Poll every 3 seconds
+            return 3000;
         },
     });
 }
@@ -86,5 +81,37 @@ export function useScanHistory(id: ID) {
         queryKey: ['scanHistory', id],
         queryFn: () => dataSourceService.getScanHistory(id),
         enabled: !!id,
+    });
+}
+
+// --- M365 Scope Hooks ---
+
+export function useM365Users(id: ID) {
+    return useQuery({
+        queryKey: ['m365Users', id],
+        queryFn: () => dataSourceService.getM365Users(id),
+        enabled: !!id,
+    });
+}
+
+export function useSharePointSites(id: ID) {
+    return useQuery({
+        queryKey: ['sharePointSites', id],
+        queryFn: () => dataSourceService.getSharePointSites(id),
+        enabled: !!id,
+    });
+}
+
+export function useUpdateScope() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, config }: { id: ID; config: M365ScopeConfig }) =>
+            dataSourceService.updateScope(id, config),
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: [...QUERY_KEY, variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['m365Users', variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['sharePointSites', variables.id] });
+        },
     });
 }

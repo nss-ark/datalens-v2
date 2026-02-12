@@ -56,4 +56,30 @@ export interface UpdateDataSourceInput {
     port?: number;
     database?: string;
     credentials?: string;
+    config?: string; // JSON string for scope configuration
+}
+
+// --- M365 Scope Configuration Types ---
+
+export interface M365User {
+    id: string; // User Principal Name or ID
+    displayName: string;
+    email: string;
+    scanOneDrive: boolean;
+    scanOutlook: boolean;
+}
+
+export interface SharePointSite {
+    id: string; // Site ID or URL
+    name: string;
+    url: string;
+    scanDocuments: boolean;
+}
+
+export interface M365ScopeConfig {
+    users: M365User[];
+    sites: SharePointSite[];
+    excludedExtensions?: string[];
+    scanAllUsers?: boolean; // If true, automatically scan new users
+    scanAllSites?: boolean; // If true, automatically scan new sites
 }

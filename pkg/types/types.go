@@ -206,6 +206,7 @@ const (
 	DataSourceOneDrive     DataSourceType = "ONEDRIVE"
 	DataSourceSalesforce   DataSourceType = "SALESFORCE"
 	DataSourceMicrosoft365 DataSourceType = "MICROSOFT_365"
+	DataSourceOutlook      DataSourceType = "OUTLOOK"
 	DataSourceIMAP         DataSourceType = "IMAP"
 	DataSourceFileSystem   DataSourceType = "FILE_SYSTEM"
 	DataSourceAPI          DataSourceType = "API"

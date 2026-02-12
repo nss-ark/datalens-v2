@@ -50,3 +50,12 @@ type Connector interface {
 	// Close releases the connection.
 	Close() error
 }
+
+// ScannableConnector is an optional interface for connectors that support
+// custom scanning logic (e.g. streaming file usage) instead of standard sampling.
+type ScannableConnector interface {
+	Connector
+	// Scan performs a scan on the data source and invokes the callback for each PII finding.
+	// This allows the connector to optimize traversal (e.g. streaming) and use internal detection.
+	Scan(ctx context.Context, ds *DataSource, onFinding func(PIIClassification)) error
+}

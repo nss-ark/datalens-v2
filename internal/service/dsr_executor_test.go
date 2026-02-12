@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/complyark/datalens/internal/config"
 	"github.com/complyark/datalens/internal/domain/compliance"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/infrastructure/connector"
@@ -71,7 +72,7 @@ func setupExecutorTest(t *testing.T) (*DSRExecutor, *mockDSRRepository, *mockDat
 
 	// Registry & Mock Connector
 	mockConn := new(DSRExecutorMockConnector)
-	registry := connector.NewConnectorRegistry()
+	registry := connector.NewConnectorRegistry(&config.Config{})
 	registry.Register(types.DataSourcePostgreSQL, func() discovery.Connector {
 		return mockConn
 	})
