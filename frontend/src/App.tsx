@@ -26,6 +26,9 @@ import IncidentDetail from './pages/Breach/IncidentDetail';
 import IdentitySettings from './pages/Compliance/IdentitySettings';
 import Analytics from './pages/Compliance/Analytics';
 import DarkPatternLab from './pages/Compliance/DarkPatternLab';
+import NotificationHistory from './pages/Compliance/NotificationHistory';
+import GrievanceList from './pages/Compliance/GrievanceList';
+import GrievanceDetail from './pages/Compliance/GrievanceDetail';
 import NoticeManager from './pages/Consent/NoticeManager';
 
 // Portal Components
@@ -36,6 +39,8 @@ import PortalDashboard from './pages/Portal/Dashboard';
 import PortalHistory from './pages/Portal/History';
 import PortalRequests from './pages/Portal/Requests';
 import ConsentManage from './pages/Portal/ConsentManage';
+import SubmitGrievance from './pages/Portal/Grievance/SubmitGrievance';
+import MyGrievances from './pages/Portal/Grievance/MyGrievances';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +100,20 @@ function App() {
                 </PortalLayout>
               </ErrorBoundary>
             } />
+            <Route path="/portal/grievance/new" element={
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <SubmitGrievance />
+                </PortalLayout>
+              </ErrorBoundary>
+            } />
+            <Route path="/portal/grievance/list" element={
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <MyGrievances />
+                </PortalLayout>
+              </ErrorBoundary>
+            } />
           </Route>
 
           {/* Protected routes */}
@@ -142,6 +161,9 @@ function App() {
             <Route path="/compliance/settings/identity" element={<IdentitySettings />} />
             <Route path="/compliance/analytics" element={<Analytics />} />
             <Route path="/compliance/lab" element={<DarkPatternLab />} />
+            <Route path="/compliance/notifications" element={<NotificationHistory />} />
+            <Route path="/compliance/grievances" element={<GrievanceList />} />
+            <Route path="/compliance/grievances/:id" element={<GrievanceDetail />} />
 
             {/* Placeholder routes */}
             <Route path="/department" element={<PlaceholderPage title="Department" />} />

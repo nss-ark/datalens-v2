@@ -207,19 +207,19 @@
 #### 2.5 Consent Engine
 - [x] Implement `Consent` entity with lifecycle (Batch 5)
 - [x] Create consent capture API (with proof recording) (Batch 5 - partial)
-- [/] Implement consent withdrawal flow → **Batch 15 Task #1**
-- [/] Implement consent expiry management with notifications → **Batch 15 Task #3**
+- [x] Implement consent withdrawal flow — Public API + Widget Auth + CORS (Batch 15)
+- [x] Implement consent expiry management with notifications — Daily scheduler + renewal API (Batch 15)
 - [ ] Create consent receipt generation
 - [x] Implement consent enforcement (check before data processing) (Batch 5)
 
 #### 2.6 Embeddable Consent Widget (CMS)
 - [x] Implement `ConsentWidget` CRUD service (Batch 5)
-- [/] Implement widget API key generation and validation → **Batch 15 Task #1**
+- [x] Implement widget API key generation and validation — `WidgetAuthMiddleware` (Batch 15)
 - [x] Build public API: `POST /api/public/consent/sessions` (record decisions) (Batch 5)
-- [/] Build public API: `GET /api/public/consent/check` (check consent status) → **Batch 15 Task #1**
-- [/] Build public API: `POST /api/public/consent/withdraw` (withdraw consent) → **Batch 15 Task #1**
-- [/] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config) → **Batch 15 Task #1**
-- [/] Implement CORS validation against `allowed_origins` → **Batch 15 Task #1**
+- [x] Build public API: `GET /api/public/consent/check` (check consent status) (Batch 15)
+- [x] Build public API: `POST /api/public/consent/withdraw` (withdraw consent) (Batch 15)
+- [x] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config) (Batch 15)
+- [x] Implement CORS validation against `allowed_origins` — `WidgetCORSMiddleware` (Batch 15)
 - [ ] Build vanilla JS consent snippet (~15 KB gzipped, framework-agnostic) → Deferred (Batch 17+)
 - [ ] Support widget types: BANNER, PREFERENCE_CENTER, INLINE_FORM, PORTAL
 - [ ] Support layouts: BOTTOM_BAR, TOP_BAR, MODAL, SIDEBAR, FULL_PAGE
@@ -418,12 +418,12 @@
 
 ## Consent Module (Sprint — MeITY BRD Alignment)
 
-### Notice Management → **Batch 15 Task #2**
-- [/] Implement `consent_notices` and `consent_notice_translations` DB migrations
-- [/] Notice CRUD API (create, read, update, publish, archive)
-- [/] Notice versioning logic (version increment on publish)
-- [/] Notice-to-widget binding API
-- [/] Notice management UI in Control Centre → **Batch 15 Task #4**
+### Notice Management → ✅ Complete (Batch 15)
+- [x] Implement `consent_notices` and `consent_notice_translations` DB migrations (Batch 15)
+- [x] Notice CRUD API (create, read, update, publish, archive) (Batch 15)
+- [x] Notice versioning logic (version increment on publish) (Batch 15)
+- [x] Notice-to-widget binding API (Batch 15)
+- [x] Notice management UI in Control Centre (Batch 15)
 
 ### Translation Pipeline (HuggingFace) → **Deferred (Batch 16)**
 - [ ] HuggingFace API integration service
@@ -439,11 +439,11 @@
 - [ ] Email, SMS, Webhook delivery channels
 - [ ] In-app notification component
 
-### Consent Renewal → **Batch 15 Task #3**
-- [/] `consent_renewal_logs` DB migration
-- [/] Renewal reminder scheduler (30/15/7 days)
-- [/] Renewal API and UI flow
-- [/] Expiry handling (mark as LAPSED)
+### Consent Renewal → ✅ Complete (Batch 15)
+- [x] `consent_renewal_logs` DB migration (Batch 15)
+- [x] Renewal reminder scheduler (30/15/7 days) (Batch 15)
+- [x] Renewal API and UI flow (Batch 15)
+- [x] Expiry handling (mark as LAPSED) (Batch 15)
 
 ### DigiLocker Integration → ✅ Partially Complete (Batch 12)
 - [x] OAuth 2.0 + PKCE flow implementation (Batch 12)
@@ -504,4 +504,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 12, 2026 — Batch 14 complete; Batch 15 (Consent Module Completion) planned; RBAC/Retention/Translations deferred; Grievance Redressal added to backlog
+> **Last Updated**: February 13, 2026 — Batch 15 (Consent Module Completion) complete; Notice Management, Public APIs, Renewal/Expiry, Portal Withdrawal all done; Lifecycle tests passing

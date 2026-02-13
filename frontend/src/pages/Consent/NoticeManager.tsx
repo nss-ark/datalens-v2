@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, UploadCloud, Archive, Link as LinkIcon } from 'lucide-react';
+import { Plus, Edit2, UploadCloud, Archive, Link as LinkIcon, Globe } from 'lucide-react';
 import { DataTable } from '../../components/DataTable/DataTable';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { NoticeForm } from '../../components/Consent/NoticeForm';
 import { consentService } from '../../services/consent';
+import { TranslationManagementModal } from '../../components/Consent/TranslationManagementModal';
 import type { ConsentNotice } from '../../types/consent';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
@@ -15,6 +16,7 @@ export default function NoticeManager() {
     const [isCreateOpen, setCreateOpen] = useState(false);
     const [editingNotice, setEditingNotice] = useState<ConsentNotice | null>(null);
     const [bindingNotice, setBindingNotice] = useState<ConsentNotice | null>(null);
+    const [translationNotice, setTranslationNotice] = useState<ConsentNotice | null>(null);
     const queryClient = useQueryClient();
 
     const { data: notices = [], isLoading } = useQuery({
@@ -106,6 +108,15 @@ export default function NoticeManager() {
                         onClick={() => setBindingNotice(row)}
                         title="Bind to Widgets"
                     />
+                    {row.status === 'PUBLISHED' && (
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            icon={<Globe size={14} />}
+                            onClick={() => setTranslationNotice(row)}
+                            title="Manage Translations"
+                        />
+                    )}
                     {row.status !== 'ARCHIVED' && (
                         <Button
                             size="sm"
@@ -177,6 +188,21 @@ export default function NoticeManager() {
                     notice={bindingNotice}
                     onClose={() => setBindingNotice(null)}
                 />
+            </Modal>
+
+            {/* Translation Management Modal */}
+            <Modal
+                open={!!translationNotice}
+                onClose={() => setTranslationNotice(null)}
+                title="Manage Translations"
+                size="xl"
+            >
+                {translationNotice && (
+                    <TranslationManagementModal
+                        notice={translationNotice}
+                        onClose={() => setTranslationNotice(null)}
+                    />
+                )}
             </Modal>
         </div>
     );

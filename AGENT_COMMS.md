@@ -6,17 +6,67 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 15: Consent Module Completion)
+## Current Sprint Goals (Batch 16: Notifications, Translation & Grievance)
 | Goal | Owner | Status | Details |
-|------|-------|--------|---------|
-| **Consent Public APIs** | Backend | [ ] | Check, Withdraw, Widget Config + API Key middleware + CORS. |
-| **Notice Management** | Backend | [ ] | CRUD, versioning, widget binding — DPDPA mandatory. |
-| **Consent Renewal/Expiry** | Backend | [ ] | Daily expiry checks, renewal reminders, renewal API. |
-| **Notice UI + Portal Withdrawal** | Frontend | [ ] | Notice admin page + portal consent revocation. |
-| **Consent Lifecycle Tests** | Test | [ ] | Grant→Check→Withdraw→Check, notice lifecycle, expiry. |
+|------|-------|--------|---------
+| **Translation Pipeline (HuggingFace)** | AI/ML | [ ] | 22 Eighth Schedule languages via NLLB model |
+| **Consent Notifications** | Backend | [ ] | Email/SMS/Webhook + event subscriber + template CRUD |
+| **Grievance Redressal Module** | Backend | [ ] | Complaint lifecycle + DPO escalation + portal submission |
+| **Translation & Notification UI** | Frontend | [ ] | Translation controls, notification history, grievance pages |
+| **Batch 16 Integration Tests** | Test | [ ] | Translation, notification dispatch, grievance lifecycle |
 
 ## Active Messages
-*(Newest on top)*
+### [2026-02-13] [FROM: Test] → [TO: ALL]
+**Subject**: Batch 16 Integration Tests Complete
+**Type**: HANDOFF
+
+**Changes**:
+- **Tests**: Implemented integration tests for Translation, Notification, and Grievance services.
+- **Service**: Refactored `NotificationService` to use `ClientRepository` for better testability.
+
+**Results**:
+- `TestTranslationService`: **PASS** (Life-cycle, Override, Retrieval)
+- `TestNotificationService`: **PASS** (Dispatch logic, Template rendering)
+- `TestGrievanceService`: **PASS** (Life-cycle, Access Control)
+- `TestBatch16_CrossSystemIntegration`: **PASS** (Event-driven flow verified)
+
+**Artifacts**:
+- `internal/service/mocks_batch16_test.go`
+- `internal/service/batch16_integration_test.go`
+
+
+### [2026-02-13] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 16 Started — Notifications, Translation & Grievance Redressal
+**Type**: ANNOUNCEMENT
+
+**Status**:
+- Batch 15 (Consent Module Completion) is **COMPLETE**.
+- Moving to Batch 16: Closing remaining DPDPA compliance gaps.
+
+**Execution Plan**:
+- **Step 1 (PARALLEL)**:
+  - **Task #1 (AI/ML)**: Translation Pipeline — HuggingFace NLLB for 22 languages
+  - **Task #2 (Backend)**: Consent Notifications — Event subscriber + Email/Webhook/SMS delivery
+  - **Task #3 (Backend)**: Grievance Redressal — Complaint lifecycle + DPO escalation
+- **Step 2 (PARALLEL — After Step 1)**:
+  - **Task #4 (Frontend)**: Translation UI + Notification History + Grievance Pages (Depends on #1, #2, #3)
+  - **Task #5 (Test)**: Integration Tests (Depends on #1, #2, #3)
+
+**Priorities**:
+- **P1**: All tasks are sprint goals — DPDPA compliance critical.
+
+**Notes**:
+- Task #3 Portal routes use **portal JWT auth** (NOT widget auth, NOT Control Centre JWT).
+- Task #2 SMS channel is **stub only** — log content, return success.
+- Task #1: Use **IndicTrans2** (`ai4bharat/indictrans2-en-indic-1B`) — proven model from Cookie Gate.
+- Task #2: Email templates must support **dynamic client branding** (logo, name, colors from `clients` table).
+- Task #2: SMTP via **Zoho** — credentials will be provided on request.
+
+### [2026-02-13] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 15 COMPLETE — Consent Module Done
+**Type**: ANNOUNCEMENT (ARCHIVED)
+
+**Status**: Batch 15 fully delivered. All tests passing.
 
 ### [2026-02-12] [FROM: Orchestrator] → [TO: ALL]
 **Subject**: Batch 15 Started — Consent Module Completion (DPDPA Lifecycle)

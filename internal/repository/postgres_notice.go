@@ -142,41 +142,6 @@ func (r *PostgresNoticeRepository) BindToWidgets(ctx context.Context, noticeID t
 	return nil
 }
 
-func (r *PostgresNoticeRepository) AddTranslation(ctx context.Context, t *consent.ConsentNoticeTranslation) error {
-	query := `INSERT INTO consent_notice_translations (
-		id, notice_id, language, title, content, created_at, updated_at
-	) VALUES ($1, $2, $3, $4, $5, $6, $7)`
-
-	_, err := r.db.Exec(ctx, query,
-		t.ID, t.NoticeID, t.Language, t.Title, t.Content, t.CreatedAt, t.UpdatedAt,
-	)
-	return err
-}
-
-func (r *PostgresNoticeRepository) GetTranslations(ctx context.Context, noticeID types.ID) ([]consent.ConsentNoticeTranslation, error) {
-	query := `SELECT 
-		id, notice_id, language, title, content, created_at, updated_at
-	FROM consent_notice_translations WHERE notice_id = $1`
-
-	rows, err := r.db.Query(ctx, query, noticeID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var translations []consent.ConsentNoticeTranslation
-	for rows.Next() {
-		var t consent.ConsentNoticeTranslation
-		if err := rows.Scan(
-			&t.ID, &t.NoticeID, &t.Language, &t.Title, &t.Content, &t.CreatedAt, &t.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		translations = append(translations, t)
-	}
-	return translations, nil
-}
-
 // GetLatestVersion returns the latest version number for a given series.
 func (r *PostgresNoticeRepository) GetLatestVersion(ctx context.Context, seriesID types.ID) (int, error) {
 	query := `SELECT COALESCE(MAX(version), 0) FROM consent_notices WHERE series_id = $1`

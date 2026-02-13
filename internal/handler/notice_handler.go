@@ -10,11 +10,15 @@ import (
 )
 
 type NoticeHandler struct {
-	service *service.NoticeService
+	service            *service.NoticeService
+	translationService *service.TranslationService
 }
 
-func NewNoticeHandler(service *service.NoticeService) *NoticeHandler {
-	return &NoticeHandler{service: service}
+func NewNoticeHandler(service *service.NoticeService, translationService *service.TranslationService) *NoticeHandler {
+	return &NoticeHandler{
+		service:            service,
+		translationService: translationService,
+	}
 }
 
 func (h *NoticeHandler) Routes() chi.Router {
@@ -26,6 +30,11 @@ func (h *NoticeHandler) Routes() chi.Router {
 	r.Post("/{id}/publish", h.Publish)
 	r.Post("/{id}/archive", h.Archive)
 	r.Post("/{id}/bind", h.Bind)
+
+	// Translation Routes
+	r.Post("/{id}/translate", h.Translate)
+	r.Get("/{id}/translations", h.GetTranslations)
+	r.Put("/{id}/translations/{lang}", h.OverrideTranslation)
 	return r
 }
 
@@ -135,6 +144,63 @@ func (h *NoticeHandler) Bind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.Bind(r.Context(), id, req.WidgetIDs); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, map[string]bool{"success": true})
+}
+
+func (h *NoticeHandler) Translate(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	results, err := h.translationService.TranslateNotice(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, results)
+}
+
+func (h *NoticeHandler) GetTranslations(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	translations, err := h.translationService.GetTranslations(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, translations)
+}
+
+func (h *NoticeHandler) OverrideTranslation(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	lang := chi.URLParam(r, "lang")
+	if lang == "" {
+		httputil.ErrorFromDomain(w, types.NewValidationError("language code required", nil))
+		return
+	}
+
+	var req struct {
+		Text string `json:"text"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	if err := h.translationService.OverrideTranslation(r.Context(), id, lang, req.Text); err != nil {
 		httputil.ErrorFromDomain(w, err)
 		return
 	}

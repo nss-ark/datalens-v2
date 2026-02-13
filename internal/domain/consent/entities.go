@@ -369,10 +369,23 @@ const (
 // ConsentNoticeTranslation holds translations for a specific notice version.
 type ConsentNoticeTranslation struct {
 	types.BaseEntity
-	NoticeID types.ID `json:"notice_id" db:"notice_id"`
-	Language string   `json:"language" db:"language"` // ISO 639-1 (en, hi, ta, etc.)
-	Title    string   `json:"title" db:"title"`
-	Content  string   `json:"content" db:"content"`
+	NoticeID          types.ID   `json:"notice_id" db:"notice_id"`
+	NoticeVersion     int        `json:"notice_version" db:"notice_version"`
+	LanguageCode      string     `json:"language_code" db:"language_code"`           // ISO 639-1 (en, hi, ta, etc.)
+	TranslatedText    string     `json:"translated_text" db:"translated_text"`       // The actual content
+	TranslationSource string     `json:"translation_source" db:"translation_source"` // INDICTRANS2 | MANUAL | UNSUPPORTED
+	IsRTL             bool       `json:"is_rtl" db:"is_rtl"`                         // Text direction
+	TranslatedAt      time.Time  `json:"translated_at" db:"translated_at"`
+	ReviewedBy        *types.ID  `json:"reviewed_by,omitempty" db:"reviewed_by"`
+	ReviewedAt        *time.Time `json:"reviewed_at,omitempty" db:"reviewed_at"`
+}
+
+// ConsentNoticeTranslationRepository defines persistence for notice translations.
+type ConsentNoticeTranslationRepository interface {
+	SaveTranslation(ctx context.Context, t *ConsentNoticeTranslation) error
+	GetByNoticeAndVersion(ctx context.Context, noticeID types.ID, version int) ([]ConsentNoticeTranslation, error)
+	GetByNoticeAndLang(ctx context.Context, noticeID types.ID, version int, lang string) (*ConsentNoticeTranslation, error)
+	Upsert(ctx context.Context, t *ConsentNoticeTranslation) error // For overrides
 }
 
 // ConsentNoticeRepository defines persistence for privacy notices.
@@ -388,7 +401,5 @@ type ConsentNoticeRepository interface {
 	BindToWidgets(ctx context.Context, noticeID types.ID, widgetIDs []types.ID) error
 
 	// Translation methods
-	AddTranslation(ctx context.Context, t *ConsentNoticeTranslation) error
-	GetTranslations(ctx context.Context, noticeID types.ID) ([]ConsentNoticeTranslation, error)
 	GetLatestVersion(ctx context.Context, seriesID types.ID) (int, error)
 }

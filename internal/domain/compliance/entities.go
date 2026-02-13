@@ -149,47 +149,6 @@ const (
 )
 
 // =============================================================================
-// Grievance — Complaint from a data subject
-// =============================================================================
-
-// Grievance represents a formal complaint.
-type Grievance struct {
-	types.TenantEntity
-	SubjectID     *types.ID       `json:"subject_id,omitempty" db:"subject_id"`
-	Type          GrievanceType   `json:"type" db:"type"`
-	Description   string          `json:"description" db:"description"`
-	ReceivedAt    time.Time       `json:"received_at" db:"received_at"`
-	ReceivedVia   string          `json:"received_via" db:"received_via"`
-	Status        GrievanceStatus `json:"status" db:"status"`
-	AssignedTo    *types.ID       `json:"assigned_to,omitempty" db:"assigned_to"`
-	Response      *string         `json:"response,omitempty" db:"response"`
-	ResolvedAt    *time.Time      `json:"resolved_at,omitempty" db:"resolved_at"`
-	Deadline      time.Time       `json:"deadline" db:"deadline"`
-	RegulationRef string          `json:"regulation_ref" db:"regulation_ref"`
-}
-
-// GrievanceType classifies the complaint.
-type GrievanceType string
-
-const (
-	GrievanceConsent      GrievanceType = "CONSENT"
-	GrievanceDataAccuracy GrievanceType = "DATA_ACCURACY"
-	GrievanceBreach       GrievanceType = "BREACH"
-	GrievanceServiceIssue GrievanceType = "SERVICE_ISSUE"
-	GrievanceOther        GrievanceType = "OTHER"
-)
-
-// GrievanceStatus tracks grievance lifecycle.
-type GrievanceStatus string
-
-const (
-	GrievanceStatusPending   GrievanceStatus = "PENDING"
-	GrievanceStatusAssigned  GrievanceStatus = "ASSIGNED"
-	GrievanceStatusResolved  GrievanceStatus = "RESOLVED"
-	GrievanceStatusEscalated GrievanceStatus = "ESCALATED"
-)
-
-// =============================================================================
 // Repository Interfaces
 // =============================================================================
 

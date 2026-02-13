@@ -235,6 +235,20 @@ type Pagination struct {
 	PageSize int `json:"page_size"`
 }
 
+func (p Pagination) Limit() int {
+	if p.PageSize <= 0 {
+		return 10
+	}
+	return p.PageSize
+}
+
+func (p Pagination) Offset() int {
+	if p.Page < 1 {
+		p.Page = 1
+	}
+	return (p.Page - 1) * p.Limit()
+}
+
 // PaginatedResult wraps a paginated response.
 type PaginatedResult[T any] struct {
 	Items      []T `json:"items"`

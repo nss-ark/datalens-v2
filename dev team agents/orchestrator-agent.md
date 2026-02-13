@@ -96,7 +96,7 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 
 ---
 
-## Current Project State (as of February 12, 2026)
+## Current Project State (as of February 13, 2026)
 
 ### Completed ✅ — DO NOT Re-Assign
 
@@ -132,27 +132,33 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - **India Dark Pattern Detector**: 13 patterns from Guidelines 2023, clause citations
 - **Dark Pattern Lab UI**: Interactive testing tool in Control Centre
 
+#### Consent Module Completion (Batch 15)
+- **Consent Public APIs**: Check, Withdraw, Widget Config — `WidgetAuthMiddleware`, wildcard CORS
+- **Notice Management**: CRUD + version-on-publish + widget binding (`NoticeService`, `NoticeHandler`)
+- **Consent Renewal/Expiry**: Daily scheduler (30/15/7 days), `ConsentExpiryService`, `POST /renew`
+- **Portal Withdrawal**: Per-purpose consent revocation UI in Data Principal Portal
+- **Lifecycle Tests**: 6 integration tests covering grant→check→withdraw→check, notices, expiry
+
 ### Known Technical Debt ⚠️
-1.  **Consent Public APIs**: Widget Check, Withdraw, Config endpoints not yet live — blocks embeddable widget.
-2.  **Notice Management**: DPDPA-mandatory privacy notices not yet implemented.
-3.  **Consent Renewal**: Expiry detection and renewal reminders not built.
-4.  **Integration Tests**: CI pipeline integration needs final polish for Docker-in-Docker.
+1.  **Integration Tests**: CI pipeline integration needs final polish for Docker-in-Docker.
+2.  **Consent Widget Bundle**: Vanilla JS bundle not built yet — widget frontend is React-only.
+3.  **Consent Notifications**: Event triggers exist but no delivery channels (Email/SMS/Webhook).
+4.  **Translation Pipeline**: Notices exist but multi-language translation not automated.
 
 ### Deferred Items (Not Planned Yet) 📋
-- **RBAC / User Role Management** → SuperAdmin portal module (future)
-- **Data Retention Policy Config** → System admin feature (future)
-- **Translation Pipeline (HuggingFace)** → Batch 16
-- **Grievance Redressal** → Extends DPR/DSR flows (Batch 16)
-- **Consent Notifications (Email/SMS)** → Requires DevOps email service (Batch 16)
-- **Vanilla JS Widget Bundle** → Separate build toolchain (future)
+- **RBAC / User Role Management** → SuperAdmin portal module (Batch 17+)
+- **Data Retention Policy Config** → System admin feature (Batch 17+)
+- **Vanilla JS Widget Bundle** → Separate build toolchain (Batch 17+)
 
-### Domain Entities Already Defined (Not Yet Implemented) 📋
-The following entities exist in `internal/domain/consent/entities.go` with full field definitions and repository interfaces. They are **ready to be implemented** (repositories + services + handlers):
-- `ConsentWidget` — embeddable consent widget configuration (theme, layout, CORS, multi-language)
-- `ConsentSession` — single consent interaction record (decisions per purpose, IP/UA context, digital signature)
-- `DataPrincipalProfile` — portal identity with OTP verification, links to `compliance.DataSubject`
-- `ConsentHistoryEntry` — immutable consent timeline entry (purpose-level changes, digital signature)
-- `DPRRequest` — Data Principal Rights request (portal-initiated, links to internal DSR, guardian consent for minors, appeal flow)
+### Domain Entities Fully Implemented ✅
+All consent domain entities from `internal/domain/consent/entities.go` are now implemented:
+- `ConsentWidget` — CRUD + public config API + widget auth middleware
+- `ConsentSession` — grant/check/withdraw + expiry tracking
+- `ConsentNotice` — notice CRUD + versioning + widget binding
+- `ConsentRenewalLog` — renewal tracking
+- `DataPrincipalProfile` — portal identity with OTP verification
+- `ConsentHistoryEntry` — immutable consent timeline with digital signatures
+- `DPRRequest` — Data Principal Rights request lifecycle
 
 ---
 
@@ -164,28 +170,23 @@ The following entities exist in `internal/domain/consent/entities.go` with full 
 
 ### Batch 14: Consent Analytics & AI ✅ COMPLETE
 
-### Batch 15: Consent Module Completion (DPDPA Lifecycle) ← CURRENT
-| Task | Agent | Priority | Notes |
-|------|-------|----------|-------|
-| Consent Public APIs + Widget Security | Backend | P0 | Check, Withdraw, Widget Config + API Key + CORS |
-| Notice Management (CRUD + Versioning) | Backend | P0 | DPDPA-mandatory privacy notices |
-| Consent Renewal & Expiry Engine | Backend | P1 | Daily expiry checks, renewal reminders |
-| Notice Management UI + Portal Withdrawal | Frontend | P1 | Admin notices + portal consent revocation |
-| Consent Lifecycle Integration Tests | Test | P1 | Grant→Check→Withdraw→Check, expiry |
+### Batch 15: Consent Module Completion (DPDPA Lifecycle) ✅ COMPLETE
 
-### Batch 16: Consent Notifications & Translation
+### Batch 16: Consent Notifications & Translation ← NEXT
 | Task | Agent | Priority | Notes |
-|------|-------|----------|-------|
+|------|-------|----------|---------|
 | Translation Pipeline (HuggingFace) | AI/ML | P1 | 22 languages for notices |
 | Consent Notifications (Email/SMS/Webhook) | Backend | P1 | Event-driven alerts |
 | Grievance Redressal Module | Backend | P1 | Extends DPR/DSR flows |
 
 ### Batch 17+: Enterprise Scale
 | Task | Agent | Priority | Notes |
-|------|-------|----------|-------|
+|------|-------|----------|---------|
 | Event Mesh Refactoring | Backend | P1 | Decouple monolith |
 | Redis Consent Cache + Enforcement Middleware | Backend | P0 | <50ms consent checks |
 | SuperAdmin Portal (RBAC + Module Selection) | Full Stack | P1 | User/module management |
+| Vanilla JS Widget Bundle | Frontend | P1 | Framework-agnostic embeddable widget |
+
 
 ---
 

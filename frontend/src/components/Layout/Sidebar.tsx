@@ -20,7 +20,8 @@ import {
     Settings,
     Gavel,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Bell
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import styles from './Sidebar.module.css';
@@ -59,7 +60,8 @@ const NAV_GROUPS = [
             { to: '/consent', label: 'Consent Records', icon: CheckSquare },
             { to: '/consent/analytics', label: 'Consent Analytics', icon: BarChart3 },
             { to: '/compliance/lab', label: 'Dark Pattern Lab', icon: ShieldCheck },
-            { to: '/grievances', label: 'Grievances', icon: AlertTriangle },
+            { to: '/compliance/notifications', label: 'Notification History', icon: Bell },
+            { to: '/compliance/grievances', label: 'Grievances', icon: AlertTriangle },
             { to: '/nominations', label: 'Nominations', icon: Award },
             { to: '/nominations', label: 'Nominations', icon: Award },
             { to: '/breach', label: 'Breach Incidents', icon: ShieldCheck },

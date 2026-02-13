@@ -10,6 +10,7 @@ import type {
     CreateDPRInput
 } from '../types/portal';
 import type { IdentityStatusResponse } from '../types/identity';
+import type { CreateGrievanceRequest, Grievance } from '../types/grievance';
 
 export const portalService = {
     // --- Auth ---
@@ -77,5 +78,25 @@ export const portalService = {
             redirect_uri: redirectUri
         });
         return res.data.data;
+    },
+
+    // --- Grievance Redressal ---
+    async submitGrievance(data: CreateGrievanceRequest): Promise<Grievance> {
+        const res = await portalApi.post<ApiResponse<Grievance>>('/public/portal/grievance', data);
+        return res.data.data;
+    },
+
+    async getGrievances(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<Grievance>> {
+        const res = await portalApi.get<ApiResponse<PaginatedResponse<Grievance>>>('/public/portal/grievance', { params });
+        return res.data.data;
+    },
+
+    async getGrievance(id: string): Promise<Grievance> {
+        const res = await portalApi.get<ApiResponse<Grievance>>(`/public/portal/grievance/${id}`);
+        return res.data.data;
+    },
+
+    async submitGrievanceFeedback(id: string, rating: number, comment?: string): Promise<void> {
+        await portalApi.post(`/public/portal/grievance/${id}/feedback`, { rating, comment });
     }
 };

@@ -7,6 +7,7 @@ interface StatusBadgeProps {
     label: string;
     variant?: BadgeVariant;
     showDot?: boolean;
+    size?: 'sm' | 'md';
 }
 
 const STATUS_MAP: Record<string, BadgeVariant> = {
@@ -26,11 +27,11 @@ const STATUS_MAP: Record<string, BadgeVariant> = {
     CANCELLED: 'neutral',
 };
 
-export function StatusBadge({ label, variant, showDot = true }: StatusBadgeProps) {
+export function StatusBadge({ label, variant, showDot = true, size = 'md' }: StatusBadgeProps) {
     const resolvedVariant = variant || STATUS_MAP[label] || 'neutral';
 
     return (
-        <span className={cn(styles.badge, styles[resolvedVariant])}>
+        <span className={cn(styles.badge, styles[resolvedVariant], size === 'sm' ? 'text-xs px-1.5 py-0.5' : '')}>
             {showDot && <span className={styles.dot} />}
             {label}
         </span>

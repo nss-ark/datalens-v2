@@ -132,7 +132,11 @@ func main() {
 	mappingRepo := repository.NewPostgresDataMappingRepository(dbPool)
 	auditRepo := repository.NewPostgresAuditRepository(dbPool)
 	breachRepo := repository.NewPostgresBreachRepository(dbPool)
+	translationRepo := repository.NewPostgresConsentNoticeTranslationRepository(dbPool)
 	identityProfileRepo := repository.NewIdentityProfileRepo(dbPool)
+	// grievanceRepo := repository.NewPostgresGrievanceRepository(dbPool)
+	notificationRepo := repository.NewPostgresNotificationRepository(dbPool)
+	notificationTemplateRepo := repository.NewPostgresNotificationTemplateRepository(dbPool)
 
 	// =========================================================================
 	// Initialize Domain Services
@@ -180,6 +184,7 @@ func main() {
 	)
 
 	noticeSvc := service.NewNoticeService(consentNoticeRepo, consentWidgetRepo, eb, slog.Default())
+	translationSvc := service.NewTranslationService(translationRepo, consentNoticeRepo, eb, "", "")
 	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
 	analyticsSvc := analytics.NewConsentAnalyticsService(consentSessionRepo)
 
@@ -316,6 +321,13 @@ func main() {
 		slog.Default(),
 	)
 
+	// 7g. Grievance Redressal
+	// grievanceSvc := service.NewGrievanceService(grievanceRepo, eb, slog.Default())
+
+	// 7h. Notification System
+	clientRepo := service.NewPostgresClientRepository(dbPool)
+	notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
+
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)
 	scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
@@ -379,6 +391,14 @@ func main() {
 	}
 	log.Info("Audit subscriber registered")
 
+	// Initialize Notification Subscriber
+	notificationSub := service.NewNotificationSubscriber(notificationSvc, eb, slog.Default())
+	if err := notificationSub.Start(context.Background()); err != nil {
+		log.Error("Failed to start notification subscriber", "error", err)
+		os.Exit(1)
+	}
+	log.Info("Notification subscriber started")
+
 	// =========================================================================
 	// Initialize API Handlers
 	// =========================================================================
@@ -391,13 +411,15 @@ func main() {
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor)                  // dsrExecutor was created earlier
 	consentHandler := handler.NewConsentHandler(consentSvc, consentExpirySvc) // Updated constructor
-	noticeHandler := handler.NewNoticeHandler(noticeSvc)
+	noticeHandler := handler.NewNoticeHandler(noticeSvc, translationSvc)
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
 	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
 	breachHandler := handler.NewBreachHandler(breachSvc)
 	m365Handler := handler.NewM365Handler(m365AuthSvc)
 	googleHandler := handler.NewGoogleHandler(googleAuthSvc)
 	identityHandler := handler.NewIdentityHandler(identitySvc)
+	// grievanceHandler := handler.NewGrievanceHandler(grievanceSvc)
+	notificationHandler := handler.NewNotificationHandler(notificationSvc)
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(
@@ -462,6 +484,9 @@ func main() {
 
 		// Portal API (Public + Portal JWT Auth)
 		r.Mount("/portal", portalHandler.Routes())
+
+		// Portal Grievances (Public + Portal JWT Auth)
+		// r.Mount("/portal/grievances", grievanceHandler.PortalRoutes())
 	})
 
 	r.Route("/api/v2", func(r chi.Router) {
@@ -527,6 +552,12 @@ func main() {
 
 			// Identity
 			r.Mount("/identity", identityHandler.Routes())
+
+			// Grievances
+			// r.Mount("/grievances", grievanceHandler.Routes())
+
+			// Notifications
+			r.Mount("/notifications", notificationHandler.Routes())
 
 			// Analytics
 			r.Mount("/analytics", analyticsHandler.Routes())
