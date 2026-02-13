@@ -35,7 +35,7 @@ func newTestConsentHandler() (*handler.ConsentHandler, *mockConsentWidgetRepo) {
 	eventBus := &mockEventBus{}
 	logger := slog.Default()
 
-	svc := service.NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, "test-secret", logger)
+	svc := service.NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, nil, "test-secret", logger, 300*time.Second)
 	h := handler.NewConsentHandler(svc, nil)
 	return h, widgetRepo
 }

@@ -1,7 +1,54 @@
+import { useState, useEffect } from 'react';
 import { Building, Users, Activity, Server } from 'lucide-react';
 import { StatCard } from '../../components/Dashboard/StatCard';
+import { adminService } from '../../services/adminService';
+import type { AdminStats } from '../../types/admin';
 
 const AdminDashboard = () => {
+    const [stats, setStats] = useState<AdminStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await adminService.getStats();
+                setStats(data);
+            } catch (err) {
+                console.error('Failed to fetch admin stats:', err);
+                setError('Failed to load dashboard statistics');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6 animate-pulse">
+                <div>
+                    <div className="h-8 w-48 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 w-64 bg-gray-200 rounded"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="bg-white h-32 rounded-lg border border-gray-200"></div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                {error}
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -12,17 +59,16 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Active Tenants"
-                    value="12"
+                    value={stats?.active_tenants.toString() || "0"}
                     icon={Building}
                     color="primary"
-                    trend={{ value: 8, label: "vs last month", direction: "up" }}
+                // Trend removed as we don't have historical data yet
                 />
                 <StatCard
                     title="Total Users"
-                    value="148"
+                    value={stats?.total_users.toString() || "0"}
                     icon={Users}
                     color="info"
-                    trend={{ value: 12, label: "vs last month", direction: "up" }}
                 />
                 <StatCard
                     title="System Health"

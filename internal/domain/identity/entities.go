@@ -136,6 +136,16 @@ type TenantRepository interface {
 	Delete(ctx context.Context, id types.ID) error
 }
 
+// UserFilter defines criteria for searching users.
+type UserFilter struct {
+	TenantID *types.ID
+	Status   *UserStatus
+	// Search matches against name or email (ILIKE)
+	Search string
+	Limit  int
+	Offset int
+}
+
 // UserRepository defines persistence for users.
 type UserRepository interface {
 	Create(ctx context.Context, u *User) error
@@ -143,8 +153,13 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, tenantID types.ID, email string) (*User, error)
 	GetByEmailGlobal(ctx context.Context, email string) (*User, error)
 	GetByTenant(ctx context.Context, tenantID types.ID) ([]User, error)
+
+	// Admin / Global methods
+	SearchGlobal(ctx context.Context, filter UserFilter) ([]User, int, error)
 	CountGlobal(ctx context.Context) (int64, error)
 	Update(ctx context.Context, u *User) error
+	UpdateStatus(ctx context.Context, id types.ID, status UserStatus) error
+	AssignRoles(ctx context.Context, userID types.ID, roleIDs []types.ID) error
 	Delete(ctx context.Context, id types.ID) error
 }
 

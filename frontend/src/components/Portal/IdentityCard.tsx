@@ -26,7 +26,8 @@ export const IdentityCard = () => {
 
             // Mocking the behavior for the UI demo if no backend:
             // await portalService.linkIdentity('digilocker', 'mock_code');
-        } catch (_error) {
+        } catch (error) {
+            console.error('Failed to initiate DigiLocker verification:', error);
             toast.error('Failed to initiate verification');
         }
     };

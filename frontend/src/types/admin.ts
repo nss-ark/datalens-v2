@@ -25,3 +25,22 @@ export interface AdminStats {
     total_users: number;
     total_dsr_requests: number; // Placeholder for future
 }
+
+export interface AdminUser {
+    id: string;
+    tenant_id: string;
+    email: string;
+    name: string;
+    status: 'ACTIVE' | 'INVITED' | 'SUSPENDED';
+    role_ids: string[];
+    mfa_enabled: boolean;
+    last_login_at: string | null;
+    created_at: string;
+}
+
+export interface AdminRole {
+    id: string;
+    name: string;
+    description: string;
+    is_system: boolean;
+}

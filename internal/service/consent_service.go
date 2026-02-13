@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/complyark/datalens/internal/domain/consent"
+	"github.com/complyark/datalens/internal/infrastructure/cache"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -69,9 +70,12 @@ type ConsentService struct {
 	widgetRepo  consent.ConsentWidgetRepository
 	sessionRepo consent.ConsentSessionRepository
 	historyRepo consent.ConsentHistoryRepository
-	eventBus    eventbus.EventBus
-	signingKey  string
-	logger      *slog.Logger
+
+	eventBus   eventbus.EventBus
+	cache      cache.ConsentCache
+	signingKey string
+	logger     *slog.Logger
+	cacheTTL   time.Duration
 }
 
 // NewConsentService creates a new ConsentService.
@@ -80,16 +84,21 @@ func NewConsentService(
 	sessionRepo consent.ConsentSessionRepository,
 	historyRepo consent.ConsentHistoryRepository,
 	eventBus eventbus.EventBus,
+	cache cache.ConsentCache,
 	signingKey string,
 	logger *slog.Logger,
+	cacheTTL time.Duration,
 ) *ConsentService {
 	return &ConsentService{
 		widgetRepo:  widgetRepo,
 		sessionRepo: sessionRepo,
 		historyRepo: historyRepo,
-		eventBus:    eventBus,
-		signingKey:  signingKey,
-		logger:      logger.With("service", "consent"),
+
+		eventBus:   eventBus,
+		cache:      cache,
+		signingKey: signingKey,
+		logger:     logger.With("service", "consent"),
+		cacheTTL:   cacheTTL,
 	}
 }
 
@@ -406,6 +415,7 @@ func (s *ConsentService) RecordConsent(ctx context.Context, req RecordConsentReq
 			s.publishEvent(ctx, eventbus.EventConsentGranted, tenantID, map[string]any{
 				"session_id": session.ID.String(),
 				"purpose_id": decision.PurposeID.String(),
+				"subject_id": session.SubjectID.String(),
 			})
 		}
 	}
@@ -425,16 +435,38 @@ func (s *ConsentService) RecordConsent(ctx context.Context, req RecordConsentReq
 
 // CheckConsent checks whether consent is currently granted for a subject+purpose.
 func (s *ConsentService) CheckConsent(ctx context.Context, tenantID, subjectID, purposeID types.ID) (bool, error) {
+	// 1. Check Cache
+	if s.cache != nil {
+		cached, err := s.cache.GetConsentStatus(ctx, tenantID, subjectID, purposeID)
+		if err != nil {
+			s.logger.Warn("failed to get consent status from cache", "error", err)
+		} else if cached != nil {
+			return *cached, nil
+		}
+	}
+
+	// 2. Cache Miss — Check DB
 	entry, err := s.historyRepo.GetLatestState(ctx, tenantID, subjectID, purposeID)
 	if err != nil {
 		return false, fmt.Errorf("check consent: %w", err)
 	}
 
-	if entry == nil {
-		return false, nil
+	granted := false
+	if entry != nil && entry.NewStatus == "GRANTED" {
+		granted = true
 	}
 
-	return entry.NewStatus == "GRANTED", nil
+	// 3. Populate Cache
+	if s.cache != nil {
+		// Asynchronously populate cache to not block response?
+		// No, for consistency we should just do it, it's fast.
+		// Use a safe TTL (e.g. 5 mins defined in config)
+		if err := s.cache.SetConsentStatus(ctx, tenantID, subjectID, purposeID, granted, s.cacheTTL); err != nil {
+			s.logger.Warn("failed to set consent status in cache", "error", err)
+		}
+	}
+
+	return granted, nil
 }
 
 // =============================================================================

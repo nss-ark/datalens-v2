@@ -33,6 +33,7 @@ import (
 	"github.com/complyark/datalens/pkg/logging"
 	"github.com/complyark/datalens/pkg/types"
 
+	"github.com/complyark/datalens/internal/infrastructure/cache"
 	"github.com/complyark/datalens/internal/infrastructure/connector"
 	"github.com/complyark/datalens/internal/infrastructure/queue"
 	"github.com/complyark/datalens/internal/service/ai"
@@ -138,6 +139,15 @@ func main() {
 	notificationRepo := repository.NewPostgresNotificationRepository(dbPool)
 	notificationTemplateRepo := repository.NewPostgresNotificationTemplateRepository(dbPool)
 
+	// Cache
+	var consentCache cache.ConsentCache
+	if rdb != nil {
+		consentCache = cache.NewRedisConsentCache(rdb)
+		log.Info("Redis consent cache initialized")
+	} else {
+		log.Warn("Redis unavailable — consent cache disabled")
+	}
+
 	// =========================================================================
 	// Initialize Domain Services
 	// =========================================================================
@@ -169,8 +179,10 @@ func main() {
 		consentSessionRepo,
 		consentHistoryRepo,
 		eb,
+		consentCache,
 		cfg.Consent.SigningKey,
 		slog.Default(),
+		cfg.Consent.CacheTTL,
 	)
 
 	consentExpirySvc := service.NewConsentExpiryService(
@@ -329,7 +341,7 @@ func main() {
 	notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
 
 	// 7i. Admin Service
-	adminSvc := service.NewAdminService(tenantRepo, userRepo, tenantSvc, slog.Default())
+	adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, tenantSvc, slog.Default())
 
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)
@@ -401,6 +413,19 @@ func main() {
 		os.Exit(1)
 	}
 	log.Info("Notification subscriber started")
+
+	// Initialize Consent Cache Subscriber
+	if consentCache != nil {
+		consentCacheSub := service.NewConsentCacheSubscriber(consentCache, eb, slog.Default(), cfg.Consent.CacheTTL)
+		if err := consentCacheSub.Start(context.Background()); err != nil {
+			log.Error("Failed to start consent cache subscriber", "error", err)
+			// Don't exit, just log error? Or exit?
+			// Cache is optional but if we have it, we want it consistent.
+			// Ideally we retry or exit. For now, log error.
+		} else {
+			log.Info("Consent cache subscriber started")
+		}
+	}
 
 	// =========================================================================
 	// Initialize API Handlers

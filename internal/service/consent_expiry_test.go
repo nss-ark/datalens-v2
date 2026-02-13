@@ -20,7 +20,7 @@ func TestExpiryChecker_DetectsExpiringConsent(t *testing.T) {
 	eventBus := newMockEventBus()
 	logger := newTestLogger()
 
-	consentSvc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, "key", logger)
+	consentSvc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, nil, "key", logger, 300*time.Second)
 	expirySvc := NewConsentExpiryService(sessionRepo, renewalRepo, historyRepo, widgetRepo, eventBus, logger, consentSvc)
 
 	ctx := context.Background()
@@ -96,7 +96,7 @@ func TestExpiryChecker_MarksExpired(t *testing.T) {
 	eventBus := newMockEventBus()
 	logger := newTestLogger()
 
-	consentSvc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, "key", logger)
+	consentSvc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, nil, "key", logger, 300*time.Second)
 	expirySvc := NewConsentExpiryService(sessionRepo, renewalRepo, historyRepo, widgetRepo, eventBus, logger, consentSvc)
 
 	ctx := context.Background()

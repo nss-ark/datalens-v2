@@ -30,7 +30,7 @@ func newTestConsentService() (*ConsentService, *mockConsentWidgetRepo, *mockCons
 	eventBus := newMockEventBus()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 
-	svc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, "test-secret-key", logger)
+	svc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, nil, "test-secret-key", logger, 300*time.Second)
 	return svc, widgetRepo, sessionRepo, historyRepo, eventBus
 }
 

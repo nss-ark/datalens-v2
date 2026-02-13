@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/pkg/types"
@@ -102,7 +103,7 @@ func TestNoticeBinding_WidgetNotice(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create Widget
-	consentSvc := NewConsentService(widgetRepo, newMockSessionRepo(), newMockHistoryRepo(), newMockEventBus(), "key", newTestLogger())
+	consentSvc := NewConsentService(widgetRepo, newMockSessionRepo(), newMockHistoryRepo(), newMockEventBus(), nil, "key", newTestLogger(), 300*time.Second)
 	widget, err := consentSvc.CreateWidget(ctx, CreateWidgetRequest{Name: "W", Type: "BANNER"})
 	require.NoError(t, err)
 

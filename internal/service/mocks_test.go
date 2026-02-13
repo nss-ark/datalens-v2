@@ -111,6 +111,54 @@ func (r *mockUserRepo) Delete(_ context.Context, id types.ID) error {
 	return nil
 }
 
+func (r *mockUserRepo) CountGlobal(_ context.Context) (int64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return int64(len(r.users)), nil
+}
+
+func (r *mockUserRepo) GetByEmailGlobal(_ context.Context, email string) (*identity.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, u := range r.users {
+		if u.Email == email {
+			return u, nil
+		}
+	}
+	return nil, fmt.Errorf("user not found")
+}
+
+func (r *mockUserRepo) SearchGlobal(_ context.Context, filter identity.UserFilter) ([]identity.User, int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []identity.User
+	for _, u := range r.users {
+		// Mock implementation: return everything, handle filtering if needed
+		result = append(result, *u)
+	}
+	return result, len(result), nil
+}
+
+func (r *mockUserRepo) UpdateStatus(_ context.Context, id types.ID, status identity.UserStatus) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if u, ok := r.users[id]; ok {
+		u.Status = status
+		return nil
+	}
+	return fmt.Errorf("user not found")
+}
+
+func (r *mockUserRepo) AssignRoles(_ context.Context, userID types.ID, roleIDs []types.ID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if u, ok := r.users[userID]; ok {
+		u.RoleIDs = roleIDs
+		return nil
+	}
+	return fmt.Errorf("user not found")
+}
+
 // =============================================================================
 // Mock Tenant Repository
 // =============================================================================
@@ -175,6 +223,27 @@ func (r *mockTenantRepo) GetAll(_ context.Context) ([]identity.Tenant, error) {
 		result = append(result, *t)
 	}
 	return result, nil
+}
+
+func (r *mockTenantRepo) Search(ctx context.Context, filter identity.TenantFilter) ([]identity.Tenant, int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []identity.Tenant
+	for _, t := range r.tenants {
+		if filter.Status != nil && t.Status != *filter.Status {
+			continue
+		}
+		result = append(result, *t)
+	}
+	return result, len(result), nil
+}
+
+func (r *mockTenantRepo) GetStats(ctx context.Context) (*identity.TenantStats, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return &identity.TenantStats{
+		TotalTenants: int64(len(r.tenants)),
+	}, nil
 }
 
 // =============================================================================

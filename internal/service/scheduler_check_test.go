@@ -34,11 +34,26 @@ func (m *LocalMockTenantRepo) GetAll(ctx context.Context) ([]identity.Tenant, er
 	args := m.Called(ctx)
 	return args.Get(0).([]identity.Tenant), args.Error(1)
 }
+
 func (m *LocalMockTenantRepo) Update(ctx context.Context, t *identity.Tenant) error {
 	return m.Called(ctx, t).Error(0)
 }
 func (m *LocalMockTenantRepo) Delete(ctx context.Context, id types.ID) error {
 	return m.Called(ctx, id).Error(0)
+}
+func (m *LocalMockTenantRepo) Search(ctx context.Context, filter identity.TenantFilter) ([]identity.Tenant, int, error) {
+	args := m.Called(ctx, filter)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]identity.Tenant), args.Int(1), args.Error(2)
+}
+func (m *LocalMockTenantRepo) GetStats(ctx context.Context) (*identity.TenantStats, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*identity.TenantStats), args.Error(1)
 }
 
 type LocalMockDataSourceRepo struct {

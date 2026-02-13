@@ -143,7 +143,8 @@ type AgentConfig struct {
 
 // ConsentConfig holds consent module settings.
 type ConsentConfig struct {
-	SigningKey string // HMAC-SHA256 key for signing consent records
+	SigningKey string        // HMAC-SHA256 key for signing consent records
+	CacheTTL   time.Duration // TTL for consent cache (default 300s)
 }
 
 // PortalConfig holds settings for the Data Principal Portal.
@@ -210,6 +211,7 @@ func Load() (*Config, error) {
 		},
 		Consent: ConsentConfig{
 			SigningKey: getEnv("CONSENT_SIGNING_KEY", "dev-consent-signing-key-change-me"),
+			CacheTTL:   getEnvDuration("CONSENT_CACHE_TTL_SECONDS", 300*time.Second),
 		},
 		Portal: PortalConfig{
 			JWTSecret: getEnv("PORTAL_JWT_SECRET", "portal-secret-key-change-me-in-prod-32chars"),

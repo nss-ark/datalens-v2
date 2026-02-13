@@ -356,6 +356,106 @@ func (r *UserRepo) Update(ctx context.Context, u *identity.User) error {
 	return nil
 }
 
+func (r *UserRepo) SearchGlobal(ctx context.Context, filter identity.UserFilter) ([]identity.User, int, error) {
+	where := "WHERE u.deleted_at IS NULL"
+	args := []any{}
+	argIdx := 1
+
+	if filter.TenantID != nil {
+		where += fmt.Sprintf(" AND u.tenant_id = $%d", argIdx)
+		args = append(args, *filter.TenantID)
+		argIdx++
+	}
+
+	if filter.Status != nil {
+		where += fmt.Sprintf(" AND u.status = $%d", argIdx)
+		args = append(args, *filter.Status)
+		argIdx++
+	}
+
+	if filter.Search != "" {
+		where += fmt.Sprintf(" AND (u.name ILIKE $%d OR u.email ILIKE $%d)", argIdx, argIdx)
+		args = append(args, "%"+filter.Search+"%")
+		argIdx++
+	}
+
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM users u %s", where)
+	var total int
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count global users: %w", err)
+	}
+
+	// Use the same projection as other Get methods
+	query := fmt.Sprintf(`
+		SELECT u.id, u.tenant_id, u.email, u.name, u.password, u.status,
+		       u.mfa_enabled, u.last_login_at, u.created_at, u.updated_at,
+		       COALESCE(array_agg(ur.role_id) FILTER (WHERE ur.role_id IS NOT NULL), '{}')
+		FROM users u
+		LEFT JOIN user_roles ur ON ur.user_id = u.id
+		%s
+		GROUP BY u.id
+		ORDER BY u.created_at DESC
+		LIMIT $%d OFFSET $%d`, where, argIdx, argIdx+1)
+
+	args = append(args, filter.Limit, filter.Offset)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("search global users: %w", err)
+	}
+	defer rows.Close()
+
+	var results []identity.User
+	for rows.Next() {
+		var u identity.User
+		if err := rows.Scan(
+			&u.ID, &u.TenantID, &u.Email, &u.Name, &u.Password, &u.Status,
+			&u.MFAEnabled, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.RoleIDs,
+		); err != nil {
+			return nil, 0, fmt.Errorf("scan user: %w", err)
+		}
+		results = append(results, u)
+	}
+	return results, total, rows.Err()
+}
+
+func (r *UserRepo) AssignRoles(ctx context.Context, userID types.ID, roleIDs []types.ID) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Delete existing roles
+	if _, err := tx.Exec(ctx, "DELETE FROM user_roles WHERE user_id = $1", userID); err != nil {
+		return fmt.Errorf("delete existing roles: %w", err)
+	}
+
+	// 2. Insert new roles
+	if len(roleIDs) > 0 {
+		query := "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)"
+		for _, roleID := range roleIDs {
+			if _, err := tx.Exec(ctx, query, userID, roleID); err != nil {
+				return fmt.Errorf("insert role %s: %w", roleID, err)
+			}
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (r *UserRepo) UpdateStatus(ctx context.Context, id types.ID, status identity.UserStatus) error {
+	query := `UPDATE users SET status = $2, updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL`
+	ct, err := r.pool.Exec(ctx, query, id, status)
+	if err != nil {
+		return fmt.Errorf("update user status: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return types.NewNotFoundError("User", id)
+	}
+	return nil
+}
+
 func (r *UserRepo) Delete(ctx context.Context, id types.ID) error {
 	query := `UPDATE users SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL`
 	ct, err := r.pool.Exec(ctx, query, id)

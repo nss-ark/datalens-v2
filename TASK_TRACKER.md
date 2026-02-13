@@ -497,6 +497,13 @@
   - [ ] User List (Filter by Tenant)
   - [ ] Role Assignment UI
 
+### Batch 17B: System Administration (User Management & Optimizations)
+- [x] Backend: Admin User CRUD API (Search, Suspend, Assign Roles)
+- [x] Backend: Redis Consent Cache (<50ms checks, pub/sub invalidation)
+- [x] Frontend: User Management UI (/admin/users, Role Assignment Modal)
+- [x] Frontend: Admin Dashboard Live Stats
+- [x] Test: Batch 17A Integration Tests (Admin Service & Middleware)
+
 ### Batch 18: DPR Completion (Data Principal Rights)
 - [ ] Implement `DPRRequest` repository and service logic
 - [ ] Build DPR public API: `POST /api/public/dpr/requests` (verify identity + submit)

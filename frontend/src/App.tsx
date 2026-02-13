@@ -47,6 +47,7 @@ import { AdminLayout } from './components/Layout/AdminLayout';
 import { AdminRoute } from './components/common/AdminRoute';
 import AdminDashboard from './pages/Admin/Dashboard';
 import TenantList from './pages/Admin/Tenants/TenantList';
+import UserList from './pages/Admin/Users/UserList';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -133,7 +134,7 @@ function App() {
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/tenants" element={<TenantList />} />
-            <Route path="/admin/users" element={<PlaceholderPage title="Platform Users" />} />
+            <Route path="/admin/users" element={<UserList />} />
             <Route path="/admin/settings" element={<PlaceholderPage title="Platform Settings" />} />
           </Route>
 

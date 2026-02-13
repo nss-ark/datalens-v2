@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/pkg/types"
@@ -18,7 +19,7 @@ func TestConsentLifecycle_GrantCheckWithdrawCheck(t *testing.T) {
 	eventBus := newMockEventBus()
 	logger := newTestLogger()
 
-	svc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, "test-secret", logger)
+	svc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, nil, "test-secret", logger, 300*time.Second)
 
 	ctx := context.Background()
 	tenantID := types.NewID()
@@ -98,7 +99,7 @@ func TestConsentWithdrawal_EventEmitted(t *testing.T) {
 	eventBus := newMockEventBus()
 	logger := newTestLogger()
 
-	svc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, "test-secret", logger)
+	svc := NewConsentService(widgetRepo, sessionRepo, historyRepo, eventBus, nil, "test-secret", logger, 300*time.Second)
 
 	ctx := context.Background()
 	tenantID := types.NewID()
