@@ -28,7 +28,6 @@ export function TranslationOverrideModal({ noticeId, translation, languageCode, 
             Object.keys(baseContent).forEach(key => initial[key] = '');
             setContent(initial);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [translation, baseContent]);
 
     const mutation = useMutation({

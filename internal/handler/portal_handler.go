@@ -50,6 +50,13 @@ func (h *PortalHandler) Routes() chi.Router {
 		r.Get("/dpr/{id}", h.getDPR)
 	})
 
+	// Guardian Verification (DPDPA Section 9)
+	r.Group(func(r chi.Router) {
+		r.Use(h.middleware.PortalJWTAuth)
+		r.Post("/guardian/verify-init", h.initiateGuardianVerify)
+		r.Post("/guardian/verify", h.verifyGuardian)
+	})
+
 	return r
 }
 
@@ -197,4 +204,56 @@ func (h *PortalHandler) getDPR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, dpr)
+}
+
+// Guardian Verification Handlers
+
+type initiateGuardianRequest struct {
+	Contact string `json:"contact"` // Email or Phone
+}
+
+func (h *PortalHandler) initiateGuardianVerify(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	var req initiateGuardianRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "invalid json body")
+		return
+	}
+
+	if err := h.principalService.InitiateGuardianVerification(r.Context(), principalID, req.Contact); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"message": "guardian verification code sent"})
+}
+
+type verifyGuardianRequest struct {
+	Code string `json:"code"`
+}
+
+func (h *PortalHandler) verifyGuardian(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	var req verifyGuardianRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "invalid json body")
+		return
+	}
+
+	if err := h.principalService.VerifyGuardian(r.Context(), principalID, req.Code); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"message": "guardian verified successfully"})
 }

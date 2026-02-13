@@ -38,6 +38,8 @@ import PortalLogin from './pages/Portal/Login';
 import PortalDashboard from './pages/Portal/Dashboard';
 import PortalHistory from './pages/Portal/History';
 import PortalRequests from './pages/Portal/Requests';
+import RequestNew from './pages/Portal/RequestNew';
+import PortalProfile from './pages/Portal/Profile';
 import ConsentManage from './pages/Portal/ConsentManage';
 import SubmitGrievance from './pages/Portal/Grievance/SubmitGrievance';
 import MyGrievances from './pages/Portal/Grievance/MyGrievances';
@@ -48,6 +50,8 @@ import { AdminRoute } from './components/common/AdminRoute';
 import AdminDashboard from './pages/Admin/Dashboard';
 import TenantList from './pages/Admin/Tenants/TenantList';
 import UserList from './pages/Admin/Users/UserList';
+import AdminDSRList from './pages/Admin/Compliance/DSRList';
+import AdminDSRDetail from './pages/Admin/Compliance/DSRDetail';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +104,20 @@ function App() {
                 </PortalLayout>
               </ErrorBoundary>
             } />
+            <Route path="/portal/requests/new" element={
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <RequestNew />
+                </PortalLayout>
+              </ErrorBoundary>
+            } />
+            <Route path="/portal/profile" element={
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <PortalLayout>
+                  <PortalProfile />
+                </PortalLayout>
+              </ErrorBoundary>
+            } />
             <Route path="/portal/consent" element={
               <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
                 <PortalLayout>
@@ -135,6 +153,8 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/tenants" element={<TenantList />} />
             <Route path="/admin/users" element={<UserList />} />
+            <Route path="/admin/compliance/dsr" element={<AdminDSRList />} />
+            <Route path="/admin/compliance/dsr/:id" element={<AdminDSRDetail />} />
             <Route path="/admin/settings" element={<PlaceholderPage title="Platform Settings" />} />
           </Route>
 

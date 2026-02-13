@@ -26,7 +26,9 @@ const PortalLogin = () => {
             tenant_id: 't-123',
             email: identifier,
             verification_status: 'VERIFIED',
-            preferred_lang: 'en'
+            preferred_lang: 'en',
+            is_minor: false,
+            guardian_verified: false,
         });
         navigate('/portal/dashboard');
     };

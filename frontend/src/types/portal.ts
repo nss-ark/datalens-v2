@@ -8,6 +8,10 @@ export interface PortalProfile extends TenantEntity {
     subject_id?: ID;
     last_access_at?: string;
     preferred_lang: string;
+    is_minor: boolean;
+    dob?: string;
+    guardian_email?: string;
+    guardian_verified: boolean;
 }
 
 export interface ConsentHistoryEntry extends TenantEntity {

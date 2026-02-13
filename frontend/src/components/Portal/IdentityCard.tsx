@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Shield, CheckCircle } from 'lucide-react';
 import { portalService } from '../../services/portalService';
 import { toast } from '../../stores/toastStore';
 import { cn } from '../../utils/cn';
 
 export const IdentityCard = () => {
+    const navigate = useNavigate();
     const { data: identityStatus, isLoading } = useQuery({
         queryKey: ['portal-identity'],
         queryFn: portalService.getIdentityStatus
@@ -113,7 +115,10 @@ export const IdentityCard = () => {
 
             {isVerified && (
                 <div className="flex gap-2">
-                    <button className="flex-1 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-2 rounded-lg text-sm font-medium">
+                    <button
+                        onClick={() => navigate('/portal/profile')}
+                        className="flex-1 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-2 rounded-lg text-sm font-medium"
+                    >
                         View Details
                     </button>
                 </div>

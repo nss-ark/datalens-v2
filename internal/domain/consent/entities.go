@@ -173,6 +173,11 @@ type DataPrincipalProfile struct {
 	// Portal state
 	LastAccessAt  *time.Time `json:"last_access_at,omitempty" db:"last_access_at"`
 	PreferredLang string     `json:"preferred_lang" db:"preferred_lang"`
+
+	// DPDPA Section 9: Minor Management
+	IsMinor          bool       `json:"is_minor" db:"is_minor"`
+	DateOfBirth      *time.Time `json:"date_of_birth,omitempty" db:"date_of_birth"`
+	GuardianVerified bool       `json:"guardian_verified" db:"guardian_verified"`
 }
 
 // VerificationStatus tracks identity verification for portal access.
@@ -331,6 +336,7 @@ type DPRRequestRepository interface {
 	GetByID(ctx context.Context, id types.ID) (*DPRRequest, error)
 	GetByProfile(ctx context.Context, profileID types.ID) ([]DPRRequest, error)
 	GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[DPRRequest], error)
+	GetByDSRID(ctx context.Context, dsrID types.ID) (*DPRRequest, error)
 	Update(ctx context.Context, r *DPRRequest) error
 }
 

@@ -57,6 +57,7 @@ type DSRRepository interface {
 	Create(ctx context.Context, dsr *DSR) error
 	GetByID(ctx context.Context, id types.ID) (*DSR, error)
 	GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *DSRStatus) (*types.PaginatedResult[DSR], error)
+	GetAll(ctx context.Context, pagination types.Pagination, statusFilter *DSRStatus, typeFilter *DSRRequestType) (*types.PaginatedResult[DSR], error)
 	GetOverdue(ctx context.Context, tenantID types.ID) ([]DSR, error)
 	Update(ctx context.Context, dsr *DSR) error
 

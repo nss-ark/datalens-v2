@@ -1,7 +1,8 @@
 import type { BaseEntity, ID } from './common';
+import type { DSR } from './dsr';
 
 export interface Tenant extends BaseEntity {
-    tenant_id: ID;
+    id: ID;
     name: string;
     domain: string;
     status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
@@ -43,4 +44,10 @@ export interface AdminRole {
     name: string;
     description: string;
     is_system: boolean;
+}
+
+// Admin DSR type (extending DSR with Tenant info if needed, though DSR already has tenant_id)
+// We might need a specific response type if the admin API returns it differently
+export interface AdminDSR extends DSR {
+    tenant_name?: string; // If enriched
 }

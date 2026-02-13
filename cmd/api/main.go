@@ -122,6 +122,8 @@ func main() {
 	feedbackRepo := repository.NewDetectionFeedbackRepo(dbPool)
 	scanRunRepo := repository.NewScanRunRepo(dbPool)
 	dsrRepo := repository.NewDSRRepo(dbPool)
+	dprRepo := repository.NewDPRRequestRepo(dbPool)               // Added
+	profileRepo := repository.NewDataPrincipalProfileRepo(dbPool) // Added
 	consentWidgetRepo := repository.NewConsentWidgetRepo(dbPool)
 	consentNoticeRepo := repository.NewPostgresNoticeRepository(dbPool)
 	consentSessionRepo := repository.NewConsentSessionRepo(dbPool)
@@ -377,7 +379,8 @@ func main() {
 	}
 
 	// Update DSR Service with queue
-	dsrSvc = service.NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, auditSvc, slog.Default())
+	// Update DSR Service with queue
+	dsrSvc = service.NewDSRService(dsrRepo, dsRepo, dsrQueue, dprRepo, eb, auditSvc, slog.Default())
 
 	// Initialize DSR Executor
 	dsrExecutor := service.NewDSRExecutor(dsrRepo, dsRepo, piiRepo, connRegistry, eb, slog.Default())
@@ -452,18 +455,19 @@ func main() {
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(
-		repository.NewDataPrincipalProfileRepo(dbPool),
+		profileRepo,
 		rdb,
 		cfg.Portal.JWTSecret,
 		cfg.Portal.JWTExpiry,
 		slog.Default(),
 	)
 	dataPrincipalSvc := service.NewDataPrincipalService(
-		repository.NewDataPrincipalProfileRepo(dbPool),
-		repository.NewDPRRequestRepo(dbPool),
+		profileRepo,
+		dprRepo,
 		dsrRepo,
 		consentHistoryRepo,
 		eb,
+		rdb,
 		slog.Default(),
 	)
 	portalHandler := handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc)

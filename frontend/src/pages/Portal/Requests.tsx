@@ -1,14 +1,13 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { portalService } from '../../services/portalService';
 import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
-import { DPRRequestModal } from '../../components/Portal/DPRRequestModal';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { useNavigate } from 'react-router-dom';
 
 const PortalRequests = () => {
-    const [isCreateOpen, setCreateOpen] = useState(false);
-    const { data: requests, isLoading, refetch } = useQuery({
+    const navigate = useNavigate();
+    const { data: requests, isLoading } = useQuery({
         queryKey: ['portal-requests'],
         queryFn: () => portalService.listRequests(),
     });
@@ -20,7 +19,7 @@ const PortalRequests = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">My Requests</h1>
                 <button
-                    onClick={() => setCreateOpen(true)}
+                    onClick={() => navigate('/portal/requests/new')}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                     <Plus size={18} />
@@ -35,7 +34,7 @@ const PortalRequests = () => {
                     <div className="p-12 text-center">
                         <p className="text-gray-500 mb-4">You haven't submitted any requests yet.</p>
                         <button
-                            onClick={() => setCreateOpen(true)}
+                            onClick={() => navigate('/portal/requests/new')}
                             className="text-blue-600 hover:underline font-medium"
                         >
                             Submit your first request
@@ -69,14 +68,6 @@ const PortalRequests = () => {
                 )}
             </div>
 
-            <DPRRequestModal
-                isOpen={isCreateOpen}
-                onClose={() => setCreateOpen(false)}
-                onSuccess={() => {
-                    setCreateOpen(false);
-                    refetch();
-                }}
-            />
         </div>
     );
 };

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/complyark/datalens/internal/domain/compliance"
 	"github.com/complyark/datalens/internal/domain/identity"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -14,6 +15,7 @@ type AdminService struct {
 	tenantRepo identity.TenantRepository
 	userRepo   identity.UserRepository
 	roleRepo   identity.RoleRepository
+	dsrRepo    compliance.DSRRepository
 	tenantSvc  *TenantService
 	logger     *slog.Logger
 }
@@ -23,6 +25,7 @@ func NewAdminService(
 	tenantRepo identity.TenantRepository,
 	userRepo identity.UserRepository,
 	roleRepo identity.RoleRepository,
+	dsrRepo compliance.DSRRepository,
 	tenantSvc *TenantService,
 	logger *slog.Logger,
 ) *AdminService {
@@ -30,6 +33,7 @@ func NewAdminService(
 		tenantRepo: tenantRepo,
 		userRepo:   userRepo,
 		roleRepo:   roleRepo,
+		dsrRepo:    dsrRepo,
 		tenantSvc:  tenantSvc,
 		logger:     logger.With("service", "admin"),
 	}
@@ -104,4 +108,14 @@ func (s *AdminService) AssignRoles(ctx context.Context, userID types.ID, roleIDs
 // Tenant-specific roles are managed by tenant admins.
 func (s *AdminService) ListRoles(ctx context.Context) ([]identity.Role, error) {
 	return s.roleRepo.GetSystemRoles(ctx)
+}
+
+// GetAllDSRs retrieves all DSRs across all tenants.
+func (s *AdminService) GetAllDSRs(ctx context.Context, pagination types.Pagination, status *compliance.DSRStatus, reqType *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
+	return s.dsrRepo.GetAll(ctx, pagination, status, reqType)
+}
+
+// GetDSR retrieves a specific DSR by ID (cross-tenant).
+func (s *AdminService) GetDSR(ctx context.Context, id types.ID) (*compliance.DSR, error) {
+	return s.dsrRepo.GetByID(ctx, id)
 }

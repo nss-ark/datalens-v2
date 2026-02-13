@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/complyark/datalens/internal/domain/compliance"
+	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
@@ -112,6 +113,54 @@ func (m *mockDSRQueue) Subscribe(_ context.Context, _ func(ctx context.Context, 
 }
 
 // =============================================================================
+// Mock DPR Repository (Minimal for sync test)
+// =============================================================================
+
+type mockDPRRepository struct {
+	requests map[types.ID]*consent.DPRRequest
+}
+
+func newMockDPRRepository() *mockDPRRepository {
+	return &mockDPRRepository{
+		requests: make(map[types.ID]*consent.DPRRequest),
+	}
+}
+
+func (m *mockDPRRepository) Create(_ context.Context, r *consent.DPRRequest) error {
+	m.requests[r.ID] = r
+	return nil
+}
+
+func (m *mockDPRRepository) GetByID(_ context.Context, id types.ID) (*consent.DPRRequest, error) {
+	if r, ok := m.requests[id]; ok {
+		return r, nil
+	}
+	return nil, types.NewNotFoundError("DPR", id)
+}
+
+func (m *mockDPRRepository) GetByDSRID(_ context.Context, dsrID types.ID) (*consent.DPRRequest, error) {
+	for _, r := range m.requests {
+		if r.DSRID != nil && *r.DSRID == dsrID {
+			return r, nil
+		}
+	}
+	return nil, types.NewNotFoundError("DPR by DSR", dsrID)
+}
+
+func (m *mockDPRRepository) Update(_ context.Context, r *consent.DPRRequest) error {
+	m.requests[r.ID] = r
+	return nil
+}
+
+// Stubs for interface compliance
+func (m *mockDPRRepository) GetByProfile(_ context.Context, profileID types.ID) ([]consent.DPRRequest, error) {
+	return nil, nil
+}
+func (m *mockDPRRepository) GetByTenant(_ context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[consent.DPRRequest], error) {
+	return nil, nil
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 
@@ -122,7 +171,7 @@ func TestDSRService_CreateDSR_Success(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, newMockDPRRepository(), eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -165,7 +214,7 @@ func TestDSRService_ApproveDSR_Success(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, newMockDPRRepository(), eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -228,7 +277,7 @@ func TestDSRService_RejectDSR_Success(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, newMockDPRRepository(), eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -271,7 +320,7 @@ func TestDSRService_ApproveDSR_InvalidTransition(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, newMockDPRRepository(), eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -304,7 +353,7 @@ func TestDSRService_GetDSRs_WithFilter(t *testing.T) {
 	dsRepo := newMockDataSourceRepo()
 	dsrQueue := newMockDSRQueue()
 	eb := newMockEventBus()
-	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, nil, logger)
+	svc := NewDSRService(dsrRepo, dsRepo, dsrQueue, newMockDPRRepository(), eb, nil, logger)
 
 	tenantID := types.NewID()
 	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
@@ -320,7 +369,7 @@ func TestDSRService_GetDSRs_WithFilter(t *testing.T) {
 
 	// Execute: Filter by PENDING
 	statusFilter := compliance.DSRStatusPending
-	result, err := svc.GetDSRs(ctx, types.Pagination{Page: 1, PageSize: 10}, &statusFilter)
+	result, err := svc.GetDSRs(ctx, types.Pagination{Page: 1, PageSize: 10}, &statusFilter, nil)
 
 	// Verify
 	require.NoError(t, err)
@@ -328,9 +377,69 @@ func TestDSRService_GetDSRs_WithFilter(t *testing.T) {
 	assert.Equal(t, compliance.DSRStatusPending, result.Items[0].Status)
 
 	// Execute: Get all (no filter)
-	resultAll, err := svc.GetDSRs(ctx, types.Pagination{Page: 1, PageSize: 10}, nil)
+	resultAll, err := svc.GetDSRs(ctx, types.Pagination{Page: 1, PageSize: 10}, nil, nil)
 
 	// Verify
 	require.NoError(t, err)
 	assert.Len(t, resultAll.Items, 3)
+}
+
+func TestDSRService_UpdateStatus_WithDPRSync(t *testing.T) {
+	// Setup
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	dsrRepo := newMockDSRRepository()
+	dprRepo := newMockDPRRepository()
+	svc := NewDSRService(dsrRepo, newMockDataSourceRepo(), newMockDSRQueue(), dprRepo, newMockEventBus(), nil, logger)
+
+	tenantID := types.NewID()
+	ctx := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantID)
+
+	// Create DSR
+	dsrID := types.NewID()
+	dsr := &compliance.DSR{
+		ID:          dsrID,
+		TenantID:    tenantID,
+		Status:      compliance.DSRStatusApproved,
+		RequestType: compliance.RequestTypeAccess,
+		UpdatedAt:   time.Now(),
+	}
+	dsrRepo.Create(ctx, dsr)
+
+	// Create Linked DPR
+	dpr := &consent.DPRRequest{
+		BaseEntity: types.BaseEntity{ID: types.NewID()},
+		TenantID:   tenantID,
+		DSRID:      &dsrID,
+		Status:     consent.DPRStatusVerified, // Pending processing
+	}
+	dprRepo.Create(ctx, dpr)
+
+	// Execute Update Status to IN_PROGRESS
+	_, err := svc.UpdateStatus(ctx, dsrID, compliance.DSRStatusInProgress, "Processing started")
+	require.NoError(t, err)
+
+	// Allow goroutine to run
+	time.Sleep(50 * time.Millisecond)
+
+	// Verify DSR updated
+	updatedDSR, _ := dsrRepo.GetByID(ctx, dsrID)
+	assert.Equal(t, compliance.DSRStatusInProgress, updatedDSR.Status)
+	assert.Equal(t, "Processing started", updatedDSR.Notes)
+
+	// Verify DPR synced
+	updatedDPR, _ := dprRepo.GetByID(ctx, dpr.ID)
+	assert.Equal(t, consent.DPRStatusInProgress, updatedDPR.Status)
+
+	// Execute Update Status to COMPLETED
+	_, err = svc.UpdateStatus(ctx, dsrID, compliance.DSRStatusCompleted, "All data sent")
+	require.NoError(t, err)
+
+	time.Sleep(50 * time.Millisecond)
+
+	updatedDSR, _ = dsrRepo.GetByID(ctx, dsrID)
+	assert.Equal(t, compliance.DSRStatusCompleted, updatedDSR.Status)
+
+	updatedDPR, _ = dprRepo.GetByID(ctx, dpr.ID)
+	assert.Equal(t, consent.DPRStatusCompleted, updatedDPR.Status)
+	assert.Equal(t, "All data sent", *updatedDPR.ResponseSummary)
 }

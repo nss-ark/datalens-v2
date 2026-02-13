@@ -1,6 +1,6 @@
 import { api } from './api';
 import type { ApiResponse, PaginatedResponse } from '../types/common';
-import type { Tenant, CreateTenantInput, AdminStats, AdminUser, AdminRole } from '../types/admin';
+import type { Tenant, CreateTenantInput, AdminStats, AdminUser, AdminRole, AdminDSR } from '../types/admin';
 
 export const adminService = {
     // Tenants
@@ -41,6 +41,19 @@ export const adminService = {
 
     async getRoles(): Promise<AdminRole[]> {
         const res = await api.get<ApiResponse<AdminRole[]>>('/admin/roles');
+        return res.data.data;
+    },
+
+    // Compliance / DSRs
+    // Note: This endpoint is assumed to be implemented in Backend Task #2 or future
+    // If it returns 404, we might need to fallback to per-tenant DSRService if possible
+    async getDSRs(params?: { page?: number; limit?: number; status?: string; type?: string; tenant_id?: string }): Promise<PaginatedResponse<AdminDSR>> {
+        const res = await api.get<ApiResponse<PaginatedResponse<AdminDSR>>>('/admin/dsr', { params });
+        return res.data.data;
+    },
+
+    async getDSRById(id: string): Promise<AdminDSR> {
+        const res = await api.get<ApiResponse<AdminDSR>>(`/admin/dsr/${id}`);
         return res.data.data;
     },
 };

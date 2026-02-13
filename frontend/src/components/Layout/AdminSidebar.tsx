@@ -1,12 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import {
-    LayoutDashboard,
     Users,
     Settings,
     Building,
+    Shield,
     ChevronLeft,
     ChevronRight,
-    Shield
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import styles from './Sidebar.module.css'; // Reusing Sidebar styles for now, but we can override colors inline or with a new module
@@ -14,9 +13,9 @@ import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 
 const ADMIN_NAV_ITEMS = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/admin/tenants', label: 'Tenants', icon: Building },
     { to: '/admin/users', label: 'Platform Users', icon: Users },
+    { to: '/admin/compliance/dsr', label: 'DSR Requests', icon: Shield },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

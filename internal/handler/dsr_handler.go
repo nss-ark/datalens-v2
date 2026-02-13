@@ -37,6 +37,7 @@ func (h *DSRHandler) Routes() chi.Router {
 	r.Put("/{id}/reject", h.Reject)
 	r.Get("/{id}/result", h.GetResult)
 	r.Post("/{id}/execute", h.ExecuteManual)
+	r.Patch("/{id}/status", h.UpdateStatus)
 	return r
 }
 
@@ -96,13 +97,50 @@ func (h *DSRHandler) List(w http.ResponseWriter, r *http.Request) {
 		statusFilter = &st
 	}
 
-	result, err := h.service.GetDSRs(r.Context(), types.Pagination{Page: page, PageSize: pageSize}, statusFilter)
+	var typeFilter *compliance.DSRRequestType
+	if t := r.URL.Query().Get("type"); t != "" {
+		rt := compliance.DSRRequestType(t)
+		typeFilter = &rt
+	}
+
+	result, err := h.service.GetDSRs(r.Context(), types.Pagination{Page: page, PageSize: pageSize}, statusFilter, typeFilter)
 	if err != nil {
 		httputil.ErrorFromDomain(w, err)
 		return
 	}
 
 	httputil.JSON(w, http.StatusOK, result)
+}
+
+// UpdateStatus handles PATCH /api/v2/dsr/{id}/status.
+func (h *DSRHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	var req struct {
+		Status compliance.DSRStatus `json:"status"`
+		Notes  string               `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
+		return
+	}
+
+	if req.Status == "" {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "VALIDATION_ERROR", "status is required")
+		return
+	}
+
+	dsr, err := h.service.UpdateStatus(r.Context(), id, req.Status, req.Notes)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, dsr)
 }
 
 // Approve handles PUT /api/v2/dsr/{id}/approve.

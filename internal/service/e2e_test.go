@@ -166,7 +166,7 @@ func TestE2E_ScanDetectFeedbackPipeline(t *testing.T) {
 	auditRepo := newMockAuditRepo()
 	auditSvc := NewAuditService(auditRepo, logger)
 
-	dsrSvc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, auditSvc, logger)
+	dsrSvc := NewDSRService(dsrRepo, dsRepo, dsrQueue, newMockDPRRepository(), eb, auditSvc, logger)
 
 	dsrReq := CreateDSRRequest{
 		RequestType:        compliance.RequestTypeAccess,

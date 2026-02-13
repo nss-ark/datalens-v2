@@ -20,14 +20,12 @@ export default function UserList() {
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
     // Tenants for filter and lookup
-    // In a real app with many tenants, this should be a search-as-you-type dropdown
-    // For V1 we'll fetch the first 100 which covers most use cases
     const { data: tenantsData } = useQuery({
         queryKey: ['admin-tenants-lookup'],
         queryFn: () => adminService.getTenants({ limit: 100 }),
     });
 
-    const tenantMap = new Map(tenantsData?.items.map((t: Tenant) => [t.tenant_id, t.name]));
+    const tenantMap = new Map(tenantsData?.items.map((t: Tenant) => [t.id, t.name]));
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['admin-users', page, pageSize, search, selectedTenant, statusFilter],
@@ -168,7 +166,7 @@ export default function UserList() {
                 >
                     <option value="">All Organizations</option>
                     {tenantsData?.items.map((tenant: Tenant) => (
-                        <option key={tenant.tenant_id} value={tenant.tenant_id}>
+                        <option key={tenant.id} value={tenant.id}>
                             {tenant.name}
                         </option>
                     ))}

@@ -415,7 +415,7 @@ func (s *ConsentService) RecordConsent(ctx context.Context, req RecordConsentReq
 			s.publishEvent(ctx, eventbus.EventConsentGranted, tenantID, map[string]any{
 				"session_id": session.ID.String(),
 				"purpose_id": decision.PurposeID.String(),
-				"subject_id": session.SubjectID.String(),
+				"subject_id": s.resolveSubjectID(session.SubjectID).String(),
 			})
 		}
 	}

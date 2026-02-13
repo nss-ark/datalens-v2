@@ -1,7 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import { usePortalAuthStore } from '../../stores/portalAuthStore';
 import { IdentityCard } from '../../components/Portal/IdentityCard';
 
 const PortalDashboard = () => {
+    const navigate = useNavigate();
     const profile = usePortalAuthStore(state => state.profile);
 
     return (
@@ -37,13 +39,22 @@ const PortalDashboard = () => {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="flex gap-4">
-                    <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                    <button
+                        onClick={() => navigate('/portal/consent')}
+                        className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors"
+                    >
                         Manage Consents
                     </button>
-                    <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors">
-                        Download My Data
+                    <button
+                        onClick={() => navigate('/portal/profile')}
+                        className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors"
+                    >
+                        My Profile
                     </button>
-                    <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                    <button
+                        onClick={() => navigate('/portal/requests/new')}
+                        className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors"
+                    >
                         Submit Request
                     </button>
                 </div>

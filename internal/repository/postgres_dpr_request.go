@@ -202,3 +202,33 @@ func (r *PostgresDPRRequestRepository) Update(ctx context.Context, req *consent.
 	}
 	return nil
 }
+
+// GetByDSRID retrieves a DPRRequest by its linked DSR ID.
+func (r *PostgresDPRRequestRepository) GetByDSRID(ctx context.Context, dsrID types.ID) (*consent.DPRRequest, error) {
+	query := `
+		SELECT
+			id, tenant_id, profile_id, dsr_id, type, description, status,
+			submitted_at, deadline, verified_at, verification_ref, is_minor,
+			guardian_name, guardian_email, guardian_relation, guardian_verified,
+			completed_at, response_summary, download_url, appeal_of, appeal_reason,
+			is_escalated, escalated_to, created_at, updated_at
+		FROM dpr_requests
+		WHERE dsr_id = $1
+	`
+	var req consent.DPRRequest
+	err := r.db.QueryRow(ctx, query, dsrID).Scan(
+		&req.ID, &req.TenantID, &req.ProfileID, &req.DSRID, &req.Type, &req.Description,
+		&req.Status, &req.SubmittedAt, &req.Deadline, &req.VerifiedAt, &req.VerificationRef,
+		&req.IsMinor, &req.GuardianName, &req.GuardianEmail, &req.GuardianRelation,
+		&req.GuardianVerified, &req.CompletedAt, &req.ResponseSummary, &req.DownloadURL,
+		&req.AppealOf, &req.AppealReason, &req.IsEscalated, &req.EscalatedTo,
+		&req.CreatedAt, &req.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, types.NewNotFoundError("DPR request not found for DSR", dsrID)
+		}
+		return nil, fmt.Errorf("get DPR by dsr_id: %w", err)
+	}
+	return &req, nil
+}

@@ -505,12 +505,17 @@
 - [x] Test: Batch 17A Integration Tests (Admin Service & Middleware)
 
 ### Batch 18: DPR Completion (Data Principal Rights)
-- [ ] Implement `DPRRequest` repository and service logic
-- [ ] Build DPR public API: `POST /api/public/dpr/requests` (verify identity + submit)
-- [ ] Build DPR status API: `GET /api/public/dpr/requests/{id}`
-- [ ] Implement Request Workflow (Submitted -> Verified -> In Progress -> Completed)
-- [ ] Implement "Guardian Consent" flow for minors (DPDPA Section 9)
-- [ ] Build internal API for processing requests (Approve/Reject/Respond)
+- [x] Backend: Guardian Consent Flow (Section 9) — OTP-based guardian verification for minors
+- [x] Backend: Admin DSR Workflow API — UpdateStatus with DPR sync, state machine transitions
+- [x] Frontend: Public Portal UI — RequestNew, GuardianVerifyModal, Dashboard quick actions
+- [x] Frontend: Admin DSR Management UI — DSRList, DSRDetail with Approve/Reject
+- [ ] **Gap**: Cross-tenant `GET /api/v2/admin/dsr` endpoint (Frontend ready, Backend needs AdminHandler route)
+
+### Batch 18.1: Admin DSR Endpoint Patch
+- [ ] Backend: Add `GetAll` to `DSRRepository` (Cross-tenant)
+- [ ] Backend: Add `GetAllDSRs` and `GetDSR` to `AdminService`
+- [ ] Backend: Add `GET /admin/dsr` and `GET /admin/dsr/{id}` to `AdminHandler`
+- [ ] Test: Verify Admin can see DSRs from multiple tenants
 
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
 - [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal

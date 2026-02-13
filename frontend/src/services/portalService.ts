@@ -98,5 +98,14 @@ export const portalService = {
 
     async submitGrievanceFeedback(id: string, rating: number, comment?: string): Promise<void> {
         await portalApi.post(`/public/portal/grievance/${id}/feedback`, { rating, comment });
+    },
+
+    // --- Guardian Verification ---
+    async initiateGuardianVerify(contact: string): Promise<void> {
+        await portalApi.post('/public/portal/guardian/verify-init', { contact });
+    },
+
+    async verifyGuardian(code: string): Promise<void> {
+        await portalApi.post('/public/portal/guardian/verify', { code });
     }
 };

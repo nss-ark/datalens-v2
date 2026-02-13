@@ -141,6 +141,82 @@ func (r *DSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination
 	}, nil
 }
 
+// GetAll lists DSRs across all tenants with pagination and optional filtering.
+func (r *DSRRepo) GetAll(ctx context.Context, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
+	baseQuery := `FROM dsr_requests WHERE 1=1`
+	args := []any{}
+	argIdx := 1
+
+	if statusFilter != nil {
+		baseQuery += fmt.Sprintf(` AND status = $%d`, argIdx)
+		args = append(args, *statusFilter)
+		argIdx++
+	}
+
+	if typeFilter != nil {
+		baseQuery += fmt.Sprintf(` AND request_type = $%d`, argIdx)
+		args = append(args, *typeFilter)
+		argIdx++
+	}
+
+	// Count total
+	countQuery := `SELECT COUNT(*) ` + baseQuery
+	var total int
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, fmt.Errorf("count all dsr: %w", err)
+	}
+
+	// Fetch items
+	offset := (pagination.Page - 1) * pagination.PageSize
+	query := fmt.Sprintf(`
+		SELECT id, tenant_id, request_type, status,
+		       subject_name, subject_email, subject_identifiers,
+		       priority, sla_deadline, assigned_to, reason, notes,
+		       created_at, updated_at, completed_at
+		%s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d`, baseQuery, argIdx, argIdx+1)
+
+	args = append(args, pagination.PageSize, offset)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list all dsr: %w", err)
+	}
+	defer rows.Close()
+
+	var items []compliance.DSR
+	for rows.Next() {
+		var dsr compliance.DSR
+		if err := rows.Scan(
+			&dsr.ID, &dsr.TenantID, &dsr.RequestType, &dsr.Status,
+			&dsr.SubjectName, &dsr.SubjectEmail, &dsr.SubjectIdentifiers,
+			&dsr.Priority, &dsr.SLADeadline, &dsr.AssignedTo, &dsr.Reason, &dsr.Notes,
+			&dsr.CreatedAt, &dsr.UpdatedAt, &dsr.CompletedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan dsr: %w", err)
+		}
+		items = append(items, dsr)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	totalPages := total / pagination.PageSize
+	if total%pagination.PageSize > 0 {
+		totalPages++
+	}
+
+	return &types.PaginatedResult[compliance.DSR]{
+		Items:      items,
+		Total:      total,
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
+		TotalPages: totalPages,
+	}, nil
+}
+
 // GetOverdue returns DSRs that have passed their SLA deadline and are still pending.
 func (r *DSRRepo) GetOverdue(ctx context.Context, tenantID types.ID) ([]compliance.DSR, error) {
 	query := `

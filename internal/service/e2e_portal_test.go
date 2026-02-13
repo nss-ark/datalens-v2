@@ -73,7 +73,7 @@ func TestE2E_PortalFlow(t *testing.T) {
 	auditRepo := newMockAuditRepo()
 	auditSvc := NewAuditService(auditRepo, logger)
 
-	dsrSvc := NewDSRService(dsrRepo, dsRepo, dsrQueue, eb, auditSvc, logger)
+	dsrSvc := NewDSRService(dsrRepo, dsRepo, dsrQueue, newMockDPRRepository(), eb, auditSvc, logger)
 
 	// =========================================================================
 	// Step 1: Initiate Login (Request OTP)
