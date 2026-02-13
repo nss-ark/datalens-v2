@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/complyark/datalens/internal/domain/consent"
+	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -120,7 +121,7 @@ func TestConsentWithdrawal_EventEmitted(t *testing.T) {
 
 	// Verify event
 	require.Len(t, eventBus.Events, 1)
-	assert.Equal(t, "consent.withdrawn", eventBus.Events[0].Type)
+	assert.Equal(t, eventbus.EventConsentWithdrawn, eventBus.Events[0].Type)
 	data := eventBus.Events[0].Data.(map[string]any)
 	assert.Equal(t, subjectID.String(), data["subject_id"])
 	assert.Equal(t, purposeID.String(), data["purpose_id"])

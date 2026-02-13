@@ -484,3 +484,44 @@ Frontend lives in the `frontend/` subdirectory.
 7. Run `npm run build` and `npm run lint` to verify
 8. **Post in `AGENT_COMMS.md`** — what you built, verification results, what Test/Backend need to know
 9. Report back with: what you created (file paths), what compiles, and any notes
+
+---
+
+## UX Fix Sprint Protocol
+
+When receiving a task spec from a **UI/UX Review** session, follow this approach:
+
+### Input Format
+You will receive a prioritized list of issues, each with:
+- **Severity**: 🔴 Critical, 🟠 High, 🟡 Medium, 🟢 Low
+- **Screen**: Route and component name
+- **Category**: Layout, Typography, Colors, Components, States, Navigation, etc.
+- **Description**: What's wrong
+- **Recommendation**: Specific fix suggestion
+
+### Fix Order
+1. **🔴 Critical first** — broken functionality, impossible workflows
+2. **🟠 High next** — missing states, confusing flows, accessibility
+3. **🟡 Medium if time** — visual polish, minor inconsistencies
+4. Group fixes by component/file to minimize context switching
+
+### Common Fix Patterns
+
+| Issue Type | Fix Approach |
+|------------|--------------|
+| **Missing empty state** | Add conditional render when `data.length === 0` with icon + message + CTA button |
+| **Missing loading state** | Add `isLoading` check → render skeleton or spinner before data arrives |
+| **Missing error state** | Add `isError` check → render error message with retry button |
+| **Inconsistent button styles** | Replace with shared `Button` component from `components/common/` |
+| **No back button on detail pages** | Add breadcrumb or `← Back` link using `useNavigate()` |
+| **Missing form validation** | Add inline validation messages under each field, red border on error |
+| **Poor responsive layout** | Use CSS Grid or Flexbox with breakpoints in CSS Modules |
+| **Accessibility: missing labels** | Add `aria-label`, `<label htmlFor>`, and `role` attributes |
+| **Sidebar active state incorrect** | Check `NavLink` `to` prop matches the current route pattern |
+
+### Verification After Fixes
+1. `npm run build` — must compile
+2. `npm run lint` — must pass
+3. For each fixed issue, note the file and what changed
+4. Post summary to `AGENT_COMMS.md` referencing which review issues were addressed
+

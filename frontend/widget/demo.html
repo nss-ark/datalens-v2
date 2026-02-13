@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataLens Consent Widget Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+    </style>
+    <!-- Placeholder for widget script -->
+    <!-- Ideally, this would point to the built script in dist/ -->
+    <script type="module" src="/src/index.ts"></script>
+</head>
+
+<body>
+    <div class="content">
+        <h1>Welcome to Acme Corp</h1>
+        <p>This is a demo page to test the embeddable consent widget.</p>
+
+        <h2>Simulated Environment</h2>
+        <p>Widget ID: <code id="widget-id">wdg_demo_123</code></p>
+        <p>API Base: <code id="api-base">http://localhost:8080</code></p>
+
+        <button onclick="DataLensConsent.show()">Open Consent Settings</button>
+        <button onclick="DataLensConsent.reset()">Reset Consent</button>
+
+        <script>
+            // Simulate initialization
+            // In a real scenario, this happens automatically or via customer script
+            window.addEventListener('load', () => {
+                if (window.DataLensConsent) {
+                    DataLensConsent.init({
+                        widgetId: 'wdg_demo_123',
+                        apiBase: 'http://localhost:8080',
+                        debug: true
+                    });
+                }
+            });
+        </script>
+    </div>
+</body>
+
+</html>

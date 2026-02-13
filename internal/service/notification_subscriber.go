@@ -52,8 +52,8 @@ func (s *NotificationSubscriber) Start(ctx context.Context) error {
 
 	// Breach events
 	breachTopics := []string{
-		"breach.incident_created",
-		"breach.incident_updated",
+		eventbus.EventBreachIncidentCreated,
+		eventbus.EventBreachIncidentUpdated,
 	}
 	for _, topic := range breachTopics {
 		if _, err := s.eventBus.Subscribe(ctx, topic, s.handleBreachEvent); err != nil {
@@ -166,12 +166,12 @@ func (s *NotificationSubscriber) handleBreachEvent(ctx context.Context, event ev
 		shouldNotify = true
 	}
 
-	if event.Type == "breach.incident_created" {
+	if event.Type == eventbus.EventBreachIncidentCreated {
 		if shouldNotify {
 			s.logger.Info("triggering breach notification for created incident", "id", incident.ID)
 			return s.breachService.NotifyDataPrincipals(ctx, incident.ID)
 		}
-	} else if event.Type == "breach.incident_updated" {
+	} else if event.Type == eventbus.EventBreachIncidentUpdated {
 		if shouldNotify {
 			s.logger.Info("triggering breach notification for updated incident (potential escalation)", "id", incident.ID)
 			return s.breachService.NotifyDataPrincipals(ctx, incident.ID)

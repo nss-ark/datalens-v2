@@ -40,7 +40,7 @@ func (s *ConsentCacheSubscriber) Start(ctx context.Context) error {
 	topics := []string{
 		eventbus.EventConsentGranted,
 		eventbus.EventConsentWithdrawn,
-		"consent.expired", // Hardcoded as it might not be in eventbus package yet
+		eventbus.EventConsentExpired,
 		"consent.renewed",
 	}
 
@@ -129,7 +129,7 @@ func (s *ConsentCacheSubscriber) handleEvent(ctx context.Context, event eventbus
 			s.logger.Error("failed to invalidate subject cache", "error", err)
 		}
 
-	case "consent.expired":
+	case eventbus.EventConsentExpired:
 		// Expiry might be specific purpose
 		if purposeIDStr != "" {
 			purposeID, err := types.ParseID(purposeIDStr)

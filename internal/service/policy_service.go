@@ -70,7 +70,7 @@ func (s *PolicyService) CreatePolicy(ctx context.Context, p *governance.Policy) 
 
 	s.auditService.Log(ctx, userID, "POLICY_CREATE", "POLICY", p.ID, nil, map[string]any{"name": p.Name, "type": p.Type}, tenantID)
 
-	event := eventbus.NewEvent("governance.policy_created", "governance", tenantID, p)
+	event := eventbus.NewEvent(eventbus.EventGovernancePolicyCreated, "governance", tenantID, p)
 	if err := s.eventBus.Publish(ctx, event); err != nil {
 		s.logger.Error("failed to publish policy created event", "error", err)
 		// We don't fail the request if event publishing fails, just log it

@@ -535,6 +535,26 @@
 - [x] Backend: Add `GET /admin/dsr` and `GET /admin/dsr/{id}` to `AdminHandler`
 - [x] Test: Verify Admin can see DSRs from multiple tenants
 
+### Batch 20: Enterprise Scale ✅
+- [x] **Frontend**: Vanilla JS Consent Widget Bundle (~11.5KB, framework-agnostic) (Batch 20)
+  - [x] Separate build target (`frontend/widget/`, Vite IIFE output)
+  - [x] DOM rendering for 5 layout types (bottom bar, top bar, modal, sidebar, full page)
+  - [x] Consent capture via `/api/public/consent/sessions`
+  - [x] Cookie persistence (`_dl_consent`), theming (`ThemeConfig`), multi-language
+- [x] **Backend**: Event Mesh Refactoring (Batch 20)
+  - [x] Typed event catalog — 15 new constants in `pkg/eventbus/eventbus.go`
+  - [x] Refactored 9 services + 2 subscribers to use catalog constants
+  - [x] Zero inline event strings remaining (`findstr` verified)
+
+### Batch 20A: UI/UX Review Sprint
+- [ ] Session 1: Auth + Dashboard + Discovery (8 screens)
+- [ ] Session 2: Compliance Part 1 — DSR, Notices, Widgets (6 screens)
+- [ ] Session 3: Compliance Part 2 — Analytics, Breach, Notifications (8 screens)
+- [ ] Session 4: Governance + Settings + Portal (10 screens)
+- [ ] Session 5: Admin Portal + Cross-Cutting Audit (5+ screens)
+- [ ] Fix sprint: Implement prioritized fixes from review findings
+- [ ] Re-review: Verify fixes meet standards
+
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
 - [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal
 - [ ] Data Retention Policy Configuration
@@ -575,4 +595,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 13, 2026 — Batch 19 (Breach UI, Cloud Config, Notifications) planned; Next: Execute Task Specs #1–#5
+> **Last Updated**: February 13, 2026 — Batch 20 (Enterprise Scale) complete; Next: Batch 20A (UI/UX Review Sprint)

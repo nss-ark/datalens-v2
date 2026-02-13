@@ -29,38 +29,41 @@
 | **Admin DSR UI** | Frontend | [x] | Approve/Reject UI |
 | **Portal UI** | Frontend | [x] | Dashboard, Request New, Identity Card |
 
+## Batch 19 Completion (Breach UI, Cloud Config, Notifications) ✅
+| Goal | Owner | Status | Details |
+|------|-------|--------|---------|
+| **Breach UI Integration** | Frontend | [x] | Routes + Sidebar + BreachDetail/Create/Edit pages |
+| **Cloud Data Source Config UI** | Frontend | [x] | M365 + Google Workspace with OAuth popup flow |
+| **Breach Notifications (DPDPA §28)** | Backend | [x] | Event subscriber + manual `POST /breach/{id}/notify` |
+| **Batch 18–19 Tests** | Test | [x] | Guardian, Admin DSR, Breach notification — all passing |
+
+## Batch 20 Completion (Enterprise Scale) ✅
+| Goal | Owner | Status | Details |
+|------|-------|--------|---------|
+| **Vanilla JS Consent Widget** | Frontend | [x] | ~11.5KB IIFE bundle, 5 layouts, cookie persistence, theming |
+| **Event Mesh Refactoring** | Backend | [x] | 15 new constants, 9 services + 2 subscribers refactored |
+
 ## Active Messages
 ### [2026-02-13] [FROM: Orchestrator] → [TO: ALL]
-**Subject**: Batch 19 — Breach UI Integration, Cloud Config UI & Breach Notifications
+**Subject**: Batch 20A — UI/UX Review Sprint Starting
 **Type**: ANNOUNCEMENT
 
 **Status**:
-- Batch 18.1 (Admin DSR Patch) is **COMPLETE**.
-- M365, Google Workspace, and Breach **backend already implemented** (Batches 9–11).
-- Batch 19 focuses on **Frontend integration** and **DPDPA §28 compliance**.
+- Batch 20 is **COMPLETE** — both tasks verified.
+- Starting **Batch 20A**: Systematic UI/UX review sprint across all 3 portals.
 
-**Focus**:
-- **Breach UI Integration**: Wire existing components into routing/sidebar, create Detail + Create pages.
-- **Cloud Data Source Config UI**: M365 & Google Workspace config in DataSource form with full OAuth popup flow.
-- **Breach Data Principal Notification**: DPDPA §28 — notify affected individuals on HIGH/CRITICAL breaches.
-- **Integration Tests**: Guardian flow, Admin DSR, Breach notification (7 tests total).
+**Process**:
+- **UX Review Agent** (`ux-review-agent.md`) guides the review
+- Human navigates the running app, provides screenshots and observations
+- Orchestrator converts findings into fix task specs for Frontend/Backend agents
+- 5 review sessions covering 36+ screens, followed by a fix sprint
 
-**Execution Plan**:
-- **Step 1 (PARALLEL)**:
-  - **Task #1 (Frontend, P0)**: Breach UI — Routes + Sidebar + Detail Page + Create Page.
-  - **Task #2 (Frontend, P1)**: Cloud Data Source Config UI (M365/Google OAuth popup).
-  - **Task #3 (Backend, P1)**: Breach Data Principal Notification (event subscriber + manual endpoint).
-- **Step 2 (DEPENDS ON Step 1)**:
-  - **Task #4 (Test, P1)**: Integration Tests — Guardian, Admin DSR, Breach Notification (7 tests).
-- **After all**: Task #5 (Orchestrator): Update trackers.
-
-**Priorities**:
-- **P0**: Breach UI Integration (components exist but unreachable).
-- **P1**: Cloud Config UI, Breach Notification, Tests.
-
-**Notes**:
-- Incident timeline on Detail page is a **stretch goal** — nice-to-have, not required.
-- Cloud OAuth uses **full popup flow** (not manual URL copy).
+**Session Plan**:
+1. Auth + Dashboard + Discovery (8 screens)
+2. Compliance Part 1 — DSR, Notices, Widgets (6 screens)
+3. Compliance Part 2 — Analytics, Breach, Notifications (8 screens)
+4. Governance + Settings + Portal (10 screens)
+5. Admin Portal + Cross-Cutting Audit (5+ screens)
 
 ### [2026-02-13] [FROM: Backend] → [TO: ALL]
 **Subject**: Admin DSR Patch Complete
@@ -551,3 +554,17 @@
 **Action Required**:
 - **Test**: Verify High/Critical breach creation triggers notification logic (check logs, as email is stubbed).
 - **Frontend**: Can add "Notify Affected Users" button on Breach Detail page.
+
+### [2026-02-13] [FROM: Backend] → [TO: ALL]
+**Subject**: Event Mesh Refactoring Complete
+**Type**: STATUS_UPDATE
+
+**Changes**:
+- **Event Bus**: Centralized event constants in `pkg/eventbus/eventbus.go`.
+- **Services**: Refactored 9 services and 2 subscribers to use typed constants.
+- **Testing**: Verified no inline event strings remain.
+
+**Notes**:
+- Added constants for Breach, Grievance, Translation, DSR, DPR, and Governance events.
+- All tests passing.
+

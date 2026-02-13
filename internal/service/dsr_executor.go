@@ -241,7 +241,7 @@ func (e *DSRExecutor) executeAccessRequest(ctx context.Context, dsr *compliance.
 	}
 
 	// Emit event
-	e.eventBus.Publish(ctx, eventbus.NewEvent("dsr.data_accessed", "dsr_executor", dsr.TenantID, map[string]any{
+	e.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventDSRDataAccessed, "dsr_executor", dsr.TenantID, map[string]any{
 		"dsr_id":         dsr.ID,
 		"data_source_id": ds.ID,
 		"entities_count": len(accessResults),
@@ -272,7 +272,7 @@ func (e *DSRExecutor) executeErasureRequest(ctx context.Context, dsr *compliance
 		e.logger.InfoContext(ctx, "manual deletion required", "dsr_id", dsr.ID, "data_source_id", ds.ID)
 
 		// Emit event
-		e.eventBus.Publish(ctx, eventbus.NewEvent("dsr.manual_deletion_required", "dsr_executor", dsr.TenantID, map[string]any{
+		e.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventDSRManualDeletionRequired, "dsr_executor", dsr.TenantID, map[string]any{
 			"dsr_id":         dsr.ID,
 			"data_source_id": ds.ID,
 			"reason":         "Data Source configured for manual deletion",
@@ -350,7 +350,7 @@ func (e *DSRExecutor) executeErasureRequest(ctx context.Context, dsr *compliance
 	}
 
 	// Emit deletion event
-	e.eventBus.Publish(ctx, eventbus.NewEvent("dsr.data_deleted", "dsr_executor", dsr.TenantID, map[string]any{
+	e.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventDSRDataDeleted, "dsr_executor", dsr.TenantID, map[string]any{
 		"dsr_id":         dsr.ID,
 		"data_source_id": ds.ID,
 		"entities_count": len(entityFields),

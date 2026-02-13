@@ -124,6 +124,78 @@ Platform-wide administration for platform operators.
 
 ---
 
+## Deep-Dive Expectations by Screen Type
+
+For each screen type, ask the human to perform these specific interactions. Don't just look at the default state — **systematically test every state and edge case**.
+
+### Dashboard Screens (`/dashboard`, `/admin`)
+- Check: Do stat cards show real data or hardcoded placeholders?
+- Check: Does the chart render correctly with 0 data points?
+- Check: Are stat card values formatted? (e.g., "1,234" not "1234", "2.5K" not "2500")
+- Ask the human: "Does the page feel scannable in 5 seconds? Can you tell what's most important?"
+- Ask: "Resize to 768px — do the stat cards stack or overflow?"
+
+### List/Table Pages (`/datasources`, `/dsr`, `/consent`, `/breach`, etc.)
+- Check: What happens with 0 rows? Is there a helpful empty state with a CTA ("Add your first…")?
+- Check: Is pagination visible? What happens with exactly 1 page of results?
+- Check: Do filters actually work? (Ask human to try each filter)
+- Check: Sorting arrows — are they visible? Do they toggle correctly?
+- Check: Long text in table cells — is it truncated with ellipsis or does it break layout?
+- Check: Action buttons in rows — do they have tooltips?
+- Ask: "Does each row have a clear clickable target to navigate to the detail page?"
+
+### Detail Pages (`/dsr/:id`, `/breach/:id`, etc.)
+- Check: Is there a back button or breadcrumb to return to the list?
+- Check: Status transitions — what actions are available? Are they contextual?
+- Check: Read-only vs editable fields — is it clear what can be changed?
+- Check: SLA/deadline indicators — is the urgency visually clear?
+- Ask: "If you were a compliance officer seeing this for the first time, would you know what to do next?"
+
+### Form Pages (`/breach/new`, `/datasources` add/edit, etc.)
+- Check: Submit an empty form — do validation errors appear on ALL required fields?
+- Check: Validation message placement — inline (next to field) or at the top?
+- Check: Does the form disable the submit button while submitting?
+- Check: After successful submit — is there a success toast and redirect?
+- Check: Cancel button — does it ask for confirmation if the form is dirty?
+- Ask: "Fill in a long value in each text field — does anything overflow?"
+
+### Modal Dialogs (various)
+- Check: Can you close with Escape key?
+- Check: Is the backdrop clickable to dismiss?
+- Check: Focus trap — can you Tab outside the modal?
+- Check: Is the modal scrollable if content exceeds viewport?
+
+### Key Compliance Workflows (Priority: CRITICAL)
+These represent the core value proposition — a DPO must be able to do these without training:
+1. **Submit a DSR** → Is the flow clear from list → create → confirm → track status?
+2. **Report a breach** → Is the creation form understandable? Is SLA/urgency clear?
+3. **Manage consent** → Can you create a notice, create a widget, preview it?
+4. **View data subject info** → Can you find where specific PII is stored (PII inventory → lineage)?
+5. **Portal experience** → Can a citizen log in, see their data, make a request?
+
+## How to Work With the Human Reviewer
+
+You cannot see the application directly. The human is your eyes. To be effective:
+
+1. **Ask specific questions**, not generic ones:
+   - ❌ "Does it look good?"  
+   - ✅ "Is the sidebar's 'Breach Management' link highlighted when you're on `/breach`?"
+   - ✅ "What happens when you click Submit with all fields empty?"
+   - ✅ "Is there a loading skeleton while the table loads, or does it flash?"
+
+2. **Request specific screenshots** for comparison:
+   - "Screenshot of the DSR list page with 5+ items"
+   - "Screenshot of the same page with 0 items"
+   - "Screenshot at 768px width"
+
+3. **Ask the human for their gut reaction** at the start of each screen:
+   - "What's your first impression? What jumps out as needing work?"
+   - Their instinct is valuable — it reveals what a real user would notice.
+
+4. **Probe the human for context** about their vision:
+   - "How do you want this page to feel? More minimal or more data-rich?"
+   - "Is this workflow too many clicks? Would you rather have inline editing?"
+
 ## Review Session Protocol
 
 ### Before Starting

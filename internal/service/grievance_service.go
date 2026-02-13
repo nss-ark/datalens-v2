@@ -81,7 +81,7 @@ func (s *GrievanceService) SubmitGrievance(ctx context.Context, req CreateGrieva
 		return nil, fmt.Errorf("create grievance: %w", err)
 	}
 
-	s.eventBus.Publish(ctx, eventbus.NewEvent("compliance.grievance_submitted", "compliance", tenantID, grievance))
+	s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventGrievanceSubmitted, "compliance", tenantID, grievance))
 	return grievance, nil
 }
 
@@ -108,7 +108,7 @@ func (s *GrievanceService) AssignGrievance(ctx context.Context, id types.ID, ass
 		return fmt.Errorf("assign grievance: %w", err)
 	}
 
-	s.eventBus.Publish(ctx, eventbus.NewEvent("compliance.grievance_assigned", "compliance", tenantID, g))
+	s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventGrievanceAssigned, "compliance", tenantID, g))
 	return nil
 }
 
@@ -137,7 +137,7 @@ func (s *GrievanceService) ResolveGrievance(ctx context.Context, id types.ID, re
 		return fmt.Errorf("resolve grievance: %w", err)
 	}
 
-	s.eventBus.Publish(ctx, eventbus.NewEvent("compliance.grievance_resolved", "compliance", tenantID, g))
+	s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventGrievanceResolved, "compliance", tenantID, g))
 	return nil
 }
 
@@ -164,7 +164,7 @@ func (s *GrievanceService) EscalateGrievance(ctx context.Context, id types.ID, a
 		return fmt.Errorf("escalate grievance: %w", err)
 	}
 
-	s.eventBus.Publish(ctx, eventbus.NewEvent("compliance.grievance_escalated", "compliance", tenantID, g))
+	s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventGrievanceEscalated, "compliance", tenantID, g))
 	return nil
 }
 

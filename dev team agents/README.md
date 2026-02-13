@@ -6,7 +6,7 @@ This folder contains the prompt files and coordination tools for the DataLens 2.
 
 **Model**: Hub-and-Spoke with shared communication board
 **Router**: Human (you) — copies task specs to agent chats and routes results back
-**Last Updated**: February 11, 2026 (post-Batch 4)
+**Last Updated**: February 13, 2026 (post-Batch 19)
 
 ---
 
@@ -20,6 +20,7 @@ This folder contains the prompt files and coordination tools for the DataLens 2.
 | 🤖 **AI/ML** | [`ai-ml-agent.md`](./ai-ml-agent.md) | PII detection, LLM integration, purpose suggestion |
 | 🧪 **Test** | [`test-agent.md`](./test-agent.md) | Unit tests, integration tests, E2E tests |
 | 🚀 **DevOps** | [`devops-agent.md`](./devops-agent.md) | Docker, CI/CD, K8s, observability |
+| 🎨 **UX Review** | [`ux-review-agent.md`](./ux-review-agent.md) | Screen-by-screen UI/UX review, accessibility, consistency |
 
 ## Communication
 
@@ -31,22 +32,27 @@ This folder contains the prompt files and coordination tools for the DataLens 2.
 
 ## Current Sprint Progress
 
-### ✅ Completed (Batches 1–4)
+### ✅ Completed (Batches 1–19)
 - Infrastructure: monorepo, Docker, CI/CD, NATS, PostgreSQL, Redis
 - Auth: JWT + refresh tokens, API keys, RBAC, tenant isolation
-- Data Discovery: 4 connectors (PostgreSQL, MySQL, MongoDB, S3), async scanning, scheduling
-- AI/ML: AI Gateway (OpenAI, Anthropic, generic), PII detection pipeline, industry templates
-- DSR Engine: entity, state machine, executor (access, erasure, correction), parallel execution
-- Frontend: 7 pages, 14 components, React Query, Zustand auth store
-- Tests: 10+ test files, compile-verified
+- Data Discovery: 7 connectors (PostgreSQL, MySQL, MongoDB, S3, M365, Google, REST)
+- AI/ML: AI Gateway (OpenAI, Anthropic, generic), PII detection, industry templates, dark pattern detection
+- DSR Engine: state machine, executor (access/erasure/correction), auto-verification
+- Consent Engine: widget CRUD, sessions, notices, expiry/renewal, public APIs, analytics
+- Portal: OTP auth, DPR submission, consent history, guardian flow, grievances
+- Governance: purpose mapping, policy engine, violations, data lineage
+- Security: breach management (DPDPA §28), identity verification (DigiLocker), encryption, audit logging
+- Superadmin: tenant/user management, cross-tenant DSR, platform stats
+- Translation: IndicTrans2 pipeline, 22 languages
+- Notifications: email/webhook channels, event-driven breach alerts
+- Frontend: 36+ pages, 25+ components, 3 portals (Control Centre, Portal, Admin)
+- Tests: 20+ test files, integration + unit + E2E
 
-### 🔜 Next Up (Batches 5–8)
+### 🔜 Next Up
 | Batch | Focus | Key Deliverables |
 |-------|-------|-----------------|
-| **5** | Consent Engine | Widget CRUD, consent session capture, embeddable JS snippet, consent UI |
-| **6** | Data Principal Portal | OTP verification, portal UI, DPR submission, guardian consent |
-| **7** | Purpose Mapping & Governance | AI purpose suggestion, sector templates, policy engine |
-| **8** | Polish & Enterprise | DSR auto-verification, identity matching, observability, E2E tests |
+| **20** | Enterprise Scale | Vanilla JS Widget Bundle, Event Mesh Refactoring |
+| **20A** | UI/UX Review Sprint | Screen-by-screen review of all 3 portals, fixes based on feedback |
 
 ---
 

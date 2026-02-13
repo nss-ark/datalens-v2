@@ -159,12 +159,24 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - **Security Fix**: Fixed IDOR in `DSRService` (strict tenant checks for non-admins)
 - **Portal UI**: Dashboard, Request New, Identity Card, Guardian Verification
 
+#### Breach UI & Cloud Config (Batch 19)
+- **Breach UI Integration**: Routes (`/breach`, `/breach/new`, `/breach/:id`, `/breach/:id/edit`), Sidebar link, BreachDetail + BreachCreate + BreachEdit pages
+- **Cloud Data Source Config UI**: M365 + Google Workspace added to DataSource form with full OAuth popup flow
+- **Breach Notifications (DPDPA §28)**: Event subscriber for HIGH/CRITICAL breaches, `POST /breach/{id}/notify` manual trigger, `NotifyDataPrincipals` via NotificationService
+- **Batch 18–19 Tests**: Guardian flow, Admin DSR, Breach notification (all passing)
+
+#### Enterprise Scale (Batch 20)
+- **Vanilla JS Consent Widget**: Standalone ~11.5KB IIFE bundle (`frontend/widget/dist/consent.min.js`) — pure DOM, 5 layouts, cookie persistence, theming, multi-language
+- **Event Mesh Refactoring**: 15 new constants in `pkg/eventbus/eventbus.go`, 9 services + 2 subscribers refactored, zero inline string events remaining
+
 
 ### Known Technical Debt ⚠️
 1.  **Integration Tests**: CI pipeline integration needs final polish for Docker-in-Docker.
-2.  **Consent Widget Bundle**: Vanilla JS bundle not built yet — widget frontend is React-only.
-3.  ~~**Consent Notifications**~~: ✅ Resolved in Batch 16
-4.  ~~**Translation Pipeline**~~: ✅ Resolved in Batch 16
+2.  ~~**Consent Widget Bundle**~~: ✅ Resolved in Batch 20 — `frontend/widget/dist/consent.min.js` (~11.5KB)
+3.  ~~**Event Strings**~~: ✅ Resolved in Batch 20 — all events use `eventbus.Event*` constants
+4.  ~~**Consent Notifications**~~: ✅ Resolved in Batch 16
+5.  ~~**Translation Pipeline**~~: ✅ Resolved in Batch 16
+6.  ~~**Breach UI Not Integrated**~~: ✅ Resolved in Batch 19
 
 ### Deferred Items (Not Planned Yet) 📋
 - ~~**RBAC / User Role Management**~~ → ✅ Phase 1 done (Batch 17A); Phase 2 user management in Batch 17B
@@ -185,20 +197,12 @@ All consent domain entities from `internal/domain/consent/entities.go` are now i
 
 ## Next Roadmap Batches
 
-### Batch 19: Cloud Integrations & Breach Management ← NEXT
+### Batch 20A: UI/UX Review Sprint ← NEXT
 | Task | Agent | Priority | Notes |
 |------|-------|----------|---------|
-| M365 Connector (Graph API) | Backend | P0 | OneDrive, SharePoint, Outlook |
-| Google Workspace Connector | Backend | P0 | Drive, Gmail |
-| Breach Management Module | Backend | P1 | Incident lifecycle, SLA (DPDPA §28) |
-| Breach UI | Frontend | P1 | Incident reporting & dashboard |
-
-### Batch 20: Enterprise Scale
-| Task | Agent | Priority | Notes |
-|------|-------|----------|---------|
-| Event Mesh Refactoring | Backend | P1 | Decouple monolith |
-| Redis Consent Cache + Enforcement Middleware | Backend | P0 | <50ms consent checks |
-| Vanilla JS Widget Bundle | Frontend | P1 | Framework-agnostic embeddable widget |
+| Screen-by-screen review (5 sessions) | UX Review + Human | P0 | Cover all 3 portals (36+ screens) |
+| Fix sprint from review findings | Frontend + Backend | P0 | Prioritized by severity |
+| Re-review verification | UX Review | P1 | Verify fixes meet standards |
 
 
 ---

@@ -165,11 +165,10 @@ func (r *PostgresDataPrincipalProfileRepository) ListByTenant(ctx context.Contex
 	}
 
 	return &types.PaginatedResult[consent.DataPrincipalProfile]{
-		Items:       items,
-		Total:       total,
-		Page:        pagination.Page,
-		PageSize:    pagination.PageSize,
-		TotalPages:  (total + pagination.PageSize - 1) / pagination.PageSize,
-		HasNextPage: total > offset+pagination.PageSize,
+		Items:      items,
+		Total:      total,
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
+		TotalPages: (total + pagination.PageSize - 1) / pagination.PageSize,
 	}, nil
 }

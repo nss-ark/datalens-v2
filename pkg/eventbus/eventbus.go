@@ -98,6 +98,32 @@ const (
 	EventUserRegistered = "user.registered"
 	EventUserLoggedIn   = "user.logged_in"
 	EventTenantCreated  = "tenant.created"
+
+	// Breach Events (Additional)
+	EventBreachIncidentCreated = "breach.incident_created"
+	EventBreachIncidentUpdated = "breach.incident_updated"
+
+	// Grievance Events
+	EventGrievanceSubmitted = "compliance.grievance_submitted"
+	EventGrievanceAssigned  = "compliance.grievance_assigned"
+	EventGrievanceResolved  = "compliance.grievance_resolved"
+	EventGrievanceEscalated = "compliance.grievance_escalated"
+
+	// Translation Events
+	EventNoticeTranslated      = "consent.notice_translated"
+	EventTranslationOverridden = "consent.translation_overridden"
+
+	// DSR Events (Additional)
+	EventDSRDataAccessed           = "dsr.data_accessed"
+	EventDSRManualDeletionRequired = "dsr.manual_deletion_required"
+	EventDSRDataDeleted            = "dsr.data_deleted"
+
+	// DPR Events
+	EventDPRSubmitted = "dpr.submitted"
+
+	// Governance Events (Additional)
+	EventLineageFlowTracked      = "governance.lineage.flow_tracked"
+	EventGovernancePolicyCreated = "governance.policy_created"
 )
 
 // =============================================================================

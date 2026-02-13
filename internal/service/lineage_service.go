@@ -74,7 +74,7 @@ func (s *LineageService) TrackFlow(ctx context.Context, flow *governance.DataFlo
 	}
 
 	// Publish event
-	event := eventbus.NewEvent("governance.lineage.flow_tracked", "governance", tenantID, flow)
+	event := eventbus.NewEvent(eventbus.EventLineageFlowTracked, "governance", tenantID, flow)
 	return s.eventBus.Publish(ctx, event)
 }
 

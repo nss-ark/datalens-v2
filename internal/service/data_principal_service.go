@@ -150,14 +150,14 @@ func (s *DataPrincipalService) SubmitDPR(ctx context.Context, principalID types.
 	}
 
 	// Publish Event
-	event := eventbus.NewEvent("dpr.submitted", "portal", profile.TenantID, dpr)
+	event := eventbus.NewEvent(eventbus.EventDPRSubmitted, "portal", profile.TenantID, dpr)
 	if err := s.eventBus.Publish(ctx, event); err != nil {
 		s.logger.ErrorContext(ctx, "failed to publish dpr event", "error", err)
 	}
 
 	// If DSR was created, publish DSR event too
 	if dsr != nil {
-		dsrEvent := eventbus.NewEvent("dsr.created", "portal", profile.TenantID, dsr)
+		dsrEvent := eventbus.NewEvent(eventbus.EventDSRCreated, "portal", profile.TenantID, dsr)
 		if err := s.eventBus.Publish(ctx, dsrEvent); err != nil {
 			s.logger.ErrorContext(ctx, "failed to publish dsr event", "error", err)
 		}

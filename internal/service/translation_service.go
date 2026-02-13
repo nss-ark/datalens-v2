@@ -150,7 +150,7 @@ func (s *TranslationService) TranslateNotice(ctx context.Context, noticeID types
 	}
 
 	// Publish completion event
-	s.eventBus.Publish(ctx, eventbus.NewEvent("consent.notice_translated", "consent", notice.TenantID, map[string]any{
+	s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventNoticeTranslated, "consent", notice.TenantID, map[string]any{
 		"notice_id": noticeID,
 		"version":   notice.Version,
 		"languages": languages,
@@ -197,7 +197,7 @@ func (s *TranslationService) OverrideTranslation(ctx context.Context, noticeID t
 		return err
 	}
 
-	s.eventBus.Publish(ctx, eventbus.NewEvent("consent.translation_overridden", "consent", notice.TenantID, map[string]any{
+	s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventTranslationOverridden, "consent", notice.TenantID, map[string]any{
 		"notice_id": noticeID,
 		"lang":      langCode,
 	}))

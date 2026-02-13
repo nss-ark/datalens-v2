@@ -131,7 +131,7 @@ func (s *BreachService) CreateIncident(ctx context.Context, req CreateIncidentRe
 		return nil, err
 	}
 
-	_ = s.eventBus.Publish(ctx, eventbus.NewEvent("breach.incident_created", "breach", incident.TenantID, incident))
+	_ = s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventBreachIncidentCreated, "breach", incident.TenantID, incident))
 	s.auditService.Log(ctx, userID, "CREATE_INCIDENT", "BREACH_INCIDENT", incident.ID, nil, toMap(incident), tenantID)
 
 	return incident, nil
@@ -236,7 +236,7 @@ func (s *BreachService) UpdateIncident(ctx context.Context, id types.ID, req Upd
 		return nil, err
 	}
 
-	_ = s.eventBus.Publish(ctx, eventbus.NewEvent("breach.incident_updated", "breach", incident.TenantID, incident))
+	_ = s.eventBus.Publish(ctx, eventbus.NewEvent(eventbus.EventBreachIncidentUpdated, "breach", incident.TenantID, incident))
 	s.auditService.Log(ctx, userID, "UPDATE_INCIDENT", "BREACH_INCIDENT", incident.ID, oldValues, toMap(incident), tenantID)
 
 	return incident, nil
