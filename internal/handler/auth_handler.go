@@ -8,6 +8,7 @@ import (
 	"github.com/complyark/datalens/internal/middleware"
 	"github.com/complyark/datalens/internal/service"
 	"github.com/complyark/datalens/pkg/httputil"
+	"github.com/complyark/datalens/pkg/types"
 )
 
 // AuthHandler handles authentication REST endpoints.
@@ -81,20 +82,19 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Domain == "" {
-		httputil.ErrorResponse(w, http.StatusBadRequest, "VALIDATION_ERROR", "domain is required for login")
-		return
-	}
-
-	// Resolve tenant from domain
-	tenant, err := h.tenantSvc.GetByDomain(r.Context(), req.Domain)
-	if err != nil {
-		httputil.ErrorResponse(w, http.StatusNotFound, "TENANT_NOT_FOUND", "no tenant found for the given domain")
-		return
+	// If domain is provided, resolve tenant. If not, pass empty tenant ID to service/repo.
+	var tenantID types.ID
+	if req.Domain != "" {
+		tenant, err := h.tenantSvc.GetByDomain(r.Context(), req.Domain)
+		if err != nil {
+			httputil.ErrorResponse(w, http.StatusNotFound, "TENANT_NOT_FOUND", "no tenant found for the given domain")
+			return
+		}
+		tenantID = tenant.ID
 	}
 
 	pair, err := h.authSvc.Login(r.Context(), service.LoginInput{
-		TenantID: tenant.ID,
+		TenantID: tenantID,
 		Email:    req.Email,
 		Password: req.Password,
 	})

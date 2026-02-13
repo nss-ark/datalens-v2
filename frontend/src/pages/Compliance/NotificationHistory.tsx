@@ -104,7 +104,7 @@ export default function NotificationHistory() {
                 <select
                     className="border rounded px-3 py-2 text-sm"
                     value={filters.channel || ''}
-                    onChange={e => setFilters(prev => ({ ...prev, channel: e.target.value as any || undefined }))}
+                    onChange={e => setFilters(prev => ({ ...prev, channel: (e.target.value as NotificationChannel) || undefined }))}
                 >
                     <option value="">All Channels</option>
                     <option value="EMAIL">Email</option>
@@ -115,7 +115,7 @@ export default function NotificationHistory() {
                 <select
                     className="border rounded px-3 py-2 text-sm"
                     value={filters.status || ''}
-                    onChange={e => setFilters(prev => ({ ...prev, status: e.target.value as any || undefined }))}
+                    onChange={e => setFilters(prev => ({ ...prev, status: (e.target.value as NotificationStatus) || undefined }))}
                 >
                     <option value="">All Statuses</option>
                     <option value="SENT">Sent</option>

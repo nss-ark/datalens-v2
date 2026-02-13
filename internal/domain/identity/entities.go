@@ -100,11 +100,25 @@ type Permission struct {
 
 // System role names.
 const (
-	RoleAdmin   = "ADMIN"
-	RoleDPO     = "DPO"
-	RoleAnalyst = "ANALYST"
-	RoleViewer  = "VIEWER"
+	RoleAdmin         = "ADMIN"
+	RoleDPO           = "DPO"
+	RoleAnalyst       = "ANALYST"
+	RoleViewer        = "VIEWER"
+	RolePlatformAdmin = "PLATFORM_ADMIN"
 )
+
+// TenantFilter defines criteria for searching tenants.
+type TenantFilter struct {
+	Status *TenantStatus
+	Limit  int
+	Offset int
+}
+
+// TenantStats holds aggregate counts.
+type TenantStats struct {
+	TotalTenants  int64
+	ActiveTenants int64
+}
 
 // =============================================================================
 // Repository Interfaces
@@ -116,6 +130,8 @@ type TenantRepository interface {
 	GetByID(ctx context.Context, id types.ID) (*Tenant, error)
 	GetByDomain(ctx context.Context, domain string) (*Tenant, error)
 	GetAll(ctx context.Context) ([]Tenant, error)
+	Search(ctx context.Context, filter TenantFilter) ([]Tenant, int, error)
+	GetStats(ctx context.Context) (*TenantStats, error)
 	Update(ctx context.Context, t *Tenant) error
 	Delete(ctx context.Context, id types.ID) error
 }
@@ -125,7 +141,9 @@ type UserRepository interface {
 	Create(ctx context.Context, u *User) error
 	GetByID(ctx context.Context, id types.ID) (*User, error)
 	GetByEmail(ctx context.Context, tenantID types.ID, email string) (*User, error)
+	GetByEmailGlobal(ctx context.Context, email string) (*User, error)
 	GetByTenant(ctx context.Context, tenantID types.ID) ([]User, error)
+	CountGlobal(ctx context.Context) (int64, error)
 	Update(ctx context.Context, u *User) error
 	Delete(ctx context.Context, id types.ID) error
 }

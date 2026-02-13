@@ -112,11 +112,14 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | Portal Profile | `pages/Portal/Profile.tsx` | `/portal/profile` | ✅ Complete (Batch 12) |
 | Consent Analytics | `pages/Compliance/ConsentAnalytics.tsx` | `/compliance/analytics` | ✅ Complete (Batch 14) |
 | Dark Pattern Lab | `pages/Compliance/DarkPatternLab.tsx` | `/compliance/dark-patterns` | ✅ Complete (Batch 14) |
+| Admin Dashboard | `pages/Admin/Dashboard.tsx` | `/admin` | ✅ Complete (Batch 17A) |
+| Admin Tenants | `pages/Admin/TenantList.tsx` | `/admin/tenants` | ✅ Complete (Batch 17A) |
 
 ### Existing Components (20)
 | Component | File | Purpose |
 |-----------|------|---------|
 | AppLayout | `components/Layout/AppLayout.tsx` | Main layout shell with Sidebar + Header |
+| AdminLayout | `components/Layout/AdminLayout.tsx` | Admin portal layout with AdminSidebar (darker theme) |
 | PortalLayout | `components/Layout/PortalLayout.tsx` | Standalone layout for Portal |
 | Sidebar | `components/Layout/Sidebar.tsx` | Navigation sidebar with grouped sections |
 | Header | `components/Layout/Header.tsx` | Top header bar |
@@ -136,6 +139,9 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | Button | `components/common/Button.tsx` | Styled button component |
 | Toast | `components/common/Toast.tsx` | Notification toast |
 | ProtectedRoute | `components/common/ProtectedRoute.tsx` | Auth guard for routes |
+| AdminRoute | `components/common/AdminRoute.tsx` | PLATFORM_ADMIN role guard (Batch 17A) |
+| AdminSidebar | `components/Layout/AdminSidebar.tsx` | Admin navigation sidebar (Batch 17A) |
+| TenantForm | `components/Admin/TenantForm.tsx` | Create tenant modal form (Batch 17A) |
 
 ### Existing Services
 | Service | File | Methods |
@@ -149,6 +155,7 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | Consent | `services/consent.ts` | `listWidgets`, `getWidget`, `createWidget`, `updateWidget`, `deleteWidget` |
 | Portal | `services/portalService.ts` | `login`, `verify`, `getProfile`, `getHistory`, `submitDPR` |
 | Governance | `services/governanceService.ts` | `getSuggestions`, `applySuggestion`, `getPolicies`, `createPolicy`, `getViolations` |
+| Admin | `services/adminService.ts` | `getTenants`, `createTenant`, `getStats` (Batch 17A) |
 
 ### Existing Types
 | File | Types |

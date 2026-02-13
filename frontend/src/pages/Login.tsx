@@ -80,17 +80,16 @@ const Login = () => {
                 {/* Form */}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
                     <div>
-                        <label style={labelStyle}>Organization Domain</label>
+                        <label style={labelStyle}>Organization Domain (Optional)</label>
                         <input
                             type="text"
                             value={domain}
                             onChange={(e) => setDomain(e.target.value)}
                             placeholder="e.g. acme-corp"
-                            required
                             style={inputStyle}
                         />
                         <small style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px', display: 'block' }}>
-                            Your organization's unique identifier
+                            Leave blank to sign in with email only
                         </small>
                     </div>
 

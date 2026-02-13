@@ -72,6 +72,7 @@ Before writing any tests, check what's already covered to avoid duplication.
 | Auth middleware | `internal/middleware/auth_middleware.go` — JWT parsing, edge cases | P1 |
 | Rate limit middleware | `internal/middleware/ratelimit_middleware.go` | P2 |
 | DSR handler | `internal/handler/dsr_handler.go` validation | P1 |
+| **Admin API (Batch 17A)** | `AdminHandler`, `AdminService`, `RequireRole` middleware — role auth, cross-tenant queries | **P1** |
 
 ---
 

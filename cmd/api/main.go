@@ -328,6 +328,9 @@ func main() {
 	clientRepo := service.NewPostgresClientRepository(dbPool)
 	notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
 
+	// 7i. Admin Service
+	adminSvc := service.NewAdminService(tenantRepo, userRepo, tenantSvc, slog.Default())
+
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)
 	scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
@@ -420,6 +423,7 @@ func main() {
 	identityHandler := handler.NewIdentityHandler(identitySvc)
 	grievanceHandler := handler.NewGrievanceHandler(grievanceSvc)
 	notificationHandler := handler.NewNotificationHandler(notificationSvc)
+	adminHandler := handler.NewAdminHandler(adminSvc)
 
 	// Portal Services
 	portalAuthSvc := service.NewPortalAuthService(
@@ -496,6 +500,14 @@ func main() {
 			w.Write([]byte(`{"pong":true}`))
 		})
 		r.Mount("/auth", authHandler.Routes())
+
+		// Admin routes (Platform Admin only, NO tenant isolation)
+		r.Route("/admin", func(r chi.Router) {
+			r.Use(mw.Auth(authSvc, apiKeySvc))
+			r.Use(mw.RequireRole(identity.RolePlatformAdmin))
+			r.Use(rateLimiter.Middleware())
+			r.Mount("/", adminHandler.Routes())
+		})
 
 		// Protected routes (auth + tenant isolation + rate limiting)
 		r.Group(func(r chi.Router) {

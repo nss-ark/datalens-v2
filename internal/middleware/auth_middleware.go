@@ -106,6 +106,28 @@ func RequirePermission(resource string, action string) func(http.Handler) http.H
 	}
 }
 
+// RequireRole returns middleware that checks if the user has a specific role.
+func RequireRole(roleName string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			roles := RolesFromContext(r.Context())
+			hasRole := false
+			for _, role := range roles {
+				if role.Name == roleName {
+					hasRole = true
+					break
+				}
+			}
+
+			if !hasRole {
+				httputil.ErrorResponse(w, http.StatusForbidden, "FORBIDDEN", "access denied: insufficient role")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func extractBearerToken(r *http.Request) string {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {

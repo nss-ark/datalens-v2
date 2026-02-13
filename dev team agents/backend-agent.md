@@ -71,18 +71,24 @@ You receive task specifications from an Orchestrator agent and implement them pr
 ### Existing Services (in `internal/service/`)
 `auth_service.go`, `tenant_service.go`, `datasource_service.go`, `discovery_service.go`, `scan_service.go`, `feedback_service.go`, `purpose_service.go`, `dashboard_service.go`, `dsr_service.go`, `dsr_executor.go`, `scheduler.go`, `apikey_service.go`, `consent_service.go`, `portal_auth_service.go`, `data_principal_service.go`, `context_engine.go`, `policy_service.go`, `breach_service.go`, `audit_service.go`, `m365_auth_service.go`, `google_auth_service.go`, `identity_service.go`, `policy_enforcer.go`, `analytics/consent_service.go`
 
-**Batch 15 (New)**: `notice_service.go` (notice CRUD + versioning), `consent_expiry_service.go` (renewal/expiry engine)
+**Batch 15**: `notice_service.go` (notice CRUD + versioning), `consent_expiry_service.go` (renewal/expiry engine)
+**Batch 16**: `translation_service.go`, `notification_service.go`, `notification_subscriber.go`, `grievance_service.go`
+**Batch 17A**: `admin_service.go` (cross-tenant admin ops, `PLATFORM_ADMIN` role)
 
 ### Existing Handlers (in `internal/handler/`)
 `auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`, `portal_handler.go`, `governance_handler.go`, `breach_handler.go`, `m365_handler.go`, `google_handler.go`, `identity_handler.go`, `analytics_handler.go`
 
-**Batch 15 (New)**: `notice_handler.go` (notice CRUD + publish/archive + widget binding)
+**Batch 15**: `notice_handler.go` (notice CRUD + publish/archive + widget binding)
+**Batch 16**: `grievance_handler.go`, `notification_handler.go`
+**Batch 17A**: `admin_handler.go` (cross-tenant admin — mounted outside TenantIsolation middleware)
 
 ### Existing Connectors (in `internal/infrastructure/connector/`)
 `postgres.go`, `mysql.go`, `mongodb.go`, `s3.go`, `m365/` (OneDrive/SharePoint/Outlook), `google/` (Drive/Gmail), `shared/file_scanner.go`, `digilocker/` (Identity Provider)
 
 ### Existing Domain Entities - Focus Areas
 `internal/domain/governance/entities.go` contains definitions for: `Policy`, `Violation`, `SectorTemplate`, `PurposeSuggestion`, `DataFlow`. **Implemented**: `DataPrincipalProfile`, `DPRRequest`, `ConsentWidget`, `Policy`, `Violation`, `AuditLog`, `BreachIncident`, `User`, `Site`, `IdentityProfile`.
+
+**Batch 17A**: `internal/domain/identity/entities.go` now includes `RolePlatformAdmin = "PLATFORM_ADMIN"` system role. `TenantRepository` has `Search`/`GetStats`/`CountGlobal`. `UserRepository` has `GetByEmailGlobal`.
 
 ---
 

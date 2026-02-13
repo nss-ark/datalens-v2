@@ -478,7 +478,26 @@
 - [ ] Replace stubbed SMS channel with real provider (Twilio/MSG91)
 - [ ] SMS delivery receipts and retry logic
 
-### Batch 18: DPR Completion (Data Principal Rights) → **Next Up**
+### Batch 17A: Superadmin Portal (Interim) → ✅ **COMPLETE** (Batch 17A)
+- [x] **Backend**: Admin API (Batch 17A)
+  - [x] `GET /api/v2/admin/tenants` (List all tenants) — `internal/handler/admin_handler.go`
+  - [x] `POST /api/v2/admin/tenants` (Create tenant) — `internal/service/admin_service.go`
+  - [x] `GET /api/v2/admin/stats` (Global analytics) — `AdminHandler.GetStats`
+  - [x] `PLATFORM_ADMIN` role + `RequireRole` middleware — `internal/middleware/auth_middleware.go`
+  - [x] Admin seed script — `cmd/admin-setup/main.go`
+- [x] **Frontend**: Admin Layout & Routing (Batch 17A)
+  - [x] `/admin` route with `AdminLayout` + `AdminSidebar` (darker theme)
+  - [x] `AdminRoute` guard component (role-based protection)
+  - [x] Admin Dashboard with StatCards
+- [x] **Frontend**: Tenant Management (Batch 17A)
+  - [x] Tenant List (`DataTable` with status badge, pagination) — `TenantList.tsx`
+  - [x] Create Tenant Modal (validation: name, domain, email, plan) — `TenantForm.tsx`
+  - [x] `adminService.ts` — API client for Admin endpoints
+- [ ] **Frontend**: User Management — **Deferred to Batch 17B**
+  - [ ] User List (Filter by Tenant)
+  - [ ] Role Assignment UI
+
+### Batch 18: DPR Completion (Data Principal Rights)
 - [ ] Implement `DPRRequest` repository and service logic
 - [ ] Build DPR public API: `POST /api/public/dpr/requests` (verify identity + submit)
 - [ ] Build DPR status API: `GET /api/public/dpr/requests/{id}`
@@ -526,4 +545,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 13, 2026 — Batch 16 (Translation + Notifications + Grievance) complete; IndicTrans2 pipeline, event-driven notifications, DPDPA grievance redressal all implemented; 10/10 tests passing; all modules wired in main.go
+> **Last Updated**: February 13, 2026 — Batch 17A (Superadmin Portal) complete; Admin API + PLATFORM_ADMIN role + Admin Dashboard + Tenant CRUD; User Management deferred to 17B

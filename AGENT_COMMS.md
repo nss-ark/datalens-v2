@@ -6,16 +6,43 @@
 - If you need to hand off work to another agent, post a message with `[HANDOFF]` prefix.
 - The Orchestrator reads this file at the start of every session.
 
-## Current Sprint Goals (Batch 16: Notifications, Translation & Grievance)
+## Current Sprint Goals (Batch 17B: User Management + Consent Widget + Consent Cache)
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **Translation Pipeline (HuggingFace)** | AI/ML | [x] | IndicTrans2, 22 languages, RTL support, rate limiting |
-| **Consent Notifications** | Backend | [x] | Email/Webhook + SMS(stub) + event subscriber + template CRUD |
-| **Grievance Redressal Module** | Backend | [x] | DPDPA lifecycle, portal + admin routes, 30-day SLA |
-| **Translation & Notification UI** | Frontend | [x] | Translation controls, notification history, grievance pages |
-| **Batch 16 Integration Tests** | Test | [x] | 10/10 tests passing, cross-system event flow verified |
+| **User Management UI** | Frontend | [ ] | Global user list, role assignment, tenant filter |
+| **Admin User CRUD API** | Backend | [ ] | Search, suspend, role assign (cross-tenant) |
+| **Redis Consent Cache** | Backend | [ ] | <50ms consent checks, pub/sub invalidation |
+| **Batch 17A Tests** | Test | [ ] | Admin API + PLATFORM_ADMIN role unit tests |
+
+## Batch 17A Completion (Superadmin Portal — Phase 1) ✅
+| Goal | Owner | Status | Details |
+|------|-------|--------|---------|
+| **Admin API + PLATFORM_ADMIN** | Backend | [x] | `AdminHandler`, `AdminService`, `RequireRole` middleware, seed script |
+| **Admin Shell & Routing** | Frontend | [x] | `AdminLayout`, `AdminSidebar`, `AdminDashboard`, `AdminRoute` guard |
+| **Tenant Management** | Frontend | [x] | `TenantList`, `TenantForm`, `adminService.ts` |
 
 ## Active Messages
+### [2026-02-13] [FROM: Backend] → [TO: ALL]
+**Subject**: Admin API & Platform Role Implementation
+**Type**: HANDOFF
+
+**Changes**:
+- **Domain**: Added `RolePlatformAdmin` ("PLATFORM_ADMIN").
+- **Services**: Created `AdminService` for cross-tenant management.
+- **Handlers**: Added `AdminHandler` (`/api/v2/admin`).
+- **Middleware**: Added `mw.RequireRole` to enforce platform admin access.
+- **Repository**: Updated `TenantRepo` & `UserRepo` with `Search` and `Global` methods.
+- **Setup**: Added `cmd/admin-setup/main.go` to seed platform admin.
+
+**API Contracts** (for Frontend agent):
+- `GET /api/v2/admin/tenants?page=1&limit=10` — Response: `{success: true, data: [tenants], meta: {total, ...}}`
+- `POST /api/v2/admin/tenants` — Request: `OnboardInput` — Response: `{success: true, data: {tenant, user}}`
+- `GET /api/v2/admin/stats` — Response: `{success: true, data: {total_tenants, active_tenants, total_users}}`
+
+**Action Required**:
+- **Frontend**: Integrate Admin Dashboard using these endpoints.
+- **Test**: Verify flow with seeded platform admin user.
+
 ### [2026-02-13] [FROM: Test] → [TO: ALL]
 **Subject**: Batch 16 Integration Tests Complete
 **Type**: HANDOFF

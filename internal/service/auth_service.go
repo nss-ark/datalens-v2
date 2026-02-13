@@ -123,8 +123,19 @@ type LoginInput struct {
 
 // Login authenticates a user and returns a token pair.
 func (s *AuthService) Login(ctx context.Context, in LoginInput) (*TokenPair, error) {
-	user, err := s.userRepo.GetByEmail(ctx, in.TenantID, in.Email)
+	var user *identity.User
+	var err error
+
+	// If TenantID is empty, try to find user by email globally
+	if in.TenantID.String() == "" {
+		user, err = s.userRepo.GetByEmailGlobal(ctx, in.Email)
+	} else {
+		user, err = s.userRepo.GetByEmail(ctx, in.TenantID, in.Email)
+	}
+
 	if err != nil {
+		// Differentiate between "user not found" and actual errors?
+		// Security practice: consistent error message
 		return nil, types.NewUnauthorizedError("invalid email or password")
 	}
 
@@ -133,13 +144,13 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*TokenPair, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password)); err != nil {
-		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, nil, map[string]any{"reason": "invalid password"}, in.TenantID)
+		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, nil, map[string]any{"reason": "invalid password"}, user.TenantID)
 		return nil, types.NewUnauthorizedError("invalid email or password")
 	}
 
 	pair, err := s.generateTokenPair(user)
 	if err != nil {
-		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, nil, map[string]any{"reason": err.Error()}, in.TenantID)
+		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, nil, map[string]any{"reason": err.Error()}, user.TenantID)
 		return nil, err
 	}
 
@@ -148,10 +159,10 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*TokenPair, err
 	user.LastLoginAt = &now
 	_ = s.userRepo.Update(ctx, user)
 
-	s.auditService.Log(ctx, user.ID, "LOGIN", "USER", user.ID, nil, nil, in.TenantID)
+	s.auditService.Log(ctx, user.ID, "LOGIN", "USER", user.ID, nil, nil, user.TenantID)
 
 	s.logger.InfoContext(ctx, "user logged in",
-		slog.String("tenant_id", in.TenantID.String()),
+		slog.String("tenant_id", user.TenantID.String()),
 
 		slog.String("id", user.ID.String()),
 		slog.String("email", user.Email),

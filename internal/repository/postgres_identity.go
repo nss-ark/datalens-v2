@@ -104,6 +104,68 @@ func (r *TenantRepo) GetAll(ctx context.Context) ([]identity.Tenant, error) {
 	return tenants, rows.Err()
 }
 
+func (r *TenantRepo) Search(ctx context.Context, filter identity.TenantFilter) ([]identity.Tenant, int, error) {
+	where := "WHERE deleted_at IS NULL"
+	args := []any{}
+	argIdx := 1
+
+	if filter.Status != nil {
+		where += fmt.Sprintf(" AND status = $%d", argIdx)
+		args = append(args, *filter.Status)
+		argIdx++
+	}
+
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM tenants %s", where)
+	var total int
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count tenants: %w", err)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, name, domain, industry, country, plan, status, settings, created_at, updated_at
+		FROM tenants
+		%s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d`, where, argIdx, argIdx+1)
+
+	args = append(args, filter.Limit, filter.Offset)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("search tenants: %w", err)
+	}
+	defer rows.Close()
+
+	var tenants []identity.Tenant
+	for rows.Next() {
+		var t identity.Tenant
+		if err := rows.Scan(
+			&t.ID, &t.Name, &t.Domain, &t.Industry, &t.Country, &t.Plan, &t.Status, &t.Settings,
+			&t.CreatedAt, &t.UpdatedAt,
+		); err != nil {
+			return nil, 0, fmt.Errorf("scan tenant: %w", err)
+		}
+		tenants = append(tenants, t)
+	}
+	return tenants, total, rows.Err()
+}
+
+func (r *TenantRepo) GetStats(ctx context.Context) (*identity.TenantStats, error) {
+	query := `
+		SELECT 
+			COUNT(*) as total,
+			COUNT(*) FILTER (WHERE status = 'ACTIVE') as active
+		FROM tenants
+		WHERE deleted_at IS NULL`
+
+	stats := &identity.TenantStats{}
+	err := r.pool.QueryRow(ctx, query).Scan(&stats.TotalTenants, &stats.ActiveTenants)
+	if err != nil {
+		return nil, fmt.Errorf("get tenant stats: %w", err)
+	}
+	return stats, nil
+}
+
 func (r *TenantRepo) Update(ctx context.Context, t *identity.Tenant) error {
 	query := `
 		UPDATE tenants
@@ -212,6 +274,32 @@ func (r *UserRepo) GetByEmail(ctx context.Context, tenantID types.ID, email stri
 	return u, nil
 }
 
+func (r *UserRepo) GetByEmailGlobal(ctx context.Context, email string) (*identity.User, error) {
+	// Find the user by email across all tenants (limit to 1 for now)
+	query := `
+		SELECT u.id, u.tenant_id, u.email, u.name, u.password, u.status,
+		       u.mfa_enabled, u.last_login_at, u.created_at, u.updated_at,
+		       COALESCE(array_agg(ur.role_id) FILTER (WHERE ur.role_id IS NOT NULL), '{}')
+		FROM users u
+		LEFT JOIN user_roles ur ON ur.user_id = u.id
+		WHERE u.email = $1 AND u.deleted_at IS NULL
+		GROUP BY u.id
+		LIMIT 1`
+
+	u := &identity.User{}
+	err := r.pool.QueryRow(ctx, query, email).Scan(
+		&u.ID, &u.TenantID, &u.Email, &u.Name, &u.Password, &u.Status,
+		&u.MFAEnabled, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.RoleIDs,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, types.NewNotFoundError("User", email)
+		}
+		return nil, fmt.Errorf("get user by email global: %w", err)
+	}
+	return u, nil
+}
+
 func (r *UserRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]identity.User, error) {
 	query := `
 		SELECT id, tenant_id, email, name, status, mfa_enabled, last_login_at, created_at, updated_at
@@ -237,6 +325,16 @@ func (r *UserRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]identi
 		results = append(results, u)
 	}
 	return results, rows.Err()
+}
+
+func (r *UserRepo) CountGlobal(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`
+	var count int64
+	err := r.pool.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count global users: %w", err)
+	}
+	return count, nil
 }
 
 func (r *UserRepo) Update(ctx context.Context, u *identity.User) error {

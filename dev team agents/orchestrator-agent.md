@@ -139,16 +139,28 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - **Portal Withdrawal**: Per-purpose consent revocation UI in Data Principal Portal
 - **Lifecycle Tests**: 6 integration tests covering grant→check→withdraw→check, notices, expiry
 
+#### Translation, Notifications & Grievance (Batch 16)
+- **Translation Pipeline**: IndicTrans2 via HuggingFace, 22 languages, RTL, rate-limited
+- **Consent Notifications**: Email/Webhook + event subscriber + template CRUD
+- **Grievance Redressal**: DPDPA lifecycle, 30-day SLA, portal + admin routes
+- **Batch 16 Tests**: 10/10 integration tests passing
+
+#### Superadmin Portal Phase 1 (Batch 17A)
+- **Admin API**: `AdminHandler`, `AdminService`, mounted outside TenantIsolation
+- **PLATFORM_ADMIN Role**: New system role + `RequireRole` middleware + seed script
+- **Admin Shell**: `AdminLayout`, `AdminSidebar`, `AdminDashboard` (darker theme)
+- **Tenant Management**: `TenantList` (DataTable), `TenantForm` (modal), `adminService.ts`
+
 ### Known Technical Debt ⚠️
 1.  **Integration Tests**: CI pipeline integration needs final polish for Docker-in-Docker.
 2.  **Consent Widget Bundle**: Vanilla JS bundle not built yet — widget frontend is React-only.
-3.  **Consent Notifications**: Event triggers exist but no delivery channels (Email/SMS/Webhook).
-4.  **Translation Pipeline**: Notices exist but multi-language translation not automated.
+3.  ~~**Consent Notifications**~~: ✅ Resolved in Batch 16
+4.  ~~**Translation Pipeline**~~: ✅ Resolved in Batch 16
 
 ### Deferred Items (Not Planned Yet) 📋
-- **RBAC / User Role Management** → SuperAdmin portal module (Batch 17+)
-- **Data Retention Policy Config** → System admin feature (Batch 17+)
-- **Vanilla JS Widget Bundle** → Separate build toolchain (Batch 17+)
+- ~~**RBAC / User Role Management**~~ → ✅ Phase 1 done (Batch 17A); Phase 2 user management in Batch 17B
+- **Data Retention Policy Config** → System admin feature (Batch 18+)
+- **Vanilla JS Widget Bundle** → Separate build toolchain (Batch 18+)
 
 ### Domain Entities Fully Implemented ✅
 All consent domain entities from `internal/domain/consent/entities.go` are now implemented:

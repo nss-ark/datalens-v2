@@ -42,6 +42,12 @@ import ConsentManage from './pages/Portal/ConsentManage';
 import SubmitGrievance from './pages/Portal/Grievance/SubmitGrievance';
 import MyGrievances from './pages/Portal/Grievance/MyGrievances';
 
+// Admin Components
+import { AdminLayout } from './components/Layout/AdminLayout';
+import { AdminRoute } from './components/common/AdminRoute';
+import AdminDashboard from './pages/Admin/Dashboard';
+import TenantList from './pages/Admin/Tenants/TenantList';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -114,6 +120,21 @@ function App() {
                 </PortalLayout>
               </ErrorBoundary>
             } />
+          </Route>
+
+          {/* Admin Routes */}
+          <Route element={
+            <AdminRoute>
+              <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                <AdminLayout />
+              </ErrorBoundary>
+            </AdminRoute>
+          }>
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/tenants" element={<TenantList />} />
+            <Route path="/admin/users" element={<PlaceholderPage title="Platform Users" />} />
+            <Route path="/admin/settings" element={<PlaceholderPage title="Platform Settings" />} />
           </Route>
 
           {/* Protected routes */}
@@ -196,3 +217,4 @@ function PlaceholderPage({ title }: { title: string }) {
 }
 
 export default App;
+
