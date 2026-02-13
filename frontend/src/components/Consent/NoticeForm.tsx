@@ -6,7 +6,7 @@ import type { ConsentNotice, UpdateNoticeInput } from '../../types/consent';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 
-const noticeSchema = z.object({
+export const noticeSchema = z.object({
     title: z.string().min(1, 'Title is required'),
     content: z.string().min(1, 'Content is required'),
     regulation: z.string().min(1, 'Regulation is required'),
@@ -80,9 +80,11 @@ export function NoticeForm({ initialData, onSuccess, onCancel }: NoticeFormProps
     };
 
     // Purpose selection helper
-    const selectedPurposes = watch('purposes');
+    // eslint-disable-next-line
+    const selectedPurposes: string[] = watch('purposes') || [];
+
     const togglePurpose = (id: string) => {
-        const current = selectedPurposes || [];
+        const current = selectedPurposes;
         if (current.includes(id)) {
             setValue('purposes', current.filter((p) => p !== id));
         } else {

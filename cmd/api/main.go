@@ -319,7 +319,6 @@ func main() {
 	lineageSvc := service.NewLineageService(lineageRepo, dsRepo, eb, slog.Default())
 
 	// 7e. Breach Management
-	breachSvc := service.NewBreachService(breachRepo, auditSvc, eb, slog.Default())
 
 	// 7f. Identity Architecture
 	// DigiLocker Provider
@@ -341,6 +340,9 @@ func main() {
 	// 7h. Notification System
 	clientRepo := service.NewPostgresClientRepository(dbPool)
 	notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
+
+	// 7e. Breach Management (Depends on Notification)
+	breachSvc := service.NewBreachService(breachRepo, profileRepo, notificationSvc, auditSvc, eb, slog.Default())
 
 	// 7i. Admin Service
 	adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, tenantSvc, slog.Default())
@@ -410,7 +412,7 @@ func main() {
 	log.Info("Audit subscriber registered")
 
 	// Initialize Notification Subscriber
-	notificationSub := service.NewNotificationSubscriber(notificationSvc, eb, slog.Default())
+	notificationSub := service.NewNotificationSubscriber(notificationSvc, breachSvc, eb, slog.Default())
 	if err := notificationSub.Start(context.Background()); err != nil {
 		log.Error("Failed to start notification subscriber", "error", err)
 		os.Exit(1)

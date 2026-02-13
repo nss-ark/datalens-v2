@@ -511,6 +511,24 @@
 - [x] Frontend: Admin DSR Management UI — DSRList, DSRDetail with Approve/Reject
 - [ ] **Gap**: Cross-tenant `GET /api/v2/admin/dsr` endpoint (Frontend ready, Backend needs AdminHandler route)
 
+### Batch 19: Breach UI Integration, Cloud Config & Notifications ✅
+- [x] **Frontend**: Breach UI Route Integration (App.tsx routes + Sidebar link) (Batch 19)
+  - [x] `/breach` → `BreachDashboard`, `/breach/new` → `BreachCreate`, `/breach/:id` → `BreachDetail`
+  - [x] Sidebar "Breach Management" link under Compliance
+- [x] **Frontend**: Breach Detail Page — SLA countdown, CERT-In report, status transitions (Batch 19)
+- [x] **Frontend**: Breach Create Page — Uses existing `BreachForm`, navigates to detail on submit (Batch 19)
+- [x] **Frontend**: Cloud Data Source Config UI (M365 & Google Workspace) (Batch 19)
+  - [x] M365: Azure AD Tenant ID, Client ID/Secret, OAuth popup flow
+  - [x] Google: Service Account key/OAuth toggle, domain, OAuth popup flow
+- [x] **Backend**: Breach Data Principal Notification (DPDPA §28) (Batch 19)
+  - [x] Event subscriber for `breach.incident_created` / `breach.incident_updated` (HIGH/CRITICAL)
+  - [x] `POST /api/v2/breach/{id}/notify` manual trigger endpoint
+  - [x] `NotifyDataPrincipals` via `NotificationService` dispatch
+- [x] **Test**: Batch 18–19 Integration Tests (Batch 19)
+  - [x] Guardian flow: minor DPR, OTP verify, post-verify DPR
+  - [x] Admin DSR: cross-tenant list, handler test
+  - [x] Breach notification: auto-trigger on HIGH/CRITICAL, event publish
+
 ### Batch 18.1: Admin DSR Endpoint Patch
 - [x] Backend: Add `GetAll` to `DSRRepository` (Cross-tenant)
 - [x] Backend: Add `GetAllDSRs` and `GetDSR` to `AdminService`
@@ -557,4 +575,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 13, 2026 — Batch 18 (DPR) & 18.1 (Admin DSR Patch) complete; Next: Batch 19 (Cloud Integrations)
+> **Last Updated**: February 13, 2026 — Batch 19 (Breach UI, Cloud Config, Notifications) planned; Next: Execute Task Specs #1–#5

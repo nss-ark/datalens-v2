@@ -31,30 +31,36 @@
 
 ## Active Messages
 ### [2026-02-13] [FROM: Orchestrator] → [TO: ALL]
-**Subject**: Batch 19 Started — Cloud Integrations & Breach Management
+**Subject**: Batch 19 — Breach UI Integration, Cloud Config UI & Breach Notifications
 **Type**: ANNOUNCEMENT
 
 **Status**:
 - Batch 18.1 (Admin DSR Patch) is **COMPLETE**.
-- Moving to Batch 19: High-value integrations and enterprise security.
+- M365, Google Workspace, and Breach **backend already implemented** (Batches 9–11).
+- Batch 19 focuses on **Frontend integration** and **DPDPA §28 compliance**.
 
 **Focus**:
-- **Microsoft 365 Connector**: SharePoint, OneDrive, Outlook (Graph API).
-- **Google Workspace Connector**: Drive, Gmail (Google APIs).
-- **Breach Management**: Incident lifecycle, SLA tracking (DPDPA Section 28).
+- **Breach UI Integration**: Wire existing components into routing/sidebar, create Detail + Create pages.
+- **Cloud Data Source Config UI**: M365 & Google Workspace config in DataSource form with full OAuth popup flow.
+- **Breach Data Principal Notification**: DPDPA §28 — notify affected individuals on HIGH/CRITICAL breaches.
+- **Integration Tests**: Guardian flow, Admin DSR, Breach notification (7 tests total).
 
 **Execution Plan**:
 - **Step 1 (PARALLEL)**:
-  - **Task #1 (Backend)**: M365 Connector Implementation (Auth + Scanning).
-  - **Task #2 (Backend)**: Google Workspace Connector Implementation.
-  - **Task #3 (Backend)**: Breach Management Module (Entities + Services).
-- **Step 2 (PARALLEL)**:
-  - **Task #4 (Frontend)**: Breach Management UI.
-  - **Task #5 (Frontend)**: data source configuration UI for M365/Google.
+  - **Task #1 (Frontend, P0)**: Breach UI — Routes + Sidebar + Detail Page + Create Page.
+  - **Task #2 (Frontend, P1)**: Cloud Data Source Config UI (M365/Google OAuth popup).
+  - **Task #3 (Backend, P1)**: Breach Data Principal Notification (event subscriber + manual endpoint).
+- **Step 2 (DEPENDS ON Step 1)**:
+  - **Task #4 (Test, P1)**: Integration Tests — Guardian, Admin DSR, Breach Notification (7 tests).
+- **After all**: Task #5 (Orchestrator): Update trackers.
 
 **Priorities**:
-- **P0**: M365 Integration (Enterprise Requirement).
-- **P1**: Breach Management (Compliance Requirement).
+- **P0**: Breach UI Integration (components exist but unreachable).
+- **P1**: Cloud Config UI, Breach Notification, Tests.
+
+**Notes**:
+- Incident timeline on Detail page is a **stretch goal** — nice-to-have, not required.
+- Cloud OAuth uses **full popup flow** (not manual URL copy).
 
 ### [2026-02-13] [FROM: Backend] → [TO: ALL]
 **Subject**: Admin DSR Patch Complete
@@ -507,3 +513,41 @@
 **Action Required**:
 - **Backend**: Add cross-tenant DSR listing to `AdminHandler` (PLATFORM_ADMIN protected).
 - **Frontend**: Dashboard stats should be dynamic (currently hardcoded).
+
+### [2026-02-13] [FROM: Frontend] → [TO: ALL]
+**Subject**: Breach Management UI Integration
+**Type**: HANDOFF
+
+**Changes**:
+- **Pages**: `BreachCreate`, `BreachDetail`, `BreachEdit` (`/breach/new`, `/breach/:id`, `/breach/:id/edit`)
+- **Routing**: Connected pages in `App.tsx`
+- **Navigation**: Updated Sidebar label to "Breach Management"
+- **Features**: 
+    - Full Incident CRUD
+    - SLA Tracking (CERT-In/DPB timers)
+    - Status Workflow (Open -> Investigating -> ... -> Closed)
+    - CERT-In Report Generation (Mock/Toast for now)
+
+**Verification**: `npm run build` (Verified) | `npm run lint` (Verified)
+
+**Action Required**:
+- **Backend**: Ensure `/api/v2/breach` endpoints match the frontend payload.
+- **Test**: Verify SLA countdown logic.
+
+### [2026-02-13] [FROM: Backend] → [TO: ALL]
+**Subject**: Breach Data Principal Notification (DPDPA §28)
+**Type**: HANDOFF
+
+**Changes**:
+- Implementation of Breach Notification (DPDPA §28).
+- `BreachService.NotifyDataPrincipals(ctx, incidentID)` logic added.
+- `NotifyDataPrincipals` iterates over `DataPrincipalProfile` (new `ListByTenant` via repository) and dispatches notifications via `NotificationService`.
+- `NotificationSubscriber` now listens for `breach.incident_created` (High/Critical) and triggers notifications automatically.
+- Added `POST /api/v2/breach/{id}/notify` endpoint for manual trigger.
+
+**API Contracts**:
+- `POST /api/v2/breach/{id}/notify` — Request: (empty body), Response: `{success: true}`.
+
+**Action Required**:
+- **Test**: Verify High/Critical breach creation triggers notification logic (check logs, as email is stubbed).
+- **Frontend**: Can add "Notify Affected Users" button on Breach Detail page.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/complyark/datalens/internal/domain/breach"
 	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
@@ -13,17 +14,20 @@ import (
 
 type NotificationSubscriber struct {
 	notificationService *NotificationService
+	breachService       *BreachService
 	eventBus            eventbus.EventBus
 	logger              *slog.Logger
 }
 
 func NewNotificationSubscriber(
 	notificationService *NotificationService,
+	breachService *BreachService,
 	eventBus eventbus.EventBus,
 	logger *slog.Logger,
 ) *NotificationSubscriber {
 	return &NotificationSubscriber{
 		notificationService: notificationService,
+		breachService:       breachService,
 		eventBus:            eventBus,
 		logger:              logger.With("service", "notification_subscriber"),
 	}
@@ -45,6 +49,19 @@ func (s *NotificationSubscriber) Start(ctx context.Context) error {
 		}
 		s.logger.Info("subscribed to event", "topic", topic)
 	}
+
+	// Breach events
+	breachTopics := []string{
+		"breach.incident_created",
+		"breach.incident_updated",
+	}
+	for _, topic := range breachTopics {
+		if _, err := s.eventBus.Subscribe(ctx, topic, s.handleBreachEvent); err != nil {
+			return fmt.Errorf("subscribe %s: %w", topic, err)
+		}
+		s.logger.Info("subscribed to breach event", "topic", topic)
+	}
+
 	return nil
 }
 
@@ -127,6 +144,38 @@ func (s *NotificationSubscriber) handleEvent(ctx context.Context, event eventbus
 	if err != nil {
 		s.logger.Error("failed to dispatch notification", "error", err, "event", event.Type)
 		return err
+	}
+
+	return nil
+}
+
+func (s *NotificationSubscriber) handleBreachEvent(ctx context.Context, event eventbus.Event) error {
+	// Parse incident
+	var incident breach.BreachIncident
+	dataBytes, err := json.Marshal(event.Data)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(dataBytes, &incident); err != nil {
+		return err
+	}
+
+	// Check severity
+	shouldNotify := false
+	if incident.Severity == breach.SeverityHigh || incident.Severity == breach.SeverityCritical {
+		shouldNotify = true
+	}
+
+	if event.Type == "breach.incident_created" {
+		if shouldNotify {
+			s.logger.Info("triggering breach notification for created incident", "id", incident.ID)
+			return s.breachService.NotifyDataPrincipals(ctx, incident.ID)
+		}
+	} else if event.Type == "breach.incident_updated" {
+		if shouldNotify {
+			s.logger.Info("triggering breach notification for updated incident (potential escalation)", "id", incident.ID)
+			return s.breachService.NotifyDataPrincipals(ctx, incident.ID)
+		}
 	}
 
 	return nil

@@ -21,8 +21,9 @@ import PolicyManager from './pages/Governance/PolicyManager';
 import Violations from './pages/Governance/Violations';
 import DataLineage from './pages/Governance/DataLineage';
 import BreachDashboard from './pages/Breach/BreachDashboard';
-import CreateIncident from './pages/Breach/CreateIncident';
-import IncidentDetail from './pages/Breach/IncidentDetail';
+import BreachCreate from './pages/Breach/BreachCreate';
+import BreachDetail from './pages/Breach/BreachDetail';
+import BreachEdit from './pages/Breach/BreachEdit';
 import IdentitySettings from './pages/Compliance/IdentitySettings';
 import Analytics from './pages/Compliance/Analytics';
 import DarkPatternLab from './pages/Compliance/DarkPatternLab';
@@ -182,8 +183,9 @@ function App() {
             <Route path="/consent/widgets" element={<ConsentWidgets />} />
             <Route path="/consent/widgets/:id" element={<WidgetDetail />} />
             <Route path="/breach" element={<BreachDashboard />} />
-            <Route path="/breach/new" element={<CreateIncident />} />
-            <Route path="/breach/:id" element={<IncidentDetail />} />
+            <Route path="/breach/new" element={<BreachCreate />} />
+            <Route path="/breach/:id" element={<BreachDetail />} />
+            <Route path="/breach/:id/edit" element={<BreachEdit />} />
 
             {/* Placeholder routes */}
             <Route path="/agents" element={<PlaceholderPage title="Agents" />} />

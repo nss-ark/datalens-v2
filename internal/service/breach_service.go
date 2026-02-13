@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/complyark/datalens/internal/domain/breach"
+	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -46,23 +48,29 @@ type UpdateIncidentRequest struct {
 }
 
 type BreachService struct {
-	repo         breach.Repository
-	auditService *AuditService
-	eventBus     eventbus.EventBus
-	logger       *slog.Logger
+	repo                breach.Repository
+	profileRepo         consent.DataPrincipalProfileRepository
+	notificationService *NotificationService
+	auditService        *AuditService
+	eventBus            eventbus.EventBus
+	logger              *slog.Logger
 }
 
 func NewBreachService(
 	repo breach.Repository,
+	profileRepo consent.DataPrincipalProfileRepository,
+	notificationService *NotificationService,
 	auditService *AuditService,
 	eventBus eventbus.EventBus,
 	logger *slog.Logger,
 ) *BreachService {
 	return &BreachService{
-		repo:         repo,
-		auditService: auditService,
-		eventBus:     eventBus,
-		logger:       logger.With("service", "breach"),
+		repo:                repo,
+		profileRepo:         profileRepo,
+		notificationService: notificationService,
+		auditService:        auditService,
+		eventBus:            eventBus,
+		logger:              logger.With("service", "breach"),
 	}
 }
 
@@ -280,4 +288,59 @@ func (s *BreachService) calculateSLA(incident *breach.BreachIncident) map[string
 		"overdue_cert_in":        now.After(certInDeadline),
 		"overdue_dpb":            now.After(dpbDeadline),
 	}
+}
+
+// NotifyDataPrincipals triggers DPDPA §28 notifications for an incident
+func (s *BreachService) NotifyDataPrincipals(ctx context.Context, id types.ID) error {
+	incident, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Fetch all data principals for the tenant
+	// TODO: Filter based on PII category match if possible in future
+	pagination := types.Pagination{Page: 1, PageSize: 1000} // Batch processing
+	for {
+		result, err := s.profileRepo.ListByTenant(ctx, incident.TenantID, pagination)
+		if err != nil {
+			return fmt.Errorf("failed to list data principals: %w", err)
+		}
+
+		for _, profile := range result.Items {
+			// Construct payload
+			payload := map[string]any{
+				"incident_id":        incident.ID,
+				"title":              incident.Title,
+				"severity":           incident.Severity,
+				"occurred_at":        incident.OccurredAt,
+				"description":        incident.Description, // Brief?
+				"affected_data":      incident.PiiCategories,
+				"what_we_are_doing":  "We have contained the incident and are investigating...",
+				"contact_email":      incident.PoCEmail,
+				"data_principal_id":  profile.ID,
+				"data_principal_sub": profile.SubjectID,
+			}
+
+			// Use NotificationService to dispatch
+			// We use profile.Email as recipient
+			if err := s.notificationService.DispatchNotification(
+				ctx,
+				"breach.notification",
+				incident.TenantID,
+				consent.RecipientTypeDataPrincipal,
+				profile.Email,
+				payload,
+			); err != nil {
+				s.logger.Error("failed to dispatch breach notification", "incident_id", id, "email", profile.Email, "error", err)
+				// Continue to next
+			}
+		}
+
+		if result.Total <= (pagination.Page * pagination.PageSize) {
+			break
+		}
+		pagination.Page++
+	}
+
+	return nil
 }

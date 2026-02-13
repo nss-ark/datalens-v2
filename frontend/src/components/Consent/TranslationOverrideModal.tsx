@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { translationService } from '../../services/translationService';
 import { Button } from '../common/Button';
@@ -15,20 +15,17 @@ interface Props {
 
 export function TranslationOverrideModal({ noticeId, translation, languageCode, baseContent, onClose }: Props) {
     const queryClient = useQueryClient();
-    const [content, setContent] = useState<Record<string, string>>({});
+    const [content, setContent] = useState<Record<string, string>>(() => {
+        if (translation?.content) {
+            return translation.content;
+        }
+        // Initialize with empty strings based on reference baseContent keys
+        const initial: Record<string, string> = {};
+        Object.keys(baseContent).forEach(key => initial[key] = '');
+        return initial;
+    });
 
     const languageName = SUPPORTED_LANGUAGES.find(l => l.code === languageCode)?.name || languageCode;
-
-    useEffect(() => {
-        if (translation?.content) {
-            setContent(translation.content);
-        } else {
-            // Initialize with empty strings or base content key
-            const initial: Record<string, string> = {};
-            Object.keys(baseContent).forEach(key => initial[key] = '');
-            setContent(initial);
-        }
-    }, [translation, baseContent]);
 
     const mutation = useMutation({
         mutationFn: (data: Record<string, string>) => translationService.overrideTranslation(noticeId, languageCode, data),

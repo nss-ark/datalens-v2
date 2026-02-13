@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/complyark/datalens/internal/domain/audit"
+	"github.com/complyark/datalens/internal/domain/breach"
+	"github.com/complyark/datalens/internal/domain/compliance"
 	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/domain/governance"
@@ -1307,4 +1309,306 @@ func (r *mockHistoryRepo) GetLatestState(_ context.Context, tenantID, subjectID,
 		}
 	}
 	return latest, nil
+}
+
+// =============================================================================
+// Mock DSR Repository (Compliance)
+// =============================================================================
+
+type mockDSRRepo struct {
+	mu   sync.Mutex
+	dsrs map[types.ID]*compliance.DSR
+}
+
+func newMockDSRRepo() *mockDSRRepo {
+	return &mockDSRRepo{
+		dsrs: make(map[types.ID]*compliance.DSR),
+	}
+}
+
+func (r *mockDSRRepo) Create(ctx context.Context, dsr *compliance.DSR) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if dsr.ID == (types.ID{}) {
+		dsr.ID = types.NewID()
+	}
+	r.dsrs[dsr.ID] = dsr
+	return nil
+}
+
+func (r *mockDSRRepo) GetByID(ctx context.Context, id types.ID) (*compliance.DSR, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	dsr, ok := r.dsrs[id]
+	if !ok {
+		return nil, fmt.Errorf("dsr not found")
+	}
+	return dsr, nil
+}
+
+func (r *mockDSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus) (*types.PaginatedResult[compliance.DSR], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []compliance.DSR
+	for _, dsr := range r.dsrs {
+		if dsr.TenantID == tenantID {
+			if statusFilter != nil && dsr.Status != *statusFilter {
+				continue
+			}
+			items = append(items, *dsr)
+		}
+	}
+	return &types.PaginatedResult[compliance.DSR]{Items: items, Total: len(items)}, nil
+}
+
+func (r *mockDSRRepo) GetAll(ctx context.Context, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []compliance.DSR
+	for _, dsr := range r.dsrs {
+		if statusFilter != nil && dsr.Status != *statusFilter {
+			continue
+		}
+		if typeFilter != nil && dsr.RequestType != *typeFilter {
+			continue
+		}
+		items = append(items, *dsr)
+	}
+	return &types.PaginatedResult[compliance.DSR]{Items: items, Total: len(items)}, nil
+}
+
+func (r *mockDSRRepo) GetOverdue(ctx context.Context, tenantID types.ID) ([]compliance.DSR, error) {
+	return nil, nil // Mock
+}
+
+func (r *mockDSRRepo) Update(ctx context.Context, dsr *compliance.DSR) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.dsrs[dsr.ID] = dsr
+	return nil
+}
+
+func (r *mockDSRRepo) CreateTask(ctx context.Context, task *compliance.DSRTask) error {
+	return nil // Mock
+}
+
+func (r *mockDSRRepo) GetTasksByDSR(ctx context.Context, dsrID types.ID) ([]compliance.DSRTask, error) {
+	return nil, nil // Mock
+}
+
+func (r *mockDSRRepo) UpdateTask(ctx context.Context, task *compliance.DSRTask) error {
+	return nil // Mock
+}
+
+// =============================================================================
+// Mock Data Principal Profile Repository (Consent)
+// =============================================================================
+
+type mockProfileRepo struct {
+	mu       sync.Mutex
+	profiles map[types.ID]*consent.DataPrincipalProfile
+}
+
+func newMockProfileRepo() *mockProfileRepo {
+	return &mockProfileRepo{
+		profiles: make(map[types.ID]*consent.DataPrincipalProfile),
+	}
+}
+
+func (r *mockProfileRepo) Create(ctx context.Context, p *consent.DataPrincipalProfile) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if p.ID == (types.ID{}) {
+		p.ID = types.NewID()
+	}
+	r.profiles[p.ID] = p
+	return nil
+}
+
+func (r *mockProfileRepo) GetByID(ctx context.Context, id types.ID) (*consent.DataPrincipalProfile, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	p, ok := r.profiles[id]
+	if !ok {
+		return nil, fmt.Errorf("profile not found")
+	}
+	return p, nil
+}
+
+func (r *mockProfileRepo) GetByEmail(ctx context.Context, tenantID types.ID, email string) (*consent.DataPrincipalProfile, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, p := range r.profiles {
+		if p.TenantID == tenantID && p.Email == email {
+			return p, nil
+		}
+	}
+	return nil, fmt.Errorf("profile not found")
+}
+
+func (r *mockProfileRepo) Update(ctx context.Context, p *consent.DataPrincipalProfile) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.profiles[p.ID] = p
+	return nil
+}
+
+func (r *mockProfileRepo) ListByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[consent.DataPrincipalProfile], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []consent.DataPrincipalProfile
+	for _, p := range r.profiles {
+		if p.TenantID == tenantID {
+			items = append(items, *p)
+		}
+	}
+	return &types.PaginatedResult[consent.DataPrincipalProfile]{Items: items, Total: len(items)}, nil
+}
+
+// =============================================================================
+// Mock DPR Request Repository (Consent)
+// =============================================================================
+
+type mockDPRRepo struct {
+	mu   sync.Mutex
+	dprs map[types.ID]*consent.DPRRequest
+}
+
+func newMockDPRRepo() *mockDPRRepo {
+	return &mockDPRRepo{
+		dprs: make(map[types.ID]*consent.DPRRequest),
+	}
+}
+
+func (r *mockDPRRepo) Create(ctx context.Context, req *consent.DPRRequest) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if req.ID == (types.ID{}) {
+		req.ID = types.NewID()
+	}
+	r.dprs[req.ID] = req
+	return nil
+}
+
+func (r *mockDPRRepo) GetByID(ctx context.Context, id types.ID) (*consent.DPRRequest, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	req, ok := r.dprs[id]
+	if !ok {
+		return nil, fmt.Errorf("dpr not found")
+	}
+	return req, nil
+}
+
+func (r *mockDPRRepo) GetByProfile(ctx context.Context, profileID types.ID) ([]consent.DPRRequest, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.DPRRequest
+	for _, req := range r.dprs {
+		if req.ProfileID == profileID {
+			result = append(result, *req)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockDPRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[consent.DPRRequest], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []consent.DPRRequest
+	for _, req := range r.dprs {
+		if req.TenantID == tenantID {
+			items = append(items, *req)
+		}
+	}
+	return &types.PaginatedResult[consent.DPRRequest]{Items: items, Total: len(items)}, nil
+}
+
+func (r *mockDPRRepo) GetByDSRID(ctx context.Context, dsrID types.ID) (*consent.DPRRequest, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, req := range r.dprs {
+		if req.DSRID != nil && *req.DSRID == dsrID {
+			return req, nil
+		}
+	}
+	return nil, fmt.Errorf("dpr not found")
+}
+
+func (r *mockDPRRepo) Update(ctx context.Context, req *consent.DPRRequest) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.dprs[req.ID] = req
+	return nil
+}
+
+// =============================================================================
+// Mock Breach Repository (Breach)
+// =============================================================================
+// Note: importing breach would cause cycle if breach imports service?
+// No, domain imports are fine. But we need to make sure we imported "github.com/complyark/datalens/internal/domain/breach"
+// The file header imports might need updating.
+// Let's assume standard domain package structure.
+
+// We need to add imports to the top of the file if they are missing.
+// I will need to check imports first or just add them blindly if I could, but replace_file_content is one block.
+// I'll check imports in a separate step if compilation fails, but looking at file content previously:
+// It imported audit, consent, discovery, governance, identity. Not breach or compliance.
+// So I MUST update imports too.
+
+type mockBreachRepo struct {
+	mu        sync.Mutex
+	incidents map[types.ID]*breach.BreachIncident
+}
+
+func newMockBreachRepo() *mockBreachRepo {
+	return &mockBreachRepo{
+		incidents: make(map[types.ID]*breach.BreachIncident),
+	}
+}
+
+func (r *mockBreachRepo) Create(ctx context.Context, i *breach.BreachIncident) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if i.ID == (types.ID{}) {
+		i.ID = types.NewID()
+	}
+	r.incidents[i.ID] = i
+	return nil
+}
+
+func (r *mockBreachRepo) GetByID(ctx context.Context, id types.ID) (*breach.BreachIncident, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	i, ok := r.incidents[id]
+	if !ok {
+		return nil, fmt.Errorf("incident not found")
+	}
+	return i, nil
+}
+
+func (r *mockBreachRepo) Update(ctx context.Context, i *breach.BreachIncident) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.incidents[i.ID] = i
+	return nil
+}
+
+func (r *mockBreachRepo) List(ctx context.Context, tenantID types.ID, filter breach.Filter, pagination types.Pagination) (*types.PaginatedResult[breach.BreachIncident], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []breach.BreachIncident
+	for _, i := range r.incidents {
+		if i.TenantID != tenantID {
+			continue
+		}
+		if filter.Severity != nil && i.Severity != *filter.Severity {
+			continue
+		}
+		if filter.Status != nil && i.Status != *filter.Status {
+			continue
+		}
+		items = append(items, *i)
+	}
+	return &types.PaginatedResult[breach.BreachIncident]{Items: items, Total: len(items)}, nil
 }

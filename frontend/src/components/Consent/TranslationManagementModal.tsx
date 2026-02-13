@@ -15,6 +15,8 @@ interface Props {
     onClose: () => void;
 }
 
+const baseContent = { "body": "Privacy Notice Content..." };
+
 export function TranslationManagementModal({ notice, onClose }: Props) {
     const queryClient = useQueryClient();
     const [overrideLang, setOverrideLang] = useState<string | null>(null);
@@ -41,14 +43,6 @@ export function TranslationManagementModal({ notice, onClose }: Props) {
     };
 
     const getTranslation = (code: string) => translations.find(t => t.language === code) || null;
-
-    // TODO: Ideally pass real content keys from notice. For now, we mock or assume standard keys if possible, 
-    // or we fetch the default english translation to get keys.
-    // For this implementation, we will assume notice has some content.
-    // Since ConsentNotice type might not have content exposed directly in list view, 
-    // we might need to fetch full notice or assume keys generally.
-    // Let's assume we pass a generic "Body" key for now if we can't get real content.
-    const baseContent = { "body": "Privacy Notice Content..." };
 
     return (
         <div className="space-y-6">
@@ -109,6 +103,7 @@ export function TranslationManagementModal({ notice, onClose }: Props) {
             >
                 {overrideLang && (
                     <TranslationOverrideModal
+                        key={overrideLang}
                         noticeId={notice.id}
                         languageCode={overrideLang}
                         translation={getTranslation(overrideLang)}

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2 } from 'lucide-react';
+import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2, Globe } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { DataTable, type Column } from '../components/DataTable/DataTable';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -10,6 +10,7 @@ import { ErrorBoundary as SafeBoundary } from '../components/common/ErrorBoundar
 import { SectionErrorFallback } from '../components/common/ErrorFallbacks';
 import { useDataSources, useCreateDataSource, useScanDataSource, useScanStatus } from '../hooks/useDataSources';
 import { toast } from '../stores/toastStore';
+import { dataSourceService } from '../services/datasource';
 import type { DataSource, DataSourceType } from '../types/datasource';
 
 const DS_TYPE_OPTIONS: { value: DataSourceType; label: string }[] = [
@@ -22,6 +23,7 @@ const DS_TYPE_OPTIONS: { value: DataSourceType; label: string }[] = [
     { value: 's3', label: 'Amazon S3' },
     { value: 'gcs', label: 'Google Cloud Storage' },
     { value: 'azure_blob', label: 'Azure Blob' },
+    { value: 'm365', label: 'Microsoft 365' },
     { value: 'google_workspace', label: 'Google Workspace' },
 ];
 
@@ -77,9 +79,50 @@ const DataSources = () => {
     const [showModal, setShowModal] = useState(false);
     const [historyId, setHistoryId] = useState<string | null>(null);
     const [form, setForm] = useState(INITIAL_FORM);
+    const [isOAuthPending, setIsOAuthPending] = useState(false);
 
-    const handleCreate = (e: FormEvent) => {
+    const handleCreate = async (e: FormEvent) => {
         e.preventDefault();
+
+        // Handle OAuth Flows
+        // Exception: Google Service Account (if credentials provided)
+        const isGoogleServiceAccount = form.type === 'google_workspace' && form.credentials && form.credentials.length > 2;
+
+        if ((form.type === 'm365' || form.type === 'google_workspace') && !isGoogleServiceAccount) {
+            const url = form.type === 'm365'
+                ? dataSourceService.getM365AuthUrl()
+                : dataSourceService.getGoogleAuthUrl();
+
+            // Open Popup
+            const width = 600;
+            const height = 700;
+            const left = window.screen.width / 2 - width / 2;
+            const top = window.screen.height / 2 - height / 2;
+
+            const popup = window.open(
+                url,
+                'Connect Data Source',
+                `width=${width},height=${height},top=${top},left=${left}`
+            );
+
+            if (popup) {
+                setIsOAuthPending(true);
+                const timer = setInterval(() => {
+                    if (popup.closed) {
+                        clearInterval(timer);
+                        setIsOAuthPending(false);
+                        setShowModal(false);
+                        refetch(); // Refresh list to see new DS
+                        toast.success('Connection Attempted', 'Check the list for the new data source.');
+                    }
+                }, 1000);
+            } else {
+                toast.error('Popup Blocked', 'Please allow popups to connect this data source.');
+            }
+            return;
+        }
+
+        // Handle Standard Database/Storage Flows
         createMutate({
             name: form.name,
             type: form.type,
@@ -232,44 +275,115 @@ const DataSources = () => {
             >
                 <form id="addDsForm" onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
-                        <label style={labelStyle}>Name</label>
-                        <input type="text" value={form.name} onChange={updateField('name')} required style={inputStyle} placeholder="HR Database" />
+                        <label style={labelStyle}>Data Source Type</label>
+                        <select value={form.type} onChange={updateField('type')} style={inputStyle}>
+                            {DS_TYPE_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                            <label style={labelStyle}>Type</label>
-                            <select value={form.type} onChange={updateField('type')} style={inputStyle}>
-                                {DS_TYPE_OPTIONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </select>
+                    {(form.type === 'm365' || form.type === 'google_workspace') ? (
+                        <div className="space-y-4">
+                            {form.type === 'm365' && (
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm text-blue-800">
+                                    <h4 className="font-semibold mb-1">Configuration Required</h4>
+                                    <p className="mb-2">Ensure your Azure AD Application is configured with this Redirect URI:</p>
+                                    <code className="bg-white px-2 py-1 rounded border border-blue-200 block w-full mb-3 select-all">
+                                        {window.location.origin}/api/v2/m365/callback
+                                    </code>
+                                    <p>Authentication uses the globally configured Client ID.</p>
+                                </div>
+                            )}
+
+                            {form.type === 'google_workspace' && (
+                                <div className="flex gap-4 p-1 bg-gray-100 rounded-lg select-none mb-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, credentials: '' }))}
+                                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${!form.credentials ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        OAuth (User)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, credentials: '{}' }))}
+                                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${form.credentials ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        Service Account
+                                    </button>
+                                </div>
+                            )}
+
+                            {(form.type === 'google_workspace' && form.credentials) ? (
+                                <div>
+                                    <label style={labelStyle}>Service Account Key (JSON)</label>
+                                    <textarea
+                                        value={form.credentials === '{}' ? '' : form.credentials}
+                                        onChange={updateField('credentials')}
+                                        style={{ ...inputStyle, height: '120px', padding: '0.75rem', resize: 'vertical', fontFamily: 'monospace', fontSize: '12px' }}
+                                        placeholder='{ "type": "service_account", ... }'
+                                        required
+                                    />
+                                    <div className="mt-4 flex justify-end">
+                                        <Button type="submit" isLoading={isCreating}>Connect Service Account</Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">
+                                    <div className="mb-4">
+                                        <div className="mx-auto w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
+                                            <Globe className="text-blue-600" size={24} />
+                                        </div>
+                                        <h3 className="text-gray-900 font-medium">Connect via OAuth</h3>
+                                        <p className="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
+                                            You will be redirected to {form.type === 'm365' ? 'Microsoft' : 'Google'} to authenticate and grant access.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        isLoading={isOAuthPending}
+                                        className="w-full justify-center"
+                                    >
+                                        {isOAuthPending ? 'Connecting...' : `Connect ${form.type === 'm365' ? 'Microsoft 365' : 'Google Workspace'}`}
+                                    </Button>
+                                </div>
+                            )}
                         </div>
-                        <div>
-                            <label style={labelStyle}>Port</label>
-                            <input type="number" value={form.port} onChange={updateField('port')} style={inputStyle} />
-                        </div>
-                    </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label style={labelStyle}>Name</label>
+                                <input type="text" value={form.name} onChange={updateField('name')} required style={inputStyle} placeholder="HR Database" />
+                            </div>
 
-                    <div>
-                        <label style={labelStyle}>Host</label>
-                        <input type="text" value={form.host} onChange={updateField('host')} required style={inputStyle} placeholder="db.example.com" />
-                    </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={labelStyle}>Host</label>
+                                    <input type="text" value={form.host} onChange={updateField('host')} required style={inputStyle} placeholder="db.example.com" />
+                                </div>
+                                <div>
+                                    <label style={labelStyle}>Port</label>
+                                    <input type="number" value={form.port} onChange={updateField('port')} style={inputStyle} />
+                                </div>
+                            </div>
 
-                    <div>
-                        <label style={labelStyle}>Database</label>
-                        <input type="text" value={form.database} onChange={updateField('database')} required style={inputStyle} placeholder="production_db" />
-                    </div>
+                            <div>
+                                <label style={labelStyle}>Database / Bucket</label>
+                                <input type="text" value={form.database} onChange={updateField('database')} required style={inputStyle} placeholder="production_db" />
+                            </div>
 
-                    <div>
-                        <label style={labelStyle}>Description</label>
-                        <textarea value={form.description} onChange={updateField('description')} style={{ ...inputStyle, height: '60px', padding: '0.5rem 0.875rem', resize: 'vertical' }} placeholder="Brief description..." />
-                    </div>
+                            <div>
+                                <label style={labelStyle}>Description</label>
+                                <textarea value={form.description} onChange={updateField('description')} style={{ ...inputStyle, height: '60px', padding: '0.5rem 0.875rem', resize: 'vertical' }} placeholder="Brief description..." />
+                            </div>
 
-                    <div>
-                        <label style={labelStyle}>Credentials (connection string or password)</label>
-                        <input type="password" value={form.credentials} onChange={updateField('credentials')} required style={inputStyle} placeholder="••••••••" />
-                    </div>
+                            <div>
+                                <label style={labelStyle}>Credentials</label>
+                                <input type="password" value={form.credentials} onChange={updateField('credentials')} required style={inputStyle} placeholder="Connection string or password" />
+                            </div>
+                        </>
+                    )}
                 </form>
             </Modal>
 

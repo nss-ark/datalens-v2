@@ -320,6 +320,7 @@ type DataPrincipalProfileRepository interface {
 	GetByID(ctx context.Context, id types.ID) (*DataPrincipalProfile, error)
 	GetByEmail(ctx context.Context, tenantID types.ID, email string) (*DataPrincipalProfile, error)
 	Update(ctx context.Context, p *DataPrincipalProfile) error
+	ListByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[DataPrincipalProfile], error)
 }
 
 // ConsentHistoryRepository defines persistence for the consent timeline.

@@ -82,7 +82,7 @@ func TestBatch16_CrossSystemIntegration(t *testing.T) {
 	// Since I cannot see `notification_subscriber.go` content right now, I'll trust the prompt requirement.
 	// I'll assume I need to instantiate `NewNotificationSubscriber` and register it.
 
-	subscriber := NewNotificationSubscriber(notificationSvc, eventBus, newTestLogger())
+	subscriber := NewNotificationSubscriber(notificationSvc, nil, eventBus, newTestLogger())
 	// Use `Start` or `Register`? Main.go used `Start`.
 	// Let's check `notification_subscriber.go` signature if possible, or guess.
 	// Main.go: `notificationSub.Start(context.Background())`

@@ -68,5 +68,18 @@ export const dataSourceService = {
         const configJson = JSON.stringify(config);
         const res = await api.put<ApiResponse<DataSource>>(`/data-sources/${dataSourceId}`, { config: configJson });
         return res.data.data;
+    },
+
+    // --- OAuth Helpers ---
+
+    getM365AuthUrl(): string {
+        // Returns the backend endpoint that redirects to Microsoft
+        // We might want to fetch this if it's dynamic, but the handler redirects directly.
+        // If we want to open it in a popup, we point the popup to this URL.
+        return `${import.meta.env.VITE_API_URL || '/api/v2'}/m365/connect`;
+    },
+
+    getGoogleAuthUrl(): string {
+        return `${import.meta.env.VITE_API_URL || '/api/v2'}/google/connect`;
     }
 };

@@ -23,6 +23,7 @@ func (h *BreachHandler) Routes() chi.Router {
 	r.Get("/", h.List)
 	r.Get("/{id}", h.GetByID)
 	r.Put("/{id}", h.Update)
+	r.Post("/{id}/notify", h.Notify)
 	r.Get("/{id}/report/cert-in", h.GetCertInReport)
 	return r
 }
@@ -127,4 +128,19 @@ func (h *BreachHandler) GetCertInReport(w http.ResponseWriter, r *http.Request) 
 	}
 
 	httputil.JSON(w, http.StatusOK, report)
+}
+
+func (h *BreachHandler) Notify(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	if err := h.service.NotifyDataPrincipals(r.Context(), id); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]bool{"success": true})
 }

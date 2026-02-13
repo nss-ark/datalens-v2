@@ -88,7 +88,7 @@ func TestBreachService_CreateIncident(t *testing.T) {
 
 	logger := slog.Default()
 	auditService := NewAuditService(mockAuditRepo, logger)
-	service := NewBreachService(mockRepo, auditService, mockEventBus, logger)
+	service := NewBreachService(mockRepo, nil, nil, auditService, mockEventBus, logger)
 
 	ctx := context.Background()
 	tenantID := types.NewID()

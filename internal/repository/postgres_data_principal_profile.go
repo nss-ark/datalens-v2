@@ -116,3 +116,60 @@ func (r *PostgresDataPrincipalProfileRepository) Update(ctx context.Context, p *
 	}
 	return nil
 }
+
+// ListByTenant retrieves a paginated list of DataPrincipalProfiles for a tenant.
+func (r *PostgresDataPrincipalProfileRepository) ListByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[consent.DataPrincipalProfile], error) {
+	if pagination.Page < 1 {
+		pagination.Page = 1
+	}
+	if pagination.PageSize < 1 {
+		pagination.PageSize = 20
+	}
+	offset := (pagination.Page - 1) * pagination.PageSize
+
+	// Count
+	var total int
+	countQuery := `SELECT COUNT(*) FROM data_principal_profiles WHERE tenant_id = $1`
+	if err := r.db.QueryRow(ctx, countQuery, tenantID).Scan(&total); err != nil {
+		return nil, fmt.Errorf("count profiles: %w", err)
+	}
+
+	// List
+	query := `
+		SELECT
+			id, tenant_id, email, phone, verification_status, verified_at,
+			verification_method, subject_id, last_access_at, preferred_lang,
+			created_at, updated_at
+		FROM data_principal_profiles
+		WHERE tenant_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := r.db.Query(ctx, query, tenantID, pagination.PageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("list profiles: %w", err)
+	}
+	defer rows.Close()
+
+	var items []consent.DataPrincipalProfile
+	for rows.Next() {
+		var p consent.DataPrincipalProfile
+		if err := rows.Scan(
+			&p.ID, &p.TenantID, &p.Email, &p.Phone, &p.VerificationStatus, &p.VerifiedAt,
+			&p.VerificationMethod, &p.SubjectID, &p.LastAccessAt, &p.PreferredLang,
+			&p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan profile: %w", err)
+		}
+		items = append(items, p)
+	}
+
+	return &types.PaginatedResult[consent.DataPrincipalProfile]{
+		Items:       items,
+		Total:       total,
+		Page:        pagination.Page,
+		PageSize:    pagination.PageSize,
+		TotalPages:  (total + pagination.PageSize - 1) / pagination.PageSize,
+		HasNextPage: total > offset+pagination.PageSize,
+	}, nil
+}

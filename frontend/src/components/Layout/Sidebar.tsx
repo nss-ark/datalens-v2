@@ -64,7 +64,7 @@ const NAV_GROUPS = [
             { to: '/compliance/grievances', label: 'Grievances', icon: AlertTriangle },
             { to: '/nominations', label: 'Nominations', icon: Award },
             { to: '/nominations', label: 'Nominations', icon: Award },
-            { to: '/breach', label: 'Breach Incidents', icon: ShieldCheck },
+            { to: '/breach', label: 'Breach Management', icon: ShieldCheck },
             { to: '/compliance/settings/identity', label: 'Identity Verification', icon: ShieldCheck },
         ]
     },
