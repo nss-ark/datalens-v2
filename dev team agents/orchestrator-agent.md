@@ -145,11 +145,20 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - **Grievance Redressal**: DPDPA lifecycle, 30-day SLA, portal + admin routes
 - **Batch 16 Tests**: 10/10 integration tests passing
 
-#### Superadmin Portal Phase 1 (Batch 17A)
+#### Superadmin Portal Phase 1 (Batch 17A/B)
 - **Admin API**: `AdminHandler`, `AdminService`, mounted outside TenantIsolation
+- **User Management**: Cross-tenant user search, suspension, role assignment
 - **PLATFORM_ADMIN Role**: New system role + `RequireRole` middleware + seed script
 - **Admin Shell**: `AdminLayout`, `AdminSidebar`, `AdminDashboard` (darker theme)
 - **Tenant Management**: `TenantList` (DataTable), `TenantForm` (modal), `adminService.ts`
+
+#### DPR & Admin DSR Patch (Batch 18/18.1)
+- **Guardian Flow**: OTP verification for minors (DPDPA §9)
+- **Admin DSR UI**: Approve/Reject DSRs from any tenant
+- **Admin DSR API**: `GET /api/v2/admin/dsr` with tenant isolation bypass for admins
+- **Security Fix**: Fixed IDOR in `DSRService` (strict tenant checks for non-admins)
+- **Portal UI**: Dashboard, Request New, Identity Card, Guardian Verification
+
 
 ### Known Technical Debt ⚠️
 1.  **Integration Tests**: CI pipeline integration needs final polish for Docker-in-Docker.
@@ -174,29 +183,21 @@ All consent domain entities from `internal/domain/consent/entities.go` are now i
 
 ---
 
-## Next 4 Sprint Batches — Roadmap
-
 ## Next Roadmap Batches
 
-### Batch 13: Automated Governance (DSR & Lineage) ✅ COMPLETE
-
-### Batch 14: Consent Analytics & AI ✅ COMPLETE
-
-### Batch 15: Consent Module Completion (DPDPA Lifecycle) ✅ COMPLETE
-
-### Batch 16: Consent Notifications & Translation ← NEXT
+### Batch 19: Cloud Integrations & Breach Management ← NEXT
 | Task | Agent | Priority | Notes |
 |------|-------|----------|---------|
-| Translation Pipeline (HuggingFace) | AI/ML | P1 | 22 languages for notices |
-| Consent Notifications (Email/SMS/Webhook) | Backend | P1 | Event-driven alerts |
-| Grievance Redressal Module | Backend | P1 | Extends DPR/DSR flows |
+| M365 Connector (Graph API) | Backend | P0 | OneDrive, SharePoint, Outlook |
+| Google Workspace Connector | Backend | P0 | Drive, Gmail |
+| Breach Management Module | Backend | P1 | Incident lifecycle, SLA (DPDPA §28) |
+| Breach UI | Frontend | P1 | Incident reporting & dashboard |
 
-### Batch 17+: Enterprise Scale
+### Batch 20: Enterprise Scale
 | Task | Agent | Priority | Notes |
 |------|-------|----------|---------|
 | Event Mesh Refactoring | Backend | P1 | Decouple monolith |
 | Redis Consent Cache + Enforcement Middleware | Backend | P0 | <50ms consent checks |
-| SuperAdmin Portal (RBAC + Module Selection) | Full Stack | P1 | User/module management |
 | Vanilla JS Widget Bundle | Frontend | P1 | Framework-agnostic embeddable widget |
 
 

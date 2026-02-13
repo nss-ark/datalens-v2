@@ -343,7 +343,7 @@ func main() {
 	notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
 
 	// 7i. Admin Service
-	adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, tenantSvc, slog.Default())
+	adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, tenantSvc, slog.Default())
 
 	// 8. Scan Orchestrator
 	// Initialize Scan Queue (NATS)

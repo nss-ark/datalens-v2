@@ -101,6 +101,15 @@ func (s *DSRService) ApproveDSR(ctx context.Context, id types.ID) (*compliance.D
 		return nil, err
 	}
 
+	// Tenant Isolation
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, errors.New("tenant id is required")
+	}
+	if dsr.TenantID != tenantID {
+		return nil, types.NewNotFoundError("DSR", id)
+	}
+
 	if err := dsr.ValidateTransition(compliance.DSRStatusApproved); err != nil {
 		return nil, types.NewValidationError("invalid transition", map[string]any{"status": err.Error()})
 	}
@@ -164,6 +173,15 @@ func (s *DSRService) RejectDSR(ctx context.Context, id types.ID, reason string) 
 		return nil, err
 	}
 
+	// Tenant Isolation
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, errors.New("tenant id is required")
+	}
+	if dsr.TenantID != tenantID {
+		return nil, types.NewNotFoundError("DSR", id)
+	}
+
 	if err := dsr.ValidateTransition(compliance.DSRStatusRejected); err != nil {
 		return nil, types.NewValidationError("invalid transition", map[string]any{"status": err.Error()})
 	}
@@ -191,6 +209,15 @@ func (s *DSRService) GetDSR(ctx context.Context, id types.ID) (*DSRWithTasks, er
 	dsr, err := s.dsrRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	// Tenant Isolation
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, errors.New("tenant id is required")
+	}
+	if dsr.TenantID != tenantID {
+		return nil, types.NewNotFoundError("DSR", id)
 	}
 
 	tasks, err := s.dsrRepo.GetTasksByDSR(ctx, id)
@@ -226,6 +253,15 @@ func (s *DSRService) UpdateStatus(ctx context.Context, id types.ID, status compl
 	dsr, err := s.dsrRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	// Tenant Isolation
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, errors.New("tenant id is required")
+	}
+	if dsr.TenantID != tenantID {
+		return nil, types.NewNotFoundError("DSR", id)
 	}
 
 	if err := dsr.ValidateTransition(status); err != nil {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/complyark/datalens/internal/domain/compliance"
 	"github.com/complyark/datalens/internal/domain/identity"
 	"github.com/complyark/datalens/internal/service"
 	"github.com/complyark/datalens/pkg/httputil"
@@ -29,6 +30,10 @@ func (h *AdminHandler) Routes() chi.Router {
 	r.Patch("/users/{id}/status", h.UpdateUserStatus)
 	r.Put("/users/{id}/roles", h.AssignRoles)
 	r.Get("/roles", h.ListRoles)
+
+	// Compliance / DSRs (Cross-tenant)
+	r.Get("/dsr", h.ListDSRs)
+	r.Get("/dsr/{id}", h.GetDSR)
 
 	return r
 }
@@ -215,4 +220,44 @@ func (h *AdminHandler) ListRoles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, roles)
+}
+
+func (h *AdminHandler) ListDSRs(w http.ResponseWriter, r *http.Request) {
+	pagination := httputil.ParsePagination(r)
+
+	var statusFilter *compliance.DSRStatus
+	if s := r.URL.Query().Get("status"); s != "" {
+		st := compliance.DSRStatus(s)
+		statusFilter = &st
+	}
+
+	var typeFilter *compliance.DSRRequestType
+	if t := r.URL.Query().Get("type"); t != "" {
+		rt := compliance.DSRRequestType(t)
+		typeFilter = &rt
+	}
+
+	dsrs, err := h.service.GetAllDSRs(r.Context(), pagination, statusFilter, typeFilter)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, dsrs)
+}
+
+func (h *AdminHandler) GetDSR(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "Invalid DSR ID")
+		return
+	}
+
+	dsr, err := h.service.GetDSR(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, dsr)
 }

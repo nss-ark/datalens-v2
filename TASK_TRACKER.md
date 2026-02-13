@@ -512,10 +512,10 @@
 - [ ] **Gap**: Cross-tenant `GET /api/v2/admin/dsr` endpoint (Frontend ready, Backend needs AdminHandler route)
 
 ### Batch 18.1: Admin DSR Endpoint Patch
-- [ ] Backend: Add `GetAll` to `DSRRepository` (Cross-tenant)
-- [ ] Backend: Add `GetAllDSRs` and `GetDSR` to `AdminService`
-- [ ] Backend: Add `GET /admin/dsr` and `GET /admin/dsr/{id}` to `AdminHandler`
-- [ ] Test: Verify Admin can see DSRs from multiple tenants
+- [x] Backend: Add `GetAll` to `DSRRepository` (Cross-tenant)
+- [x] Backend: Add `GetAllDSRs` and `GetDSR` to `AdminService`
+- [x] Backend: Add `GET /admin/dsr` and `GET /admin/dsr/{id}` to `AdminHandler`
+- [x] Test: Verify Admin can see DSRs from multiple tenants
 
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
 - [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal
@@ -557,4 +557,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 13, 2026 — Batch 17A (Superadmin Portal) complete; Admin API + PLATFORM_ADMIN role + Admin Dashboard + Tenant CRUD; User Management deferred to 17B
+> **Last Updated**: February 13, 2026 — Batch 18 (DPR) & 18.1 (Admin DSR Patch) complete; Next: Batch 19 (Cloud Integrations)

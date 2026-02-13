@@ -64,6 +64,26 @@ func (m *mockDSRRepository) GetByTenant(_ context.Context, tenantID types.ID, pa
 	}, nil
 }
 
+func (m *mockDSRRepository) GetAll(_ context.Context, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
+	var items []compliance.DSR
+	for _, dsr := range m.dsrs {
+		if statusFilter != nil && dsr.Status != *statusFilter {
+			continue
+		}
+		if typeFilter != nil && dsr.RequestType != *typeFilter {
+			continue
+		}
+		items = append(items, *dsr)
+	}
+	return &types.PaginatedResult[compliance.DSR]{
+		Items:      items,
+		Total:      len(items),
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
+		TotalPages: 1,
+	}, nil
+}
+
 func (m *mockDSRRepository) GetOverdue(_ context.Context, tenantID types.ID) ([]compliance.DSR, error) {
 	var items []compliance.DSR
 	now := time.Now()
@@ -442,4 +462,34 @@ func TestDSRService_UpdateStatus_WithDPRSync(t *testing.T) {
 	updatedDPR, _ = dprRepo.GetByID(ctx, dpr.ID)
 	assert.Equal(t, consent.DPRStatusCompleted, updatedDPR.Status)
 	assert.Equal(t, "All data sent", *updatedDPR.ResponseSummary)
+}
+
+func TestDSRService_GetDSR_TenantIsolation(t *testing.T) {
+	// Setup
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	dsrRepo := newMockDSRRepository()
+	// Using proper mocks for dependencies
+	svc := NewDSRService(dsrRepo, newMockDataSourceRepo(), newMockDSRQueue(), newMockDPRRepository(), newMockEventBus(), nil, logger)
+
+	tenantA := types.NewID()
+	tenantB := types.NewID()
+
+	// Create DSR for Tenant A
+	dsrA := &compliance.DSR{
+		ID:        types.NewID(),
+		TenantID:  tenantA,
+		Status:    compliance.DSRStatusPending,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	// Use manual create to bypass service checks (which assume correct tenant context)
+	dsrRepo.Create(context.Background(), dsrA)
+
+	// Try to access DSR A as Tenant B
+	ctxB := context.WithValue(context.Background(), types.ContextKeyTenantID, tenantB)
+	_, err := svc.GetDSR(ctxB, dsrA.ID)
+
+	// Verify - Should fail with Not Found (to hide existence) or Forbidden
+	require.Error(t, err)
+	assert.True(t, types.IsNotFoundError(err), "Should return NotFound for tenant isolation mismatch")
 }

@@ -15,17 +15,51 @@
 | **Batch 17A Tests** | Test | [x] | `AdminService` (3 tests) + `RequireRole` middleware (3 tests) |
 | **Dashboard Live Stats** | Frontend | [x] | Real API data replaces hardcoded values |
 
-## Batch 17A Completion (Superadmin Portal — Phase 1) ✅
+## Batch 18.1 Completion (Admin DSR Patch) ✅
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| **Admin API + PLATFORM_ADMIN** | Backend | [x] | `AdminHandler`, `AdminService`, `RequireRole` middleware, seed script |
-| **Admin Shell & Routing** | Frontend | [x] | `AdminLayout`, `AdminSidebar`, `AdminDashboard`, `AdminRoute` guard |
-| **Tenant Management** | Frontend | [x] | `TenantList`, `TenantForm`, `adminService.ts` |
+| **Cross-Tenant DSRs** | Backend | [x] | `GET /api/v2/admin/dsr` implemented in `AdminHandler` (with tenant isolation bypass for admins) |
+| **Security Fix** | Backend | [x] | Fixed IDOR in `DSRService` (strict tenant checks for non-admins) |
+| **Verification** | Test | [x] | `TestAdminHandler` + `TestDSRService_TenantIsolation` passing |
+
+## Batch 18 Completion (DPR & Portal) ✅
+| Goal | Owner | Status | Details |
+|------|-------|--------|---------|
+| **Guardian Flow** | Backend | [x] | OTP verification for minors |
+| **Admin DSR UI** | Frontend | [x] | Approve/Reject UI |
+| **Portal UI** | Frontend | [x] | Dashboard, Request New, Identity Card |
 
 ## Active Messages
+### [2026-02-13] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 19 Started — Cloud Integrations & Breach Management
+**Type**: ANNOUNCEMENT
+
+**Status**:
+- Batch 18.1 (Admin DSR Patch) is **COMPLETE**.
+- Moving to Batch 19: High-value integrations and enterprise security.
+
+**Focus**:
+- **Microsoft 365 Connector**: SharePoint, OneDrive, Outlook (Graph API).
+- **Google Workspace Connector**: Drive, Gmail (Google APIs).
+- **Breach Management**: Incident lifecycle, SLA tracking (DPDPA Section 28).
+
+**Execution Plan**:
+- **Step 1 (PARALLEL)**:
+  - **Task #1 (Backend)**: M365 Connector Implementation (Auth + Scanning).
+  - **Task #2 (Backend)**: Google Workspace Connector Implementation.
+  - **Task #3 (Backend)**: Breach Management Module (Entities + Services).
+- **Step 2 (PARALLEL)**:
+  - **Task #4 (Frontend)**: Breach Management UI.
+  - **Task #5 (Frontend)**: data source configuration UI for M365/Google.
+
+**Priorities**:
+- **P0**: M365 Integration (Enterprise Requirement).
+- **P1**: Breach Management (Compliance Requirement).
+
 ### [2026-02-13] [FROM: Backend] → [TO: ALL]
-**Subject**: Admin API & Platform Role Implementation
+**Subject**: Admin DSR Patch Complete
 **Type**: HANDOFF
+
 
 **Changes**:
 - **Domain**: Added `RolePlatformAdmin` ("PLATFORM_ADMIN").

@@ -114,6 +114,9 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | Dark Pattern Lab | `pages/Compliance/DarkPatternLab.tsx` | `/compliance/dark-patterns` | ✅ Complete (Batch 14) |
 | Admin Dashboard | `pages/Admin/Dashboard.tsx` | `/admin` | ✅ Complete (Batch 17A) |
 | Admin Tenants | `pages/Admin/TenantList.tsx` | `/admin/tenants` | ✅ Complete (Batch 17A) |
+| Admin Users | `pages/Admin/UserList.tsx` | `/admin/users` | ✅ Complete (Batch 17B) |
+| Admin DSRs | `pages/Admin/DSRList.tsx` | `/admin/compliance/dsr` | ✅ Complete (Batch 18) |
+| Admin DSR Detail | `pages/Admin/DSRDetail.tsx` | `/admin/compliance/dsr/:id` | ✅ Complete (Batch 18) |
 
 ### Existing Components (20)
 | Component | File | Purpose |
