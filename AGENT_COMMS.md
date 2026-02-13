@@ -8,12 +8,12 @@
 
 ## Current Sprint Goals (Batch 16: Notifications, Translation & Grievance)
 | Goal | Owner | Status | Details |
-|------|-------|--------|---------
-| **Translation Pipeline (HuggingFace)** | AI/ML | [ ] | 22 Eighth Schedule languages via NLLB model |
-| **Consent Notifications** | Backend | [ ] | Email/SMS/Webhook + event subscriber + template CRUD |
-| **Grievance Redressal Module** | Backend | [ ] | Complaint lifecycle + DPO escalation + portal submission |
-| **Translation & Notification UI** | Frontend | [ ] | Translation controls, notification history, grievance pages |
-| **Batch 16 Integration Tests** | Test | [ ] | Translation, notification dispatch, grievance lifecycle |
+|------|-------|--------|---------|
+| **Translation Pipeline (HuggingFace)** | AI/ML | [x] | IndicTrans2, 22 languages, RTL support, rate limiting |
+| **Consent Notifications** | Backend | [x] | Email/Webhook + SMS(stub) + event subscriber + template CRUD |
+| **Grievance Redressal Module** | Backend | [x] | DPDPA lifecycle, portal + admin routes, 30-day SLA |
+| **Translation & Notification UI** | Frontend | [x] | Translation controls, notification history, grievance pages |
+| **Batch 16 Integration Tests** | Test | [x] | 10/10 tests passing, cross-system event flow verified |
 
 ## Active Messages
 ### [2026-02-13] [FROM: Test] → [TO: ALL]

@@ -79,6 +79,10 @@ type WidgetConfig struct {
 	RegulationRef     string `json:"regulation_ref"`
 	RequireExplicit   bool   `json:"require_explicit"`
 	ConsentExpiryDays int    `json:"consent_expiry_days"` // Days until re-consent
+
+	// Script blocking (SDK)
+	BlockedScriptPatterns []BlockedScriptPattern `json:"blocked_script_patterns,omitempty"`
+	Purposes              []PurposeRef           `json:"purposes,omitempty"`
 }
 
 // ThemeConfig holds visual styling for the widget.
@@ -89,6 +93,20 @@ type ThemeConfig struct {
 	FontFamily      string  `json:"font_family"`
 	LogoURL         *string `json:"logo_url,omitempty"`
 	BorderRadius    string  `json:"border_radius"`
+}
+
+// BlockedScriptPattern maps a URL pattern to a purpose for script blocking.
+type BlockedScriptPattern struct {
+	Pattern   string `json:"pattern"`    // URL substring match, e.g. "google-analytics.com"
+	PurposeID string `json:"purpose_id"` // Purpose this script belongs to
+}
+
+// PurposeRef is a lightweight purpose reference included in the widget config.
+type PurposeRef struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsEssential bool   `json:"is_essential"`
 }
 
 // LayoutType defines how the widget appears.

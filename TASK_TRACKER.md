@@ -220,7 +220,10 @@
 - [x] Build public API: `POST /api/public/consent/withdraw` (withdraw consent) (Batch 15)
 - [x] Build public API: `GET /api/public/consent/widget/{id}/config` (fetch config) (Batch 15)
 - [x] Implement CORS validation against `allowed_origins` — `WidgetCORSMiddleware` (Batch 15)
-- [ ] Build vanilla JS consent snippet (~15 KB gzipped, framework-agnostic) → Deferred (Batch 17+)
+- [x] Build vanilla JS consent snippet (~15 KB gzipped, framework-agnostic) (Batch 17)
+  - [x] SDK Core: Banner, Preferences, i18n, Storage (Batch 17)
+  - [x] Script Blocking Engine (Cookie Gate pattern) (Batch 17)
+  - [x] Backend: SDK Serving + Config API + Embed Code (Batch 17)
 - [ ] Support widget types: BANNER, PREFERENCE_CENTER, INLINE_FORM, PORTAL
 - [ ] Support layouts: BOTTOM_BAR, TOP_BAR, MODAL, SIDEBAR, FULL_PAGE
 - [ ] Implement widget theming (colors, fonts, logo, border radius)
@@ -324,6 +327,13 @@
 - [x] DigiLocker Integration (OAuth2 + HMAC)
 - [x] Identity Verification Policy UI (Admin)
 - [x] Data Principal Portal Verification Flow
+
+### Batch 16: Translation, Notifications & Grievance Redressal
+- [x] Translation Pipeline — IndicTrans2 via HuggingFace, 22 Indian languages, RTL support (Batch 16)
+- [x] Consent Notifications — Event-driven Email/Webhook/SMS(stub), template CRUD, subscriber (Batch 16)
+- [x] Grievance Redressal Module — DPDPA-compliant lifecycle, portal + admin routes, 30-day SLA (Batch 16)
+- [x] Batch 16 Frontend — Translation UI, Notification History, Grievance Dashboard (Batch 16)
+- [x] Batch 16 Integration Tests — 10/10 tests passing, cross-system event flow verified (Batch 16)
 
 #### 3.3 Enhanced Connectors (Batch 8)
 - [x] Hardening AWS S3 Connector (JSON/CSV handling)
@@ -458,11 +468,23 @@
 - [ ] Cache invalidation on consent withdrawal (pub/sub)
 - [ ] Language SDKs (Go, Python, Node.js)
 
-### Grievance Redressal → **Deferred (Batch 16)**
-- [ ] Complaint logging with categorization
-- [ ] Resolution tracking dashboard
-- [ ] DPO escalation workflow
-- [ ] Feedback collection on resolution
+### Grievance Redressal → ✅ **Completed (Batch 16)**
+- [x] Complaint logging with categorization (Batch 16)
+- [x] Resolution tracking dashboard (Batch 16)
+- [x] DPO escalation workflow (Batch 16)
+- [x] Feedback collection on resolution (Batch 16)
+
+### Real SMS Integration → **Deferred (End of roadmap)**
+- [ ] Replace stubbed SMS channel with real provider (Twilio/MSG91)
+- [ ] SMS delivery receipts and retry logic
+
+### Batch 18: DPR Completion (Data Principal Rights) → **Next Up**
+- [ ] Implement `DPRRequest` repository and service logic
+- [ ] Build DPR public API: `POST /api/public/dpr/requests` (verify identity + submit)
+- [ ] Build DPR status API: `GET /api/public/dpr/requests/{id}`
+- [ ] Implement Request Workflow (Submitted -> Verified -> In Progress -> Completed)
+- [ ] Implement "Guardian Consent" flow for minors (DPDPA Section 9)
+- [ ] Build internal API for processing requests (Approve/Reject/Respond)
 
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
 - [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal
@@ -504,4 +526,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 13, 2026 — Batch 15 (Consent Module Completion) complete; Notice Management, Public APIs, Renewal/Expiry, Portal Withdrawal all done; Lifecycle tests passing
+> **Last Updated**: February 13, 2026 — Batch 16 (Translation + Notifications + Grievance) complete; IndicTrans2 pipeline, event-driven notifications, DPDPA grievance redressal all implemented; 10/10 tests passing; all modules wired in main.go

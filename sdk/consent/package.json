@@ -1,0 +1,20 @@
+{
+    "name": "@datalens/consent-sdk",
+    "version": "1.0.0",
+    "description": "DataLens Consent Collection SDK — DPDPA-compliant, framework-agnostic consent widget",
+    "main": "dist/consent.min.js",
+    "scripts": {
+        "build": "esbuild src/index.ts --bundle --minify --format=iife --global-name=DataLensConsent --outfile=dist/consent.min.js --target=es2018",
+        "build:dev": "esbuild src/index.ts --bundle --format=iife --global-name=DataLensConsent --outfile=dist/consent.js --target=es2018 --sourcemap",
+        "watch": "esbuild src/index.ts --bundle --format=iife --global-name=DataLensConsent --outfile=dist/consent.js --target=es2018 --sourcemap --watch",
+        "size": "gzip -c dist/consent.min.js | wc -c"
+    },
+    "devDependencies": {
+        "esbuild": "^0.20.0",
+        "typescript": "^5.3.0"
+    },
+    "files": [
+        "dist/consent.min.js"
+    ],
+    "license": "UNLICENSED"
+}

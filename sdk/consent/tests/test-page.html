@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataLens Consent SDK — Test Page</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; color: #fff; padding: 40px;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 28px; margin-bottom: 12px; }
+    .subtitle { opacity: 0.85; margin-bottom: 32px; font-size: 14px; }
+    .card {
+      background: rgba(255,255,255,0.1); backdrop-filter: blur(12px);
+      border-radius: 12px; padding: 24px; margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .card h2 { font-size: 16px; margin-bottom: 12px; }
+    .card p { font-size: 13px; opacity: 0.85; line-height: 1.5; margin-bottom: 8px; }
+    .btn {
+      display: inline-block; padding: 10px 20px; border-radius: 8px;
+      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+      color: #fff; cursor: pointer; font-size: 13px; font-weight: 600;
+      transition: all 0.2s; margin: 4px;
+    }
+    .btn:hover { background: rgba(255,255,255,0.3); }
+    #consent-status {
+      font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3);
+      padding: 16px; border-radius: 8px; margin-top: 12px; max-height: 200px;
+      overflow-y: auto; white-space: pre-wrap;
+    }
+    .blocked-indicator { color: #ff6b6b; font-weight: bold; }
+    .released-indicator { color: #51cf66; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛡️ DataLens Consent SDK Test</h1>
+    <p class="subtitle">This page tests the consent widget SDK in isolation with a mock config server.</p>
+
+    <div class="card">
+      <h2>Widget Controls</h2>
+      <p>These buttons interact with the SDK's public API (window.DataLensConsent)</p>
+      <button class="btn" onclick="showPrefs()">Show Preferences</button>
+      <button class="btn" onclick="checkConsent()">Check Consent State</button>
+      <button class="btn" onclick="revokeAll()">Revoke Consent</button>
+      <button class="btn" onclick="clearStorage()">Clear Storage</button>
+    </div>
+
+    <div class="card">
+      <h2>Script Blocking Test</h2>
+      <p>The scripts below have <code>data-consent-purpose</code> attributes and should be blocked until consent is granted.</p>
+      <p>Analytics script: <span id="analytics-status" class="blocked-indicator">BLOCKED</span></p>
+      <p>Marketing script: <span id="marketing-status" class="blocked-indicator">BLOCKED</span></p>
+    </div>
+
+    <div class="card">
+      <h2>Consent Status Log</h2>
+      <div id="consent-status">Waiting for SDK initialization...</div>
+    </div>
+  </div>
+
+  <!-- Test scripts that should be blocked by the SDK -->
+  <script data-consent-purpose="analytics" type="text/javascript">
+    document.getElementById('analytics-status').textContent = 'RELEASED ✓';
+    document.getElementById('analytics-status').className = 'released-indicator';
+    window.__analyticsLoaded = true;
+  </script>
+
+  <script data-consent-purpose="marketing" type="text/javascript">
+    document.getElementById('marketing-status').textContent = 'RELEASED ✓';
+    document.getElementById('marketing-status').className = 'released-indicator';
+    window.__marketingLoaded = true;
+  </script>
+
+  <!--
+    SDK Script Tag
+    For local testing: replace data-api-url with your local API server.
+    The data-widget-id and data-api-key would be real values in production.
+  -->
+  <script
+    src="./consent.min.js"
+    data-widget-id="test_widget_001"
+    data-api-key="test_api_key_001"
+    data-api-url="http://localhost:8080"
+    defer
+  ></script>
+
+  <script>
+    // ---- Test Helpers ----
+    const log = (msg) => {
+      const el = document.getElementById('consent-status');
+      el.textContent += '\n' + new Date().toLocaleTimeString() + ' — ' + msg;
+      el.scrollTop = el.scrollHeight;
+    };
+
+    // Listen for consent event
+    window.addEventListener('datalens:consent', (e) => {
+      log('EVENT: datalens:consent fired');
+      log('Decisions: ' + JSON.stringify(e.detail.decisions, null, 2));
+
+      // Check if blocked scripts were released
+      setTimeout(() => {
+        log('Analytics loaded: ' + (window.__analyticsLoaded ? 'YES' : 'NO'));
+        log('Marketing loaded: ' + (window.__marketingLoaded ? 'YES' : 'NO'));
+      }, 500);
+    });
+
+    function showPrefs() {
+      if (window.DataLensConsent?.showPreferences) {
+        window.DataLensConsent.showPreferences();
+        log('Called showPreferences()');
+      } else {
+        log('ERROR: SDK not initialized');
+      }
+    }
+
+    function checkConsent() {
+      if (window.DataLensConsent?.getConsent) {
+        const state = window.DataLensConsent.getConsent();
+        log('Consent state: ' + JSON.stringify(state));
+      } else {
+        log('ERROR: SDK not initialized');
+      }
+    }
+
+    function revokeAll() {
+      if (window.DataLensConsent?.revokeConsent) {
+        log('Revoking consent...');
+        window.DataLensConsent.revokeConsent();
+      } else {
+        log('ERROR: SDK not initialized');
+      }
+    }
+
+    function clearStorage() {
+      localStorage.removeItem('dl_consent_test_widget_001');
+      log('Cleared localStorage for test widget');
+    }
+
+    // Log when page is ready
+    window.addEventListener('load', () => {
+      log('Page loaded. SDK should initialize shortly...');
+      log('Analytics blocked: ' + (!window.__analyticsLoaded));
+      log('Marketing blocked: ' + (!window.__marketingLoaded));
+    });
+  </script>
+</body>
+</html>

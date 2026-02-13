@@ -134,7 +134,7 @@ func main() {
 	breachRepo := repository.NewPostgresBreachRepository(dbPool)
 	translationRepo := repository.NewPostgresConsentNoticeTranslationRepository(dbPool)
 	identityProfileRepo := repository.NewIdentityProfileRepo(dbPool)
-	// grievanceRepo := repository.NewPostgresGrievanceRepository(dbPool)
+	grievanceRepo := repository.NewPostgresGrievanceRepository(dbPool)
 	notificationRepo := repository.NewPostgresNotificationRepository(dbPool)
 	notificationTemplateRepo := repository.NewPostgresNotificationTemplateRepository(dbPool)
 
@@ -322,7 +322,7 @@ func main() {
 	)
 
 	// 7g. Grievance Redressal
-	// grievanceSvc := service.NewGrievanceService(grievanceRepo, eb, slog.Default())
+	grievanceSvc := service.NewGrievanceService(grievanceRepo, eb, slog.Default())
 
 	// 7h. Notification System
 	clientRepo := service.NewPostgresClientRepository(dbPool)
@@ -418,7 +418,7 @@ func main() {
 	m365Handler := handler.NewM365Handler(m365AuthSvc)
 	googleHandler := handler.NewGoogleHandler(googleAuthSvc)
 	identityHandler := handler.NewIdentityHandler(identitySvc)
-	// grievanceHandler := handler.NewGrievanceHandler(grievanceSvc)
+	grievanceHandler := handler.NewGrievanceHandler(grievanceSvc)
 	notificationHandler := handler.NewNotificationHandler(notificationSvc)
 
 	// Portal Services
@@ -486,7 +486,7 @@ func main() {
 		r.Mount("/portal", portalHandler.Routes())
 
 		// Portal Grievances (Public + Portal JWT Auth)
-		// r.Mount("/portal/grievances", grievanceHandler.PortalRoutes())
+		r.Mount("/portal/grievances", grievanceHandler.PortalRoutes())
 	})
 
 	r.Route("/api/v2", func(r chi.Router) {
@@ -554,7 +554,7 @@ func main() {
 			r.Mount("/identity", identityHandler.Routes())
 
 			// Grievances
-			// r.Mount("/grievances", grievanceHandler.Routes())
+			r.Mount("/grievances", grievanceHandler.Routes())
 
 			// Notifications
 			r.Mount("/notifications", notificationHandler.Routes())

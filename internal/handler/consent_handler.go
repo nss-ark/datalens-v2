@@ -3,7 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/go-chi/chi/v5"
 
@@ -15,15 +19,19 @@ import (
 
 // ConsentHandler handles HTTP requests for consent management.
 type ConsentHandler struct {
-	service   *service.ConsentService
-	expirySvc *service.ConsentExpiryService
+	service     *service.ConsentService
+	expirySvc   *service.ConsentExpiryService
+	sdkFilePath string // Absolute path to consent.min.js
 }
 
 // NewConsentHandler creates a new ConsentHandler.
 func NewConsentHandler(s *service.ConsentService, expirySvc *service.ConsentExpiryService) *ConsentHandler {
+	// Resolve SDK file path relative to executable
+	sdkPath := resolveSDKPath()
 	return &ConsentHandler{
-		service:   s,
-		expirySvc: expirySvc,
+		service:     s,
+		expirySvc:   expirySvc,
+		sdkFilePath: sdkPath,
 	}
 }
 
@@ -39,6 +47,7 @@ func (h *ConsentHandler) Routes() chi.Router {
 	r.Delete("/widgets/{id}", h.deleteWidget)
 	r.Put("/widgets/{id}/activate", h.activateWidget)
 	r.Put("/widgets/{id}/pause", h.pauseWidget)
+	r.Get("/widgets/{id}/embed-code", h.getEmbedCode)
 
 	r.Get("/sessions", h.listSessions) // Actually getSessionsBySubject as per service, but simplified
 	r.Get("/history/{subjectId}", h.getHistory)
@@ -50,6 +59,9 @@ func (h *ConsentHandler) Routes() chi.Router {
 // Mounted at /api/public/consent (requires Widget API Key auth).
 func (h *ConsentHandler) PublicRoutes() chi.Router {
 	r := chi.NewRouter()
+
+	// SDK file (no auth required, served with aggressive caching)
+	r.Get("/sdk/consent.min.js", h.serveSDKFile)
 
 	// Widget config (public, requires API Key)
 	r.Get("/widget/config", h.getWidgetConfig) // Using API key from header to identify widget
@@ -317,4 +329,92 @@ func (h *ConsentHandler) withdrawConsent(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// serveSDKFile serves the consent widget JS SDK file with aggressive caching.
+func (h *ConsentHandler) serveSDKFile(w http.ResponseWriter, r *http.Request) {
+	if h.sdkFilePath == "" {
+		httputil.ErrorResponse(w, http.StatusNotFound, "SDK_NOT_FOUND", "consent sdk file not found")
+		return
+	}
+
+	data, err := os.ReadFile(h.sdkFilePath)
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusNotFound, "SDK_NOT_FOUND", "consent sdk file not available")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=86400, s-maxage=604800") // 1d browser, 7d CDN
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+// getEmbedCode generates the embed snippet for a consent widget.
+func (h *ConsentHandler) getEmbedCode(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := types.ParseID(idStr)
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid widget id")
+		return
+	}
+
+	widget, err := h.service.GetWidget(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	// Generate embed code
+	// Host is derived from the request (works for local dev and production)
+	scheme := "https"
+	if r.TLS == nil {
+		scheme = "http"
+	}
+	host := r.Host
+	baseURL := fmt.Sprintf("%s://%s", scheme, host)
+
+	embedCode := fmt.Sprintf(
+		`<script src="%s/api/public/consent/sdk/consent.min.js" data-widget-id="%s" data-api-key="%s" defer></script>`,
+		baseURL, widget.ID, widget.APIKey,
+	)
+
+	httputil.JSON(w, http.StatusOK, map[string]string{
+		"embed_code": embedCode,
+		"widget_id":  widget.ID.String(),
+		"version":    fmt.Sprintf("%d", widget.Version),
+	})
+}
+
+// resolveSDKPath finds the consent.min.js file.
+// It checks multiple locations to work in both dev and production.
+func resolveSDKPath() string {
+	// Try paths relative to the current working directory
+	candidates := []string{
+		"sdk/consent/dist/consent.min.js",
+		"../../sdk/consent/dist/consent.min.js", // When running from cmd/api/
+	}
+
+	// Also try relative to the source file (for development)
+	_, filename, _, ok := runtime.Caller(0)
+	if ok {
+		srcDir := filepath.Dir(filename)
+		candidates = append(candidates,
+			filepath.Join(srcDir, "..", "..", "..", "sdk", "consent", "dist", "consent.min.js"),
+		)
+	}
+
+	for _, candidate := range candidates {
+		abs, err := filepath.Abs(candidate)
+		if err != nil {
+			continue
+		}
+		if _, err := os.Stat(abs); err == nil {
+			return abs
+		}
+	}
+
+	return ""
 }
