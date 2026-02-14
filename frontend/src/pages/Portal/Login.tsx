@@ -1,36 +1,59 @@
 import React, { useState } from 'react';
 import { usePortalAuthStore } from '../../stores/portalAuthStore';
 import { useNavigate } from 'react-router-dom';
+import { portalService } from '../../services/portalService';
+import { toast } from '../../stores/toastStore';
+import { Loader2 } from 'lucide-react';
 
 const PortalLogin = () => {
     const [step, setStep] = useState<'IDENTIFIER' | 'OTP'>('IDENTIFIER');
     const [identifier, setIdentifier] = useState('');
     const [otp, setOtp] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const setAuth = usePortalAuthStore(state => state.setAuth);
 
-    const handleSendOtp = (e: React.FormEvent) => {
+    const isEmail = (input: string) => /\S+@\S+\.\S+/.test(input);
+
+    const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Call API
-        console.log('Sending OTP to', identifier);
-        setStep('OTP');
+        if (!identifier.trim()) return;
+
+        setIsLoading(true);
+        try {
+            const payload = isEmail(identifier) ? { email: identifier } : { phone: identifier };
+            await portalService.requestOTP(payload);
+            toast.success("Code Sent", `Verification code sent to ${identifier}`);
+            setStep('OTP');
+        } catch (error) {
+            console.error('OTP Request failed:', error);
+            toast.error("Error", "Failed to send OTP. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleVerifyOtp = (e: React.FormEvent) => {
+    const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Call API
-        console.log('Verifying OTP', otp);
-        // Mock success
-        setAuth('mock-portal-token', {
-            id: 'p-123',
-            tenant_id: 't-123',
-            email: identifier,
-            verification_status: 'VERIFIED',
-            preferred_lang: 'en',
-            is_minor: false,
-            guardian_verified: false,
-        });
-        navigate('/portal/dashboard');
+        if (!otp.trim()) return;
+
+        setIsLoading(true);
+        try {
+            const payload = {
+                otp,
+                ...(isEmail(identifier) ? { email: identifier } : { phone: identifier })
+            };
+            const response = await portalService.verifyOTP(payload);
+
+            setAuth(response.token, response.profile);
+            toast.success("Welcome", `Logged in as ${response.profile.email || response.profile.phone}`);
+            navigate('/portal/dashboard');
+        } catch (error) {
+            console.error('Verification failed:', error);
+            toast.error("Invalid Code", "Please check the verification code and try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -59,13 +82,16 @@ const PortalLogin = () => {
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
                                 required
+                                disabled={isLoading}
                             />
                         </div>
                         <button
                             type="submit"
-                            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                            disabled={isLoading}
+                            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
-                            Send Verification Code
+                            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {isLoading ? 'Sending...' : 'Send Verification Code'}
                         </button>
                     </form>
                 ) : (
@@ -82,18 +108,22 @@ const PortalLogin = () => {
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
                                 required
+                                disabled={isLoading}
                             />
                         </div>
                         <button
                             type="submit"
-                            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                            disabled={isLoading}
+                            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
-                            Verify & Login
+                            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {isLoading ? 'Verifying...' : 'Verify & Login'}
                         </button>
                         <button
                             type="button"
-                            onClick={() => setStep('IDENTIFIER')}
+                            onClick={() => { setStep('IDENTIFIER'); setOtp(''); }}
                             className="w-full text-gray-500 text-sm hover:text-gray-700"
+                            disabled={isLoading}
                         >
                             Back to Login
                         </button>

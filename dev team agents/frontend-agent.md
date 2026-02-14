@@ -39,7 +39,50 @@ You build the Control Centre frontend — the web UI used by compliance teams to
 | Recharts | Latest | Charts and visualizations |
 | Lucide React | Latest | Icons (clean, modern) |
 | Zustand | Latest | Client state (auth store) |
-| CSS Modules or Vanilla CSS | — | Styling (no Tailwind unless specified) |
+| Tailwind CSS | v4 | Utility-first styling |
+| shadcn/ui + KokonutUI | Latest | Component library (see Design System section below) |
+| class-variance-authority | Latest | Component variant styling |
+
+---
+
+## Design System — KokonutUI (via shadcn/ui)
+
+**KokonutUI** is the official component library for DataLens 2.0. All new UI must use these components. Do NOT build custom buttons, inputs, cards, badges, dialogs, or tables from scratch.
+
+### Installation
+Components are installed via the shadcn CLI:
+```powershell
+# Install a shadcn/ui component
+npx shadcn@latest add button
+
+# Install a KokonutUI component
+npx shadcn@latest add @kokonutui/particle-button
+```
+
+### Directory Structure
+| Path | Contents |
+|------|----------|
+| `src/components/ui/` | shadcn/ui base components (button, input, card, badge, dialog, table) |
+| `src/components/kokonutui/` | KokonutUI premium components (installed via CLI) |
+| `src/lib/utils.ts` | `cn()` utility for merging Tailwind classes |
+
+### Installed Components
+| Component | Import | Use For |
+|-----------|--------|---------|
+| `Button` | `@/components/ui/button` | All buttons (variants: default, destructive, outline, secondary, ghost, link) |
+| `Input` | `@/components/ui/input` | All text inputs in forms |
+| `Card` + `CardHeader` + `CardContent` | `@/components/ui/card` | Stat cards, info panels, content containers |
+| `Badge` | `@/components/ui/badge` | Status indicators, tags, labels |
+| `Dialog` + `DialogContent` + `DialogHeader` | `@/components/ui/dialog` | All modal dialogs |
+| `Table` + `TableHeader` + `TableRow` + `TableCell` | `@/components/ui/table` | Data tables |
+
+### Critical Rules for KokonutUI
+1. **Use `@/components/ui/` components** before creating custom ones
+2. **Use `cn()` from `@/lib/utils`** to merge Tailwind classes — never concatenate strings
+3. **Import path alias**: Always use `@/` prefix (e.g., `import { Button } from "@/components/ui/button"`)
+4. **Styling**: Use Tailwind CSS v4 utility classes. The project uses CSS variables for theming.
+5. **When a KokonutUI component exists for your use case**, install it via CLI rather than building from scratch
+6. **Existing custom components** (`components/common/Button.tsx`, `components/common/Modal.tsx`, etc.) should be **gradually migrated** to use shadcn/ui equivalents
 
 ---
 

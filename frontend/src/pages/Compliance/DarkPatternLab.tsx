@@ -50,12 +50,12 @@ export default function DarkPatternLab() {
                 {/* Input Section */}
                 <div className="flex flex-col gap-4">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                        <div className="flex border-b border-gray-100 mb-4 pb-2 gap-6">
+                        <div className="flex flex-wrap border-b border-gray-100 mb-4 gap-4">
                             <button
                                 onClick={() => setContentType('TEXT')}
-                                className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors ${contentType === 'TEXT'
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${contentType === 'TEXT'
+                                    ? 'text-indigo-600 border-indigo-600'
+                                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-200'
                                     }`}
                             >
                                 <Type className="w-4 h-4" />
@@ -63,9 +63,9 @@ export default function DarkPatternLab() {
                             </button>
                             <button
                                 onClick={() => setContentType('CODE')}
-                                className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors ${contentType === 'CODE'
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${contentType === 'CODE'
+                                    ? 'text-indigo-600 border-indigo-600'
+                                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-200'
                                     }`}
                             >
                                 <Code className="w-4 h-4" />
@@ -73,7 +73,7 @@ export default function DarkPatternLab() {
                             </button>
                             <button
                                 disabled
-                                className="flex items-center gap-2 pb-2 text-sm font-medium text-gray-300 cursor-not-allowed"
+                                className="flex items-center gap-2 pb-2 text-sm font-medium text-gray-300 cursor-not-allowed border-b-2 border-transparent -mb-[1px]"
                                 title="URL scanning coming soon"
                             >
                                 <Link className="w-4 h-4" />

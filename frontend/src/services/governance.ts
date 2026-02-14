@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { ApiResponse } from '../types/common';
 import type {
     PurposeSuggestion,
     GovernancePolicy,
@@ -10,8 +11,8 @@ import type {
 export const governanceService = {
     // Purpose Suggestions
     getPurposeSuggestions: async (): Promise<PurposeSuggestion[]> => {
-        const response = await api.get('/governance/suggestions');
-        return response.data;
+        const response = await api.get<ApiResponse<PurposeSuggestion[]>>('/governance/suggestions');
+        return response.data.data;
     },
 
     acceptSuggestion: async (id: string): Promise<void> => {
@@ -24,13 +25,13 @@ export const governanceService = {
 
     // Policies
     getPolicies: async (): Promise<GovernancePolicy[]> => {
-        const response = await api.get('/governance/policies');
-        return response.data;
+        const response = await api.get<ApiResponse<GovernancePolicy[]>>('/governance/policies');
+        return response.data.data;
     },
 
     createPolicy: async (data: CreatePolicyRequest): Promise<GovernancePolicy> => {
-        const response = await api.post('/governance/policies', data);
-        return response.data;
+        const response = await api.post<ApiResponse<GovernancePolicy>>('/governance/policies', data);
+        return response.data.data;
     },
 
     deletePolicy: async (id: string): Promise<void> => {
@@ -38,14 +39,14 @@ export const governanceService = {
     },
 
     togglePolicyStatus: async (id: string, isActive: boolean): Promise<GovernancePolicy> => {
-        const response = await api.patch(`/governance/policies/${id}/status`, { isActive });
-        return response.data;
+        const response = await api.patch<ApiResponse<GovernancePolicy>>(`/governance/policies/${id}/status`, { isActive });
+        return response.data.data;
     },
 
     // Violations
     getViolations: async (): Promise<PolicyViolation[]> => {
-        const response = await api.get('/governance/violations');
-        return response.data;
+        const response = await api.get<ApiResponse<PolicyViolation[]>>('/governance/violations');
+        return Array.isArray(response.data.data) ? response.data.data : [];
     },
 
     resolveViolation: async (id: string): Promise<void> => {
@@ -54,7 +55,7 @@ export const governanceService = {
 
     // Data Lineage
     getLineage: async (): Promise<LineageGraph> => {
-        const response = await api.get('/governance/lineage');
-        return response.data;
+        const response = await api.get<ApiResponse<LineageGraph>>('/governance/lineage');
+        return response.data.data;
     }
 };

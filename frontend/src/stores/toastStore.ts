@@ -20,6 +20,10 @@ let toastCounter = 0;
 export const useToastStore = create<ToastStore>((set) => ({
     toasts: [],
     addToast: (toast) => {
+        // Deduplicate: skip if a toast with the same title already exists
+        const existing = useToastStore.getState().toasts;
+        if (existing.some((t) => t.title === toast.title)) return;
+
         const id = `toast-${++toastCounter}`;
         set((state) => ({ toasts: [...state.toasts, { ...toast, id }] }));
         // Auto-dismiss after 5 seconds

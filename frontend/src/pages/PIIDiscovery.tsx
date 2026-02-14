@@ -8,6 +8,7 @@ import { Button } from '../components/common/Button';
 import { useClassifications, useSubmitFeedback, useAccuracyStats } from '../hooks/useDiscovery';
 import { toast } from '../stores/toastStore';
 import { cn } from '../utils/cn';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type {
     PIIClassification,
     PIICategory,
@@ -16,7 +17,6 @@ import type {
     VerificationStatus,
 } from '../types/discovery';
 import { PII_CATEGORIES, PII_TYPES, DETECTION_METHODS } from '../types/discovery';
-import styles from './PIIDiscovery.module.css';
 
 const PAGE_SIZE = 20;
 
@@ -124,11 +124,24 @@ const PIIDiscovery = () => {
     // ── Confidence badge helper ──
     const ConfidenceBadge = ({ value }: { value: number }) => {
         const pct = Math.round(value * 100);
-        const tier = pct >= 90 ? 'confHigh' : pct >= 70 ? 'confMedium' : 'confLow';
+        const tier = pct >= 90 ? 'high' : pct >= 70 ? 'medium' : 'low';
+
+        const colors = {
+            high: "text-green-700",
+            medium: "text-yellow-700",
+            low: "text-red-700"
+        };
+
+        const fills = {
+            high: "bg-green-500",
+            medium: "bg-yellow-500",
+            low: "bg-red-500"
+        };
+
         return (
-            <span className={cn(styles.confidence, styles[tier])}>
-                <span className={styles.confBar}>
-                    <span className={styles.confFill} style={{ width: `${pct}%` }} />
+            <span className={cn("inline-flex items-center gap-1.5 text-xs font-semibold", colors[tier])}>
+                <span className="w-10 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <span className={cn("block h-full rounded-full transition-all duration-300", fills[tier])} style={{ width: `${pct}%` }} />
                 </span>
                 {pct}%
             </span>
@@ -143,8 +156,8 @@ const PIIDiscovery = () => {
             sortable: true,
             render: (row) => (
                 <div>
-                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{row.field_name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{row.entity_name}</div>
+                    <div className="font-semibold text-gray-900">{row.field_name}</div>
+                    <div className="text-xs text-gray-500">{row.entity_name}</div>
                 </div>
             ),
         },
@@ -154,7 +167,7 @@ const PIIDiscovery = () => {
             sortable: true,
             width: '120px',
             render: (row) => (
-                <span style={{ fontSize: '0.8125rem', fontWeight: 500 }}>{row.category}</span>
+                <span className="text-xs font-medium">{row.category}</span>
             ),
         },
         {
@@ -163,7 +176,7 @@ const PIIDiscovery = () => {
             sortable: true,
             width: '110px',
             render: (row) => (
-                <span style={{ fontSize: '0.8125rem' }}>{row.type}</span>
+                <span className="text-xs">{row.type}</span>
             ),
         },
         {
@@ -178,14 +191,18 @@ const PIIDiscovery = () => {
             header: 'Method',
             sortable: true,
             width: '100px',
-            render: (row) => <span className={styles.methodBadge}>{row.detection_method}</span>,
+            render: (row) => (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 tracking-wide uppercase">
+                    {row.detection_method}
+                </span>
+            ),
         },
         {
             key: 'status',
             header: 'Status',
             sortable: true,
             width: '110px',
-            render: (row) => <StatusBadge label={row.status} />,
+            render: (row) => <StatusBadge label={row.status} size="sm" />,
         },
         {
             key: 'actions',
@@ -193,23 +210,23 @@ const PIIDiscovery = () => {
             width: '110px',
             render: (row) =>
                 row.status === 'PENDING' ? (
-                    <div className={styles.actions}>
+                    <div className="flex gap-1">
                         <button
-                            className={cn(styles.actionBtn, styles.verifyBtn)}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 bg-white hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-colors"
                             onClick={(e) => handleVerify(row, e)}
                             title="Verify"
                         >
                             <Check size={14} />
                         </button>
                         <button
-                            className={cn(styles.actionBtn, styles.correctBtn)}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 bg-white hover:bg-yellow-50 hover:text-yellow-600 hover:border-yellow-200 transition-colors"
                             onClick={(e) => openCorrectModal(row, e)}
                             title="Correct"
                         >
                             <Pencil size={14} />
                         </button>
                         <button
-                            className={cn(styles.actionBtn, styles.rejectBtn)}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
                             onClick={(e) => openRejectModal(row, e)}
                             title="Reject"
                         >
@@ -217,35 +234,42 @@ const PIIDiscovery = () => {
                         </button>
                     </div>
                 ) : (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Reviewed</span>
+                    <span className="text-xs text-gray-400">Reviewed</span>
                 ),
         },
     ];
 
     return (
-        <div>
+        <div className="space-y-6">
             {/* Page Header */}
-            <div className={styles.pageHeader}>
+            <div className="flex justify-between items-start">
                 <div>
-                    <h1 className={styles.title}>PII Discovery</h1>
-                    <p className={styles.subtitle}>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">PII Discovery</h1>
+                    <p className="text-sm text-gray-500">
                         Review auto-detected PII classifications and provide feedback
                     </p>
                 </div>
             </div>
 
             {/* Accuracy Stats Panel */}
-            <div className={styles.statsPanel}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {DETECTION_METHODS.map((m) => (
-                    <StatsCard key={m.value} method={m.value} label={m.label} active={statsMethod === m.value} onClick={() => setStatsMethod(m.value)} stats={statsMethod === m.value ? accuracyStats : undefined} />
+                    <StatsCard
+                        key={m.value}
+                        method={m.value}
+                        label={m.label}
+                        active={statsMethod === m.value}
+                        onClick={() => setStatsMethod(m.value)}
+                        stats={statsMethod === m.value ? accuracyStats : undefined}
+                    />
                 ))}
             </div>
 
             {/* Filter Bar */}
-            <div className={styles.filterBar}>
-                <Filter size={16} style={{ color: 'var(--text-tertiary)' }} />
+            <div className="flex flex-wrap gap-3 items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                <Filter size={16} className="text-gray-400 ml-1" />
                 <select
-                    className={styles.filterSelect}
+                    className="h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     value={statusFilter}
                     onChange={(e) => { setStatusFilter(e.target.value as VerificationStatus | ''); setPage(1); }}
                 >
@@ -256,7 +280,7 @@ const PIIDiscovery = () => {
                 </select>
 
                 <select
-                    className={styles.filterSelect}
+                    className="h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     value={methodFilter}
                     onChange={(e) => { setMethodFilter(e.target.value as DetectionMethod | ''); setPage(1); }}
                 >
@@ -267,25 +291,34 @@ const PIIDiscovery = () => {
                 </select>
 
                 {hasFilters && (
-                    <button className={styles.clearBtn} onClick={clearFilters}>Clear filters</button>
+                    <button
+                        className="text-xs font-medium text-primary-600 hover:text-primary-700 ml-1"
+                        onClick={clearFilters}
+                    >
+                        Clear filters
+                    </button>
                 )}
 
-                <span className={styles.activeFilters}>{total} classifications</span>
+                <span className="text-xs text-gray-400 ml-auto mr-1">{total} classifications</span>
             </div>
 
             {/* Data Table */}
-            <DataTable
-                columns={columns}
-                data={classifications}
-                isLoading={isLoading}
-                keyExtractor={(row) => row.id}
-                emptyTitle="No PII classifications found"
-                emptyDescription="Run a scan on a data source to discover PII fields."
-            />
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                <DataTable
+                    columns={columns}
+                    data={classifications}
+                    isLoading={isLoading}
+                    keyExtractor={(row) => row.id}
+                    emptyTitle="No PII classifications found"
+                    emptyDescription="Run a scan on a data source to discover PII fields."
+                />
+            </div>
 
             {/* Pagination */}
             {total > PAGE_SIZE && (
-                <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+                <div className="mt-4">
+                    <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+                </div>
             )}
 
             {/* ── Correct Modal ── */}
@@ -301,14 +334,18 @@ const PIIDiscovery = () => {
                 }
             >
                 {correctModal && (
-                    <div className={styles.modalForm}>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-500">
                             Correcting <strong>{correctModal.field_name}</strong> in <strong>{correctModal.entity_name}</strong>
                         </p>
 
                         <div>
-                            <label className={styles.modalLabel}>Correct Category</label>
-                            <select className={styles.modalSelect} value={corrCategory} onChange={(e) => setCorrCategory(e.target.value as PIICategory)}>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Correct Category</label>
+                            <select
+                                className="w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                value={corrCategory}
+                                onChange={(e) => setCorrCategory(e.target.value as PIICategory)}
+                            >
                                 {PII_CATEGORIES.map((c) => (
                                     <option key={c.value} value={c.value}>{c.label}</option>
                                 ))}
@@ -316,8 +353,12 @@ const PIIDiscovery = () => {
                         </div>
 
                         <div>
-                            <label className={styles.modalLabel}>Correct Type</label>
-                            <select className={styles.modalSelect} value={corrType} onChange={(e) => setCorrType(e.target.value as PIIType)}>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Correct Type</label>
+                            <select
+                                className="w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                value={corrType}
+                                onChange={(e) => setCorrType(e.target.value as PIIType)}
+                            >
                                 {PII_TYPES.map((t) => (
                                     <option key={t.value} value={t.value}>{t.label}</option>
                                 ))}
@@ -340,14 +381,14 @@ const PIIDiscovery = () => {
                 }
             >
                 {rejectModal && (
-                    <div className={styles.modalForm}>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-500">
                             Rejecting <strong>{rejectModal.field_name}</strong> ({rejectModal.category} → {rejectModal.type})
                         </p>
                         <div>
-                            <label className={styles.modalLabel}>Reason / Notes</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason / Notes</label>
                             <textarea
-                                className={styles.modalTextarea}
+                                className="w-full h-20 px-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                                 value={rejectNotes}
                                 onChange={(e) => setRejectNotes(e.target.value)}
                                 placeholder="Why is this a false positive?"
@@ -367,32 +408,38 @@ function StatsCard({
     method: string; label: string; active: boolean;
     onClick: () => void; stats?: { total: number; verified: number; corrected: number; rejected: number; accuracy: number };
 }) {
-    const acc = stats ? Math.round(stats.accuracy * 100) : 0;
+    const rawAcc = stats ? stats.accuracy * 100 : 0;
+    const acc = Number.isFinite(rawAcc) ? Math.round(rawAcc) : 0;
+
     return (
-        <div
-            className={styles.statCard}
-            style={{
-                cursor: 'pointer',
-                borderColor: active ? 'var(--primary-400)' : undefined,
-                boxShadow: active ? '0 0 0 1px var(--primary-200)' : undefined,
-            }}
+        <Card
+            className={cn(
+                "cursor-pointer transition-all hover:shadow-md",
+                active ? "border-primary-500 ring-1 ring-primary-200" : ""
+            )}
             onClick={onClick}
         >
-            <div className={styles.statLabel}>{label}</div>
-            {stats ? (
-                <>
-                    <div className={styles.statValue}>{acc}%</div>
-                    <div className={styles.statSub}>
-                        {stats.verified}✓ {stats.corrected}✎ {stats.rejected}✗ of {stats.total}
-                    </div>
-                    <div className={styles.progressBar}>
-                        <div className={styles.progressFill} style={{ width: `${acc}%` }} />
-                    </div>
-                </>
-            ) : (
-                <div className={styles.statSub} style={{ marginTop: '0.25rem' }}>Click to load</div>
-            )}
-        </div>
+            <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    {label}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                {stats ? (
+                    <>
+                        <div className="text-2xl font-bold text-gray-900">{acc}%</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                            {stats.verified}✓ {stats.corrected}✎ {stats.rejected}✗ of {stats.total}
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full mt-2 overflow-hidden">
+                            <div className="h-full bg-primary-600 rounded-full transition-all duration-300" style={{ width: `${acc}%` }} />
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-xs text-gray-400 mt-1">Click to load</div>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 

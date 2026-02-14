@@ -299,6 +299,16 @@ Text:       Slate-900 for headings, Slate-600 for body
 - Between sections: 24px
 - Between form fields: 16px
 
+### Component Library — KokonutUI (via shadcn/ui)
+DataLens 2.0 uses **KokonutUI** as its official design system. When reviewing, check:
+- All buttons should use the `Button` component from `@/components/ui/button` (not raw `<button>`)
+- All form inputs should use `Input` from `@/components/ui/input`
+- Stat cards and info panels should use `Card` from `@/components/ui/card`
+- Status indicators should use `Badge` from `@/components/ui/badge`
+- Modal dialogs should use `Dialog` from `@/components/ui/dialog`
+- Tables should use `Table` from `@/components/ui/table`
+- **Flag as 🟡 Medium** any page using raw HTML form elements or ad-hoc inline styling instead of KokonutUI components
+
 ---
 
 ## Inter-Agent Communication

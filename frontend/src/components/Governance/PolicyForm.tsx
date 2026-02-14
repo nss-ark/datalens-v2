@@ -1,5 +1,31 @@
-import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '../ui/form';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../ui/select';
 import type { CreatePolicyRequest } from '../../types/governance';
+
+const policySchema = z.object({
+    name: z.string().min(1, 'Policy Name is required').max(100, 'Name too long'),
+    type: z.enum(['retention', 'access', 'encryption', 'minimization']),
+    description: z.string().optional(),
+});
 
 interface PolicyFormProps {
     onSubmit: (data: CreatePolicyRequest) => void;
@@ -7,101 +33,96 @@ interface PolicyFormProps {
     isLoading?: boolean;
 }
 
-export const PolicyForm: React.FC<PolicyFormProps> = ({ onSubmit, onCancel, isLoading }) => {
-    const [formData, setFormData] = useState<CreatePolicyRequest>({
-        name: '',
-        type: 'retention',
-        description: '',
-        rules: {}
+export const PolicyForm = ({ onSubmit, onCancel, isLoading }: PolicyFormProps) => {
+    const form = useForm<z.infer<typeof policySchema>>({
+        resolver: zodResolver(policySchema),
+        defaultValues: {
+            name: '',
+            type: 'retention',
+            description: '',
+        },
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSubmit(formData);
+    const handleSubmit = (values: z.infer<typeof policySchema>) => {
+        onSubmit({
+            ...values,
+            description: values.description || '',
+            rules: {}, // Placeholder for now
+        });
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Policy Name
-                </label>
-                <input
-                    type="text"
-                    id="name"
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                <FormField
+                    control={form.control}
                     name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                    placeholder="e.g., 7 Year Retention"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Policy Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., 7 Year Retention" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-            </div>
 
-            <div>
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-                    Policy Type
-                </label>
-                <select
-                    id="type"
+                <FormField
+                    control={form.control}
                     name="type"
-                    value={formData.type}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                >
-                    <option value="retention">Retention</option>
-                    <option value="access">Access Control</option>
-                    <option value="encryption">Encryption</option>
-                    <option value="minimization">Data Minimization</option>
-                </select>
-            </div>
-
-            <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                    Description
-                </label>
-                <textarea
-                    id="description"
-                    name="description"
-                    rows={3}
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                    placeholder="Describe the purpose of this policy..."
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Policy Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a policy type" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="retention">Retention</SelectItem>
+                                    <SelectItem value="access">Access Control</SelectItem>
+                                    <SelectItem value="encryption">Encryption</SelectItem>
+                                    <SelectItem value="minimization">Data Minimization</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-            </div>
 
-            {/* Placeholder for dynamic rules based on type - keeping it simple for now */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700">
-                    Configuration
-                </label>
-                <div className="mt-1 p-3 bg-gray-50 rounded-md border border-gray-200 text-sm text-gray-500">
-                    Configuration options for <strong>{formData.type}</strong> will appear here.
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                                <Textarea
+                                    placeholder="Describe the purpose of this policy..."
+                                    className="resize-none"
+                                    {...field}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
+                    Configuration options for <strong>{form.watch('type')}</strong> will appear here.
                 </div>
-            </div>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                    {isLoading ? 'Creating...' : 'Create Policy'}
-                </button>
-            </div>
-        </form>
+                <div className="flex justify-end gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? 'Creating...' : 'Create Policy'}
+                    </Button>
+                </div>
+            </form>
+        </Form>
     );
 };

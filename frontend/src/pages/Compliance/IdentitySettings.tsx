@@ -112,8 +112,9 @@ const IdentitySettings = () => {
 
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                         <div className="flex items-center gap-4">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/DigiLocker.svg/1200px-DigiLocker.svg.png"
-                                alt="DigiLocker" className="h-8 object-contain opactiy-80" />
+                            <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                <Shield className="h-5 w-5 text-blue-600" />
+                            </div>
                             <div>
                                 <h3 className="font-medium text-gray-900">DigiLocker (India)</h3>
                                 <p className="text-sm text-gray-500">Verify identities using government-issued documents (Aadhaar, PAN).</p>
@@ -142,13 +143,20 @@ const IdentitySettings = () => {
                                 <p className="text-sm text-gray-500 mt-1">Allow Data Principals to verify their identity using DigiLocker OAuth.</p>
                             </div>
                             <div className="flex items-center h-6">
-                                <input
-                                    type="checkbox"
+                                <button
+                                    type="button"
                                     disabled={!isEditing}
-                                    checked={formData.enable_digilocker}
-                                    onChange={(e) => setFormData({ ...formData, enable_digilocker: e.target.checked })}
-                                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
-                                />
+                                    onClick={() => setFormData({ ...formData, enable_digilocker: !formData.enable_digilocker })}
+                                    className={cn(
+                                        "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+                                        formData.enable_digilocker ? "bg-blue-600" : "bg-gray-200"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                        formData.enable_digilocker ? "translate-x-5" : "translate-x-0"
+                                    )} />
+                                </button>
                             </div>
                         </div>
 
@@ -163,13 +171,20 @@ const IdentitySettings = () => {
                                 </p>
                             </div>
                             <div className="flex items-center h-6">
-                                <input
-                                    type="checkbox"
+                                <button
+                                    type="button"
                                     disabled={!isEditing}
-                                    checked={formData.require_govt_id_for_dsr}
-                                    onChange={(e) => setFormData({ ...formData, require_govt_id_for_dsr: e.target.checked })}
-                                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
-                                />
+                                    onClick={() => setFormData({ ...formData, require_govt_id_for_dsr: !formData.require_govt_id_for_dsr })}
+                                    className={cn(
+                                        "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+                                        formData.require_govt_id_for_dsr ? "bg-blue-600" : "bg-gray-200"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                        formData.require_govt_id_for_dsr ? "translate-x-5" : "translate-x-0"
+                                    )} />
+                                </button>
                             </div>
                         </div>
 
@@ -190,13 +205,20 @@ const IdentitySettings = () => {
                                 )}
                             </div>
                             <div className="flex items-center h-6">
-                                <input
-                                    type="checkbox"
+                                <button
+                                    type="button"
                                     disabled={!isEditing}
-                                    checked={formData.fallback_to_email_otp}
-                                    onChange={(e) => setFormData({ ...formData, fallback_to_email_otp: e.target.checked })}
-                                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
-                                />
+                                    onClick={() => setFormData({ ...formData, fallback_to_email_otp: !formData.fallback_to_email_otp })}
+                                    className={cn(
+                                        "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+                                        formData.fallback_to_email_otp ? "bg-blue-600" : "bg-gray-200"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                        formData.fallback_to_email_otp ? "translate-x-5" : "translate-x-0"
+                                    )} />
+                                </button>
                             </div>
                         </div>
                     </div>

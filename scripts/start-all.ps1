@@ -7,6 +7,12 @@
 
 $ErrorActionPreference = "Stop"
 
+# Ensure HOME is set for tools that require it (like Playwright)
+if (-not $env:HOME) {
+    $env:HOME = $env:USERPROFILE
+    Write-Host "Set HOME to $env:HOME" -ForegroundColor Gray
+}
+
 # ---- Helper Functions ----
 
 function Check-Command {

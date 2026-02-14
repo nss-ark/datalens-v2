@@ -255,8 +255,15 @@ const DataSourceConfig = () => {
     );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TabButton = ({ active, onClick, icon, label, count }: any) => (
+interface TabButtonProps {
+    active: boolean;
+    onClick: () => void;
+    icon: React.ReactNode;
+    label: string;
+    count: number;
+}
+
+const TabButton = ({ active, onClick, icon, label, count }: TabButtonProps) => (
     <button
         onClick={onClick}
         className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${active

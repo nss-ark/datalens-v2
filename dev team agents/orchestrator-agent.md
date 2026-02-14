@@ -235,6 +235,14 @@ The consent widget is a **standalone vanilla JS bundle** (~15KB gzipped) that cu
 ### 4. Digital Signatures
 Consent sessions and history entries require cryptographic signatures for compliance proof. The Backend agent needs to implement HMAC or similar signing.
 
+### 5. KokonutUI Design System
+All Frontend task specs MUST reference the KokonutUI design system:
+- Components installed via `npx shadcn@latest add {component}` or `npx shadcn@latest add @kokonutui/{component}`
+- Base components live in `frontend/src/components/ui/` (button, input, card, badge, dialog, table)
+- KokonutUI premium components live in `frontend/src/components/kokonutui/`
+- All new pages MUST use these components — no raw HTML inputs, ad-hoc card divs, or custom buttons
+- Include in every Frontend task spec: "Use KokonutUI components from `@/components/ui/`. Install additional components via `npx shadcn@latest add @kokonutui/{name}` if needed."
+
 ---
 
 ## Reference Documents — Full Index

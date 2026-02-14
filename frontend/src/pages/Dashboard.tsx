@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Database, ShieldCheck, AlertTriangle, Activity, ArrowRight, Plus } from 'lucide-react';
-import { Button } from '../components/common/Button';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { StatCard } from '../components/Dashboard/StatCard';
 import { PIIChart } from '../components/Dashboard/PIIChart';
 import { DataTable } from '../components/DataTable/DataTable';
@@ -58,25 +59,20 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-                    <p className="text-gray-500 mt-1">Overview of your data compliance posture</p>
-                </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => navigate('/discovery')}>
-                        Review PII
-                    </Button>
-                    <Button icon={<Plus size={16} />} onClick={() => navigate('/datasources')}>
-                        Add Data Source
-                    </Button>
-                </div>
+        <div className="space-y-6 p-6">
+            {/* Actions Header (Title removed to avoid redundancy) */}
+            <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => navigate('/discovery')}>
+                    Review PII
+                </Button>
+                <Button onClick={() => navigate('/datasources')}>
+                    <Plus size={16} className="mr-2" />
+                    Add Data Source
+                </Button>
             </div>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Stat Cards - Improved Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Total Data Sources"
                     value={stats?.total_data_sources ?? 0}
@@ -109,35 +105,39 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Scans */}
-                <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-lg font-semibold text-gray-900">Recent Scans</h2>
-                        <Button variant="ghost" size="sm" rightIcon={<ArrowRight size={16} />} onClick={() => navigate('/datasources')}>
-                            View All
+                <Card className="lg:col-span-2">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-lg font-semibold">Recent Scans</CardTitle>
+                        <Button variant="ghost" size="sm" onClick={() => navigate('/datasources')}>
+                            View All <ArrowRight size={16} className="ml-2" />
                         </Button>
-                    </div>
-                    <ErrorBoundary FallbackComponent={SectionErrorFallback}>
-                        <DataTable
-                            columns={recentScansColumns}
-                            data={stats?.recent_scans ?? []}
-                            isLoading={isLoading}
-                            keyExtractor={(row) => row.id}
-                            emptyTitle="No recent scans"
-                            emptyDescription="Start a scan from the Data Sources page"
-                            loadingRows={3}
-                        />
-                    </ErrorBoundary>
-                </div>
+                    </CardHeader>
+                    <CardContent>
+                        <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+                            <DataTable
+                                columns={recentScansColumns}
+                                data={stats?.recent_scans ?? []}
+                                isLoading={isLoading}
+                                keyExtractor={(row) => row.id}
+                                emptyTitle="No recent scans"
+                                emptyDescription="Start a scan from the Data Sources page"
+                                loadingRows={3}
+                            />
+                        </ErrorBoundary>
+                    </CardContent>
+                </Card>
 
                 {/* PII Distribution */}
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-lg font-semibold text-gray-900">PII by Category</h2>
-                    </div>
-                    <ErrorBoundary FallbackComponent={SectionErrorFallback}>
-                        <PIIChart data={stats?.pii_by_category ?? {}} loading={isLoading} />
-                    </ErrorBoundary>
-                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg font-semibold">PII by Category</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+                            <PIIChart data={stats?.pii_by_category ?? {}} loading={isLoading} />
+                        </ErrorBoundary>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

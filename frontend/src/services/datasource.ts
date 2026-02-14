@@ -45,7 +45,7 @@ export const dataSourceService = {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
-            onUploadProgress: (progressEvent) => {
+            onUploadProgress: (progressEvent: { loaded: number; total?: number }) => {
                 if (onProgress && progressEvent.total) {
                     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                     onProgress(percentCompleted);

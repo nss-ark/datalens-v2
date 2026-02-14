@@ -3,7 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Building2, Trash2 } from 'lucide-react';
 import { governanceService } from '../../services/governance';
 import { DataTable } from '../../components/DataTable/DataTable';
-import { Modal } from '../../components/common/Modal';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '../../components/ui/dialog';
+import { Button } from '../../components/ui/button';
 import { PolicyForm } from '../../components/Governance/PolicyForm';
 import { toast } from '../../stores/toastStore';
 import type { GovernancePolicy } from '../../types/governance';
@@ -85,18 +91,20 @@ const PolicyManager = () => {
             width: '100px',
             render: (row: GovernancePolicy) => (
                 <div className="flex justify-end">
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => {
                             e.stopPropagation();
                             if (window.confirm('Are you sure you want to delete this policy?')) {
                                 deleteMutation.mutate(row.id);
                             }
                         }}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-gray-400 hover:text-red-600 hover:bg-red-50"
                         title="Delete Policy"
                     >
                         <Trash2 size={16} />
-                    </button>
+                    </Button>
                 </div>
             )
         }
@@ -114,13 +122,10 @@ const PolicyManager = () => {
                         Define and manage data governance policies.
                     </p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
-                >
+                <Button onClick={() => setIsModalOpen(true)}>
                     <Plus size={16} className="mr-2" />
                     Create Policy
-                </button>
+                </Button>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -134,19 +139,18 @@ const PolicyManager = () => {
                 />
             </div>
 
-            <div className="modal-container">
-                <Modal
-                    open={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    title="Create New Policy"
-                >
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Create New Policy</DialogTitle>
+                    </DialogHeader>
                     <PolicyForm
                         onSubmit={(data) => createMutation.mutate(data)}
                         onCancel={() => setIsModalOpen(false)}
                         isLoading={createMutation.isPending}
                     />
-                </Modal>
-            </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

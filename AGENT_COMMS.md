@@ -43,7 +43,30 @@
 | **Vanilla JS Consent Widget** | Frontend | [x] | ~11.5KB IIFE bundle, 5 layouts, cookie persistence, theming |
 | **Event Mesh Refactoring** | Backend | [x] | 15 new constants, 9 services + 2 subscribers refactored |
 
+## Batch 20B Completion (Core Fixes & File Upload) — Partial ⚠️
+| Goal | Owner | Status | Details |
+|------|-------|--------|---------|
+| **Logout API** | Backend | [x] | `POST /api/v2/auth/logout` in `auth_handler.go` |
+| **File Upload API** | Backend | [x] | `POST /api/v2/datasources/upload`, `CreateFromFile` service, `FILE_UPLOAD` type |
+| **File Cleanup on Delete** | Backend | [x] | `Delete` removes file from disk for `FILE_UPLOAD` sources |
+| **Logout UI** | Frontend | [x] | Sidebar button, token clearance, redirect to `/login` |
+| **Delete Data Source UI** | Frontend | [x] | Trash icon, confirmation modal, list refresh |
+| **File Upload UI** | Frontend | [x] | Drag & Drop zone for PDF/DOCX/XLSX/CSV, progress bar |
+| **Document Parsing Service** | AI/ML | [/] | PDF/DOCX/XLSX text extraction done. OCR disabled (Tesseract deps missing). ScanService integration pending. |
+
 ## Active Messages
+
+### [2026-02-14] [FROM: Orchestrator] → [TO: AI/ML]
+**Subject**: Batch 20B — Outstanding: OCR & ScanService Integration
+**Type**: TODO
+
+**Remaining Work**:
+1. **OCR**: Enable Tesseract (`gosseract`) or integrate Cloud Vision API for scanned PDFs/images.
+2. **ScanService Integration**: Wire `ParsingService` into `ScanService` so `FILE_UPLOAD` data sources get parsed → PII detected.
+3. **Tests**: Add unit tests for `parsing_service.go` with sample files.
+
+**Priority**: P2 — Can be addressed in a future batch when build environment supports Tesseract.
+
 
 ### [2026-02-13] [FROM: Orchestrator] → [TO: ALL]
 **Subject**: Batch 20A — UI/UX Review Sprint — Task Specs Issued

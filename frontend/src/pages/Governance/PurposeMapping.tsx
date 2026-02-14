@@ -4,6 +4,14 @@ import { Briefcase, CheckCircle } from 'lucide-react';
 import { governanceService } from '../../services/governance';
 import { SuggestionCard } from '../../components/Governance/SuggestionCard';
 import { toast } from '../../stores/toastStore';
+import { Button } from '../../components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../../components/ui/select';
 import type { PurposeSuggestion } from '../../types/governance';
 
 const PurposeMapping = () => {
@@ -52,11 +60,6 @@ const PurposeMapping = () => {
             return;
         }
 
-        // In a real app, this should probably be a bulk API endpoint
-        // For now, we'll just sequentially accept them (simple implementation)
-        // or better, just show a toast that this feature is coming soon if strict backend alignment is needed
-        // But per requirements, let's implement loop for now if no bulk endpoint
-
         try {
             await Promise.all(highConfidence.map((s: PurposeSuggestion) => governanceService.acceptSuggestion(s.id)));
             toast.success('Batch Accept Complete', `Accepted ${highConfidence.length} suggestions.`);
@@ -69,7 +72,7 @@ const PurposeMapping = () => {
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                         <Briefcase className="text-blue-600" />
@@ -79,22 +82,28 @@ const PurposeMapping = () => {
                         Review AI suggestions for unmapped data elements.
                     </p>
                 </div>
-                <div className="flex gap-3">
-                    <select
-                        className="border-gray-300 rounded-md shadow-sm text-sm p-2 border"
+                <div className="flex flex-wrap items-center gap-3">
+                    <Select
                         value={filter}
-                        onChange={(e) => setFilter(e.target.value as 'all' | 'high_confidence')}
+                        onValueChange={(val) => setFilter(val as 'all' | 'high_confidence')}
                     >
-                        <option value="all">All Suggestions</option>
-                        <option value="high_confidence">High Confidence Only</option>
-                    </select>
-                    <button
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter suggestions" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Suggestions</SelectItem>
+                            <SelectItem value="high_confidence">High Confidence Only</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Button
                         onClick={handleAcceptAllHighConfidence}
-                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
+                        variant="default"
+                        className="bg-green-600 hover:bg-green-700 text-white"
                     >
                         <CheckCircle size={16} className="mr-2" />
-                        Accept All High Confidence
-                    </button>
+                        Accept High Confidence
+                    </Button>
                 </div>
             </div>
 

@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { Plus, Play, Pause, Trash2, Code, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/common/Button';
+import { Button } from '../components/ui/button';
 import { DataTable } from '../components/DataTable/DataTable';
 import { StatusBadge } from '../components/common/StatusBadge';
-import { Modal } from '../components/common/Modal';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '../components/ui/dialog';
 import { useWidgets, useDeleteWidget, useActivateWidget, usePauseWidget } from '../hooks/useConsent';
 import type { ConsentWidget } from '../types/consent';
 import WidgetBuilder from '../components/Consent/WidgetBuilder';
@@ -73,7 +78,7 @@ export default function ConsentWidgets() {
                 <div className="flex gap-2">
                     <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => handleToggleStatus(row)}
                         title={row.status === 'ACTIVE' ? "Pause Widget" : "Activate Widget"}
                     >
@@ -81,7 +86,7 @@ export default function ConsentWidgets() {
                     </Button>
                     <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => navigate(`/consent/widgets/${row.id}`)}
                         title="View Code & Analytics"
                     >
@@ -89,7 +94,7 @@ export default function ConsentWidgets() {
                     </Button>
                     <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => handleDelete(row.id)}
                         title="Delete Widget"
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -110,7 +115,8 @@ export default function ConsentWidgets() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Consent Widgets</h1>
                     <p className="text-gray-500 dark:text-gray-400">Manage your consent collection widgets and notices.</p>
                 </div>
-                <Button onClick={() => setIsBuilderOpen(true)} icon={<Plus size={16} />}>
+                <Button onClick={() => setIsBuilderOpen(true)}>
+                    <Plus size={16} className="mr-2" />
                     New Widget
                 </Button>
             </div>
@@ -133,7 +139,7 @@ export default function ConsentWidgets() {
                         </span>
                         <div className="flex gap-2">
                             <Button
-                                variant="secondary"
+                                variant="outline"
                                 size="sm"
                                 disabled={page === 1}
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -141,7 +147,7 @@ export default function ConsentWidgets() {
                                 Previous
                             </Button>
                             <Button
-                                variant="secondary"
+                                variant="outline"
                                 size="sm"
                                 disabled={page === (data?.total_pages || 1)}
                                 onClick={() => setPage(p => p + 1)}
@@ -153,14 +159,14 @@ export default function ConsentWidgets() {
                 </>
             )}
 
-            {/* Widget Builder Modal */}
-            <Modal
-                open={isBuilderOpen}
-                onClose={() => setIsBuilderOpen(false)}
-                title="Create New Widget"
-            >
-                <WidgetBuilder onClose={() => setIsBuilderOpen(false)} />
-            </Modal>
+            <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
+                <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="px-6 py-4 border-b">
+                        <DialogTitle>Create New Widget</DialogTitle>
+                    </DialogHeader>
+                    <WidgetBuilder onClose={() => setIsBuilderOpen(false)} />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

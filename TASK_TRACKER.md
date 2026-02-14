@@ -547,13 +547,29 @@
   - [x] Zero inline event strings remaining (`findstr` verified)
 
 ### Batch 20A: UI/UX Review Sprint
-- [ ] Session 1: Auth + Dashboard + Discovery (8 screens)
-- [ ] Session 2: Compliance Part 1 — DSR, Notices, Widgets (6 screens)
-- [ ] Session 3: Compliance Part 2 — Analytics, Breach, Notifications (8 screens)
-- [ ] Session 4: Governance + Settings + Portal (10 screens)
-- [ ] Session 5: Admin Portal + Cross-Cutting Audit (5+ screens)
-- [ ] Fix sprint: Implement prioritized fixes from review findings
+- [x] Session 1: Auth + Dashboard + Discovery (8 screens)
+- [x] Session 2: Compliance Part 1 — DSR, Notices, Widgets (6 screens)
+- [x] Session 3: Compliance Part 2 — Analytics, Breach, Notifications (8 screens)
+- [x] Session 4: Governance + Settings + Portal (10 screens)
+- [x] Session 5: Admin Portal + Cross-Cutting Audit (5+ screens)
+- [x] Fix sprint: Implement prioritized fixes from review findings (High + Medium Priority Done)
 - [ ] Re-review: Verify fixes meet standards
+
+### Batch 20B: Core Fixes & File Upload/OCR (Partial)
+- [x] **Backend**: Logout API — `POST /api/v2/auth/logout` in `internal/handler/auth_handler.go` (Batch 20B)
+- [x] **Backend**: File Upload API — `POST /api/v2/datasources/upload` in `internal/handler/datasource_handler.go` (Batch 20B)
+  - [x] `DataSourceTypeFileUpload` added to `pkg/types/types.go`
+  - [x] `CreateFromFile` in `internal/service/datasource_service.go` — saves to `uploads/tenant_{id}/`
+  - [x] File cleanup on `Delete` for `FILE_UPLOAD` data sources
+- [x] **Frontend**: Logout button in Sidebar + token clearance (Batch 20B)
+- [x] **Frontend**: Delete Data Source action with confirmation modal (Batch 20B)
+- [x] **Frontend**: File Upload UI — Drag & Drop zone for PDF/DOCX/XLSX/CSV (Batch 20B)
+- [/] **AI/ML**: Document Parsing Service — `internal/service/ai/parsing_service.go` (Batch 20B)
+  - [x] PDF native text extraction
+  - [x] DOCX/XLSX text extraction
+  - [ ] OCR via Tesseract — disabled on current env (missing build deps)
+  - [ ] Integration with `ScanService` for `FILE_UPLOAD` sources
+
 
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
 - [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal
@@ -595,4 +611,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 13, 2026 — Batch 20 (Enterprise Scale) complete; Next: Batch 20A (UI/UX Review Sprint)
+> **Last Updated**: February 14, 2026 — Batch 20B (Core Fixes & File Upload/OCR) partially complete; Next: Batch 20A (UI/UX Review Sprint) + Batch 20B OCR completion
