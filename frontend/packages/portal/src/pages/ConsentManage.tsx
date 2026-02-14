@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, AlertTriangle } from 'lucide-react';
-import { portalService } from '../../services/portalService';
+import { portalService } from '@/services/portalService';
 import { Button } from '@datalens/shared';
 import { Modal } from '@datalens/shared'; // Using reusable modal
 import { toast } from 'react-toastify';

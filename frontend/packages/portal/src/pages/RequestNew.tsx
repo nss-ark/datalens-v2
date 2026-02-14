@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { portalService } from '../../services/portalService';
-import { usePortalAuthStore } from '../../stores/portalAuthStore';
+import { portalService } from '@/services/portalService';
+import { usePortalAuthStore } from '@/stores/portalAuthStore';
 import { Button } from '@datalens/shared';
 import { toast } from '@datalens/shared';
-import type { CreateDPRInput } from '../../types/portal';
+import type { CreateDPRInput } from '@/types/portal';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
-import { GuardianVerifyModal } from '../../components/Portal/GuardianVerifyModal';
+import { GuardianVerifyModal } from '@/components/GuardianVerifyModal';
 import { AxiosError } from 'axios';
 
 const RequestNew = () => {

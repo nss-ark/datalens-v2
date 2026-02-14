@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { portalService } from '../../services/portalService';
-import { Modal } from '../common/Modal';
-import { Button } from '../common/Button';
-import { OTPInput } from '../common/OTPInput';
+import { portalService } from '@/services/portalService';
+import { Modal } from '@datalens/shared';
+import { Button } from '@datalens/shared';
+import { OTPInput } from './OTPInput';
 import { toast } from '@datalens/shared';
 import { Mail, ShieldCheck } from 'lucide-react';
 import { AxiosError } from 'axios';

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Shield, CheckCircle } from 'lucide-react';
-import { portalService } from '../../services/portalService';
+import { portalService } from '@/services/portalService';
 import { toast } from '@datalens/shared';
 import { cn } from '@datalens/shared';
 

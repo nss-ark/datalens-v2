@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { portalService } from '../../services/portalService';
+import { portalService } from '@/services/portalService';
 import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 

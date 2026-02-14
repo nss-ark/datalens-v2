@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
-import { adminService } from '../../../services/adminService';
+import { adminService } from '@/services/adminService';
 import { DataTable, type Column } from '@datalens/shared';
 import { Pagination } from '@datalens/shared';
 import { Button } from '@datalens/shared';
 import { StatusBadge } from '@datalens/shared';
 import { TenantForm } from './TenantForm';
-import type { Tenant } from '../../../types/admin';
+import type { Tenant } from '@/types/admin';
 
 export default function TenantList() {
     const [page, setPage] = useState(1);

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { portalService } from '../../../services/portalService';
+import { portalService } from '@/services/portalService';
 import { Button } from '@datalens/shared';
 import { StatusBadge } from '@datalens/shared';
 import { Modal } from '@datalens/shared';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { MessageSquare } from 'lucide-react';
-import type { Grievance } from '../../../types/grievance';
+import type { Grievance } from '@/types/grievance';
 
 export default function MyGrievances() {
     const queryClient = useQueryClient();

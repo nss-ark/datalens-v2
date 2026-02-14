@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { adminService } from '../../../services/adminService';
+import { adminService } from '@/services/adminService';
 import { toast } from '@datalens/shared';
 import { Button } from '@datalens/shared';
 import { Modal } from '@datalens/shared';
-import type { AdminUser, AdminRole } from '../../../types/admin';
+import type { AdminUser, AdminRole } from '@/types/admin';
 
 interface RoleAssignModalProps {
     isOpen: boolean;

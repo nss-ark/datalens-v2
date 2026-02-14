@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { portalService } from '../../services/portalService';
-import { IdentityCard } from '../../components/Portal/IdentityCard';
-import { GuardianVerifyModal } from '../../components/Portal/GuardianVerifyModal';
+import { portalService } from '@/services/portalService';
+import { IdentityCard } from '@/components/IdentityCard';
+import { GuardianVerifyModal } from '@/components/GuardianVerifyModal';
 import { User, Mail, Phone, Calendar, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import { StatusBadge } from '@datalens/shared';

@@ -623,3 +623,21 @@
 - Added constants for Breach, Grievance, Translation, DSR, DPR, and Governance events.
 - All tests passing.
 
+
+### [2026-02-14] [FROM: Frontend] [TO: ALL]
+**Subject**: Frontend Monorepo Split Complete (Review Batch R1)
+**Type**: STATUS_UPDATE
+
+**Changes**:
+- **Structure**: Split frontend into `@datalens/control-centre`, `@datalens/admin`, `@datalens/portal`, and `@datalens/shared`.
+- **Ports**:
+  - Control Centre: `http://localhost:3000` (API Proxy: 8080)
+  - Admin: `http://localhost:3001` (API Proxy: 8081)
+  - Portal: `http://localhost:3002` (API Proxy: 8082)
+- **Shared**: Common components, hooks, stores, and types moved to shared package.
+- **Cleanup**: Legacy `frontend/src` removed. `frontend/widget/` preserved.
+
+**Verification**:
+- All packages build cleanly (`npm run build`).
+- Import paths updated and verified.
+

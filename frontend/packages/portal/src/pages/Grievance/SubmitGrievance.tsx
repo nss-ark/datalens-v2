@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { portalService } from '../../../services/portalService';
+import { portalService } from '@/services/portalService';
 import { Button } from '@datalens/shared';
 import { toast } from 'react-toastify';
 import { ArrowLeft } from 'lucide-react';

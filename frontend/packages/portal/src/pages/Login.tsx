@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { usePortalAuthStore } from '../../stores/portalAuthStore';
+import { usePortalAuthStore } from '@/stores/portalAuthStore';
 import { useNavigate } from 'react-router-dom';
-import { portalService } from '../../services/portalService';
+import { portalService } from '@/services/portalService';
 import { toast } from '@datalens/shared';
 import { Loader2 } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { AdminSidebar } from './AdminSidebar';
-import { Header } from './Header'; // Reusing Header for now, might need adaptation
+import { Header } from './Header';
 import { useUIStore } from '@datalens/shared';
 
 export const AdminLayout = () => {

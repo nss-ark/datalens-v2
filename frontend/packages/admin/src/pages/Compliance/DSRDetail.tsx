@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle, XCircle, FileText } from 'lucide-react';
-import { adminService } from '../../../services/adminService';
-import { dsrService } from '../../../services/dsr'; // Using generic DSR service for status updates
+import { adminService } from '@/services/adminService';
+import { dsrService } from '@/services/dsr'; // Using generic DSR service for status updates
 import { Button } from '@datalens/shared';
 import { StatusBadge } from '@datalens/shared';
 import { toast } from 'react-toastify';

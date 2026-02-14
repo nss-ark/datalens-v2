@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Building, Users, Activity, Server } from 'lucide-react';
-import { StatCard } from '../../components/Dashboard/StatCard';
-import { adminService } from '../../services/adminService';
-import type { AdminStats } from '../../types/admin';
+import { StatCard } from '@/components/Dashboard/StatCard';
+import { adminService } from '@/services/adminService';
+import type { AdminStats } from '@/types/admin';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState<AdminStats | null>(null);

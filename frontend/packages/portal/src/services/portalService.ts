@@ -8,9 +8,9 @@ import type {
     ConsentHistoryEntry,
     DPRRequest,
     CreateDPRInput
-} from '../types/portal';
-import type { IdentityStatusResponse } from '../types/identity';
-import type { CreateGrievanceRequest, Grievance } from '../types/grievance';
+} from '@/types/portal';
+import type { IdentityStatusResponse } from '@/types/identity';
+import type { CreateGrievanceRequest, Grievance } from '@/types/grievance';
 
 export const portalService = {
     // --- Auth ---

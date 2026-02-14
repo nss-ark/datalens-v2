@@ -1,1 +1,0 @@
-﻿packages/control-centre/src/pages/Governance/PurposeMapping.tsx(101,25): error TS2322: Type '"default"' is not assignable to type '"secondary" | "outline" | "ghost" | "primary" | "danger" | undefined'.

@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
-import { adminService } from '../../../services/adminService';
+import { adminService } from '@/services/adminService';
 import { DataTable, type Column } from '@datalens/shared';
 import { Pagination } from '@datalens/shared';
 import { StatusBadge } from '@datalens/shared';
 import { Button } from '@datalens/shared';
-import type { AdminDSR } from '../../../types/admin';
+import type { AdminDSR } from '@/types/admin';
 
 export default function AdminDSRList() {
     const navigate = useNavigate();

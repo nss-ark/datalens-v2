@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Shield, Ban, CheckCircle, Search } from 'lucide-react';
-import { adminService } from '../../../services/adminService';
+import { adminService } from '@/services/adminService';
 import { DataTable, type Column } from '@datalens/shared';
 import { Pagination } from '@datalens/shared';
 import { Button } from '@datalens/shared';
 import { StatusBadge } from '@datalens/shared';
 import { RoleAssignModal } from './RoleAssignModal';
-import type { AdminUser, Tenant } from '../../../types/admin';
+import type { AdminUser, Tenant } from '@/types/admin';
 import { toast } from '@datalens/shared';
 
 export default function UserList() {

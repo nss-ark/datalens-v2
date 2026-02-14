@@ -1,5 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { usePortalAuthStore } from '../stores/portalAuthStore';
+import { usePortalAuthStore } from '@/stores/portalAuthStore';
 
 // Separate axios instance for Portal to keep auth distinct from Admin
 export const portalApi = axios.create({

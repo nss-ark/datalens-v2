@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { usePortalAuthStore } from '../../stores/portalAuthStore';
-import { IdentityCard } from '../../components/Portal/IdentityCard';
+import { usePortalAuthStore } from '@/stores/portalAuthStore';
+import { IdentityCard } from '@/components/IdentityCard';
 
 const PortalDashboard = () => {
     const navigate = useNavigate();

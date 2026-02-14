@@ -1,6 +1,6 @@
 import { api } from '@datalens/shared';
 import type { ApiResponse, PaginatedResponse } from '@datalens/shared';
-import type { Tenant, CreateTenantInput, AdminStats, AdminUser, AdminRole, AdminDSR } from '../types/admin';
+import type { Tenant, CreateTenantInput, AdminStats, AdminUser, AdminRole, AdminDSR } from '@/types/admin';
 
 export const adminService = {
     // Tenants

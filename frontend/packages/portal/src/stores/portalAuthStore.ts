@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { PortalProfile } from '../types/portal';
+import type { PortalProfile } from '@/types/portal';
 
 interface PortalAuthState {
     token: string | null;

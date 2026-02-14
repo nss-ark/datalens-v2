@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { portalService } from '../../services/portalService';
-import { Modal } from '../common/Modal';
-import { Button } from '../common/Button';
+import { portalService } from '@/services/portalService';
+import { Modal } from '@datalens/shared';
+import { Button } from '@datalens/shared';
 import { toast } from '@datalens/shared';
-import type { CreateDPRInput } from '../../types/portal';
+import type { CreateDPRInput } from '@/types/portal';
 import { AxiosError } from 'axios';
 
 interface DPRRequestModalProps {
