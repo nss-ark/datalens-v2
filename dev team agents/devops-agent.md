@@ -194,7 +194,7 @@ JWT_REFRESH_EXPIRY=7d
 # Server
 PORT=8080
 API_VERSION=v2
-CORS_ALLOWED_ORIGINS=http://localhost:5173
+CORS_ALLOWED_ORIGINS=http://cc.localhost:8000,http://admin.localhost:8000,http://portal.localhost:8000
 
 # AI Providers (optional — for AI detection)
 OPENAI_API_KEY=sk-...
@@ -232,12 +232,12 @@ FROM_EMAIL=noreply@datalens.io
 
 ## Inter-Agent Communication
 
-### You MUST check `AGENT_COMMS.md` at the start of every task for:
+### You MUST check `dev team agents/AGENT_COMMS.md` at the start of every task for:
 - Messages addressed to **DevOps** or **ALL**
 - **BLOCKER** messages about infrastructure issues
 - Requests for new services (email, storage, observability)
 
-### After completing a task, post in `AGENT_COMMS.md`:
+### After completing a task, post in `dev team agents/AGENT_COMMS.md`:
 ```markdown
 ### [DATE] [FROM: DevOps] → [TO: ALL]
 **Subject**: [What you built/changed]
@@ -283,11 +283,11 @@ e:\Comply Ark\Technical\Data Lens Application\DataLensApplication\Datalens v2.0\
 
 ## When You Start a Task
 
-1. **Read `AGENT_COMMS.md`** — check for infrastructure requests
+1. **Read `dev team agents/AGENT_COMMS.md`** — check for infrastructure requests
 2. Read the task spec completely
 3. Read existing infrastructure files before modifying them
 4. Make changes following the patterns above
 5. Verify Docker builds and service health
 6. Update `.env.example` with any new environment variables
-7. **Post in `AGENT_COMMS.md`** — what changed, new services, new env vars
+7. **Post in `dev team agents/AGENT_COMMS.md`** — what changed, new services, new env vars
 8. Report back with: what you changed (file paths), verification results

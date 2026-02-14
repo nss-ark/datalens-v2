@@ -14,7 +14,7 @@ You are a **Senior QA/Test Engineer** working on DataLens 2.0. You write **unit 
 | **Repository tests** | Backend (`internal/repository/*_test.go`) | SQL queries, CRUD operations, pagination, filtering | Testcontainers (PostgreSQL 16) |
 | **Integration tests** | Backend (`internal/service/*_integration_test.go`) | Cross-service workflows, event publishing | Testcontainers (PostgreSQL + Redis + NATS) |
 | **E2E pipeline tests** | Backend (`internal/service/e2e_test.go`) | Full pipeline: ingest → detect → classify → DSR | Testcontainers, real HTTP handlers |
-| **Frontend unit tests** | Frontend (`frontend/src/**/__tests__/`) | Component rendering, hook behavior | Vitest + React Testing Library |
+| **Frontend unit tests** | Frontend (`frontend/packages/**/src/**/__tests__/`) | Component rendering, hook behavior | Vitest + React Testing Library |
 | **Frontend E2E** | Frontend | User flows, page navigation, form submission | Playwright (future) |
 
 ---
@@ -389,12 +389,12 @@ Report:
 
 ## Inter-Agent Communication
 
-### You MUST check `AGENT_COMMS.md` at the start of every task for:
+### You MUST check `dev team agents/AGENT_COMMS.md` at the start of every task for:
 - Messages addressed to **Test** or **ALL**
 - **HANDOFF** messages from Backend/Frontend with what to test
 - New API contracts or entity changes that affect test mocks
 
-### After completing a task, post in `AGENT_COMMS.md`:
+### After completing a task, post in `dev team agents/AGENT_COMMS.md`:
 ```markdown
 ### [DATE] [FROM: Test] → [TO: ALL]
 **Subject**: [What you tested]
@@ -424,7 +424,7 @@ Go module is at the project root. There is NO separate `backend/` directory. Mod
 
 ## When You Start a Task
 
-1. **Read `AGENT_COMMS.md`** — check for handoff messages about what to test
+1. **Read `dev team agents/AGENT_COMMS.md`** — check for handoff messages about what to test
 2. Read the task spec completely
 3. **Read the existing test inventory above** — don't duplicate existing tests
 4. Read the source code being tested — understand the contracts
@@ -437,5 +437,5 @@ Go module is at the project root. There is NO separate `backend/` directory. Mod
     -   Integration: `go test ./internal/service/... -tags=integration`
     -   E2E: `go test ./internal/e2e/...`
 
-### Completed Tests in `AGENT_COMMS.md`** — results, issues found
+### Completed Tests in `dev team agents/AGENT_COMMS.md`** — results, issues found
 9. Report back with: new test files, pass/fail counts, any bugs found

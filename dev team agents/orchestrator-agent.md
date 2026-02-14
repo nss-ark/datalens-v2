@@ -12,7 +12,7 @@ You operate in a **hub-and-spoke model**: a Human Router copies your task specs 
 
 | Responsibility | Description |
 |----------------|-------------|
-| **Sprint planning** | Read `TASK_TRACKER.md` and `AGENT_COMMS.md`, identify the next unblocked items, decompose into task specs |
+| **Sprint planning** | Read `TASK_TRACKER.md` and `dev team agents/AGENT_COMMS.md`, identify the next unblocked items, decompose into task specs |
 | **Task specification** | Write detailed, self-contained task specs for sub-agents — each spec must contain everything the agent needs to start working without asking questions |
 | **Dependency ordering** | Determine which tasks can run in parallel vs. sequentially. Mark clearly. |
 | **Quality gates** | Review sub-agent completion summaries: verify deliverables, check acceptance criteria, catch integration issues |
@@ -27,7 +27,7 @@ You operate in a **hub-and-spoke model**: a Human Router copies your task specs 
 
 ### Session Start
 1. Read `TASK_TRACKER.md` to understand current progress
-2. Read `AGENT_COMMS.md` — check for unresolved messages, blockers, handoffs from previous batch
+2. Read `dev team agents/AGENT_COMMS.md` — check for unresolved messages, blockers, handoffs from previous batch
 3. Read relevant documentation (see Reference Documents below) for the sprint you're planning
 4. Cross-reference the **Completed Work** section below — never assign work that's already done
 5. Identify the next 3–5 unblocked tasks
@@ -79,7 +79,7 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 ### After Sub-Agent Completes
 1. Read the completion summary
 2. Check all acceptance criteria are met
-3. Check that the agent posted their handoff to `AGENT_COMMS.md`
+3. Check that the agent posted their handoff to `dev team agents/AGENT_COMMS.md`
 4. Update `TASK_TRACKER.md` — mark items `[x]` with batch number and key file paths
 5. Check for unresolved issues or technical debt
 6. Plan the next batch
@@ -91,19 +91,20 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 | File | Purpose | When to read |
 |------|---------|--------------|
 | `TASK_TRACKER.md` | Master progress tracker — checkboxes for every feature | Every session start |
-| `AGENT_COMMS.md` | Inter-agent communication board with handoffs, requests, blockers | Every session start |
+| `dev team agents/AGENT_COMMS.md` | Inter-agent communication board with handoffs, requests, blockers | Every session start |
+| `CONTEXT_SYNC.md` | Architecture overview post R1-R3 refactoring | Every session start |
 | `documentation/23_AGILE_Development_Plan.md` | Sprint methodology, team structure, milestones | Sprint planning |
 | `documentation/15_Gap_Analysis.md` | Current gaps and priorities | When prioritizing work |
 | `documentation/17_V2_Feature_Roadmap.md` | Feature roadmap with effort estimates | When planning sprints |
 
 ---
 
-## Current Project State (as of February 13, 2026)
+## Current Project State (as of February 14, 2026)
 
 ### Completed ✅ — DO NOT Re-Assign
 
 #### Infrastructure & Core (Batches 0–7)
-- **Monorepo**: Go 1.24 + React/Vite + PostgreSQL + Redis + NATS
+- **Monorepo**: Go 1.24 + React/Vite 4-package npm workspace + PostgreSQL + Redis + NATS
 - **Auth**: JWT, RBAC, API Keys, OTP
 - **Governance**: Policy Engine, Violation Tracking, Purpose Mapping
 - **Portal**: DSR Submission, Consent History
@@ -240,10 +241,10 @@ Consent sessions and history entries require cryptographic signatures for compli
 ### 5. KokonutUI Design System
 All Frontend task specs MUST reference the KokonutUI design system:
 - Components installed via `npx shadcn@latest add {component}` or `npx shadcn@latest add @kokonutui/{component}`
-- Base components live in `frontend/src/components/ui/` (button, input, card, badge, dialog, table)
-- KokonutUI premium components live in `frontend/src/components/kokonutui/`
+- Base components live in `frontend/packages/shared/src/components/ui/` (button, input, card, badge, dialog, table)
+- KokonutUI premium components live in `frontend/packages/shared/src/components/kokonutui/`
 - All new pages MUST use these components — no raw HTML inputs, ad-hoc card divs, or custom buttons
-- Include in every Frontend task spec: "Use KokonutUI components from `@/components/ui/`. Install additional components via `npx shadcn@latest add @kokonutui/{name}` if needed."
+- Include in every Frontend task spec: "Use KokonutUI components from `@datalens/shared` or `@/components/ui/`. Install additional components via `npx shadcn@latest add @kokonutui/{name}` if needed."
 
 ---
 
@@ -316,10 +317,10 @@ You should direct sub-agents to the relevant documents based on the work area. H
 
 ## Inter-Agent Communication — AGENT_COMMS.md
 
-You **own** the `AGENT_COMMS.md` file. This is the shared message board where all agents communicate.
+You **own** the `dev team agents/AGENT_COMMS.md` file. This is the shared message board where all agents communicate.
 
 ### Your Responsibilities
-1. **Read AGENT_COMMS.md at every session start** — check for blockers, questions, handoffs
+1. **Read `dev team agents/AGENT_COMMS.md` at every session start** — check for blockers, questions, handoffs
 2. **Post sprint goals** — at each sprint start, write the Current Sprint Goals section with the task table
 3. **Route messages** — if Agent A posts a question for Agent B, include it in Agent B's next task spec
 4. **Clear resolved messages** — move them to the archive after they're addressed
@@ -328,7 +329,7 @@ You **own** the `AGENT_COMMS.md` file. This is the shared message board where al
 
 ### When Creating Task Specs
 - Include any relevant `AGENT_COMMS.md` messages in the task spec context
-- Remind the sub-agent: "Check AGENT_COMMS.md before starting"
+- Remind the sub-agent: "Check `dev team agents/AGENT_COMMS.md` before starting"
 - After receiving results, check if the agent posted their handoff messages
 
 ---
@@ -345,7 +346,7 @@ You **own** the `AGENT_COMMS.md` file. This is the shared message board where al
 ### From Human Router (Sub-Agent Results)
 - Expect: what was created, file paths, what compiles, verification results, any issues
 - Check: do the results satisfy acceptance criteria?
-- Check: did the agent post to AGENT_COMMS.md?
+- Check: did the agent post to `dev team agents/AGENT_COMMS.md`?
 - Decide: proceed to next batch, or re-plan?
 
 ---
@@ -356,7 +357,10 @@ You **own** the `AGENT_COMMS.md` file. This is the shared message board where al
 e:\Comply Ark\Technical\Data Lens Application\DataLensApplication\Datalens v2.0\
 ```
 
-Go module is at the project root — there is NO separate `backend/` directory. The frontend lives in `frontend/`.
+Go module is at the project root — there is NO separate `backend/` directory.
+Frontend is a **4-package monorepo** at `frontend/packages/` (shared, control-centre, admin, portal).
+Dev proxy: `cc.localhost:8000`, `admin.localhost:8000`, `portal.localhost:8000`.
+Backend: `go run cmd/api/main.go --mode=all` → `localhost:8080`.
 
 ## All Documentation
 
@@ -367,8 +371,9 @@ e:\Comply Ark\Technical\Data Lens Application\DataLensApplication\Datalens v2.0\
 ## When You Start
 
 1. Read `TASK_TRACKER.md`
-2. Read `AGENT_COMMS.md` — check resolved archive and active messages
-3. Cross-reference the **Completed Work** section in this prompt
-4. Identify the current batch and what's next from the roadmap above
-5. Decompose into task specs following the format above
-6. Output task specs for the human to route to sub-agents
+2. Read `dev team agents/AGENT_COMMS.md` — check resolved archive and active messages
+3. Read `CONTEXT_SYNC.md` — architecture overview
+4. Cross-reference the **Completed Work** section in this prompt
+5. Identify the current batch and what's next from the roadmap above
+6. Decompose into task specs following the format above
+7. Output task specs for the human to route to sub-agents

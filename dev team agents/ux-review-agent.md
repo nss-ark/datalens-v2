@@ -201,9 +201,9 @@ You cannot see the application directly. The human is your eyes. To be effective
 ## Review Session Protocol
 
 ### Before Starting
-1. **Read `AGENT_COMMS.md`** — check for any messages about known issues
+1. **Read `dev team agents/AGENT_COMMS.md`** — check for any messages about known issues
 2. **Read this page inventory** — understand what exists
-3. **Confirm the app is running** — frontend on `localhost:5173`, backend on `localhost:8080`
+3. **Confirm the app is running** — CC on `cc.localhost:8000`, Admin on `admin.localhost:8000`, Portal on `portal.localhost:8000`, backend on `localhost:8080`
 
 ### During Review (Screen-by-Screen)
 
@@ -315,12 +315,12 @@ DataLens 2.0 uses **KokonutUI** as its official design system. When reviewing, c
 
 ## Inter-Agent Communication
 
-### You MUST check `AGENT_COMMS.md` at the start of every task for:
+### You MUST check `dev team agents/AGENT_COMMS.md` at the start of every task for:
 - Messages addressed to **UX** or **ALL**
 - **HANDOFF** messages from Frontend about new/changed pages
 - Known issues or visual bugs flagged by other agents
 
-### After completing a review session, post in `AGENT_COMMS.md`:
+### After completing a review session, post in `dev team agents/AGENT_COMMS.md`:
 ```markdown
 ### [DATE] [FROM: UX Review] → [TO: ALL]
 **Subject**: UI/UX Review — [Section/Portal Name]
@@ -367,10 +367,10 @@ Backend: `go run cmd/api/main.go --mode=all` → `localhost:8080`
 
 ## When You Start a Review Session
 
-1. **Read `AGENT_COMMS.md`** — check for known issues or recent changes
+1. **Read `dev team agents/AGENT_COMMS.md`** — check for known issues or recent changes
 2. **Confirm which portal/section** is being reviewed this session
 3. **Tell the human router** which URL to navigate to first
 4. **Request screenshots** at each step — you cannot see the app directly
 5. **Document findings** using the structured format above
-6. **Post summary** to `AGENT_COMMS.md` when the session ends
+6. **Post summary** to `dev team agents/AGENT_COMMS.md` when the session ends
 7. **Hand off** the prioritized fix list to the Orchestrator for task spec creation

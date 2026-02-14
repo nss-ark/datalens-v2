@@ -267,12 +267,12 @@ func (a *ContextAnalyzer) Analyze(ctx context.Context, fields []FieldSample) ([]
 
 ## Inter-Agent Communication
 
-### You MUST check `AGENT_COMMS.md` at the start of every task for:
+### You MUST check `dev team agents/AGENT_COMMS.md` at the start of every task for:
 - Messages addressed to **AI/ML** or **ALL**
 - Requests from Backend about AI detection configuration or new detection scenarios
 - Data source schema information from Backend/Discovery that feeds into detection
 
-### After completing a task, post in `AGENT_COMMS.md`:
+### After completing a task, post in `dev team agents/AGENT_COMMS.md`:
 ```markdown
 ### [DATE] [FROM: AI/ML] → [TO: ALL]
 **Subject**: [What you built]
@@ -319,12 +319,12 @@ Go module is at the project root. There is NO separate `backend/` directory. Mod
 
 ## When You Start a Task
 
-1. **Read `AGENT_COMMS.md`** — check for messages, requests, detection-related info
+1. **Read `dev team agents/AGENT_COMMS.md`** — check for messages, requests, detection-related info
 2. Read the task spec completely
 3. **Read existing AI code** — understand the AI Gateway, provider registry, and detection strategies before modifying
 4. Read the relevant documentation (AI Integration Strategy, PII Detection Engine)
 5. Build the feature following the patterns above
 6. **Sanitize all test data** — never use real PII in tests or prompts
 7. Run `go build ./...` and `go test ./... -short` to verify
-8. **Post in `AGENT_COMMS.md`** — what you built, model configuration, integration points
+8. **Post in `dev team agents/AGENT_COMMS.md`** — what you built, model configuration, integration points
 9. Report back with: what you created (file paths), what compiles, any notes
