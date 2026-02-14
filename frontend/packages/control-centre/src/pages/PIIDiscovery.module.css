@@ -1,0 +1,252 @@
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Filter Bar */
+.filterBar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.filterSelect {
+    height: 36px;
+    padding: 0 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: white;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    min-width: 140px;
+}
+
+.filterSelect:focus {
+    outline: none;
+    border-color: var(--primary-400);
+}
+
+.activeFilters {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-left: auto;
+}
+
+.clearBtn {
+    font-size: 0.75rem;
+    color: var(--primary-600);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-weight: 500;
+    margin-left: 0.5rem;
+}
+
+/* Confidence badge */
+.confidence {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.confBar {
+    width: 40px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--slate-100);
+    overflow: hidden;
+}
+
+.confFill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.confHigh .confFill {
+    background: var(--success-500);
+}
+
+.confHigh {
+    color: var(--success-700);
+}
+
+.confMedium .confFill {
+    background: var(--warning-500);
+}
+
+.confMedium {
+    color: var(--warning-600);
+}
+
+.confLow .confFill {
+    background: var(--danger-500);
+}
+
+.confLow {
+    color: var(--danger-700);
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    gap: 4px;
+}
+
+.actionBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.actionBtn:hover {
+    border-color: var(--slate-300);
+}
+
+.verifyBtn:hover {
+    background: var(--success-50);
+    color: var(--success-600);
+    border-color: var(--success-300);
+}
+
+.correctBtn:hover {
+    background: var(--warning-50);
+    color: var(--warning-600);
+    border-color: var(--warning-300);
+}
+
+.rejectBtn:hover {
+    background: var(--danger-50);
+    color: var(--danger-600);
+    border-color: var(--danger-300);
+}
+
+/* Accuracy Panel */
+.statsPanel {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.statCard {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+}
+
+.statLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin-bottom: 0.5rem;
+}
+
+.statValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.statSub {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.progressBar {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--slate-100);
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--primary-500);
+    transition: width 0.3s;
+}
+
+/* Layout */
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Modal form */
+.modalForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.modalLabel {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.375rem;
+}
+
+.modalSelect,
+.modalTextarea {
+    width: 100%;
+    padding: 0 0.875rem;
+    height: 40px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.modalTextarea {
+    height: 80px;
+    padding: 0.5rem 0.875rem;
+    resize: vertical;
+}
+
+.methodBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: var(--slate-100);
+    color: var(--slate-600);
+}

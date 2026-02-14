@@ -1,0 +1,18 @@
+﻿packages/admin/src/components/Layout/AdminLayout.tsx(3,24): error TS2307: Cannot find module './Header' or its corresponding type declarations.
+packages/admin/src/pages/Compliance/DSRDetail.tsx(5,30): error TS2307: Cannot find module '../../../services/adminService' or its corresponding type declarations.
+packages/admin/src/pages/Compliance/DSRDetail.tsx(6,28): error TS2307: Cannot find module '../../../services/dsr' or its corresponding type declarations.
+packages/admin/src/pages/Compliance/DSRList.tsx(5,30): error TS2307: Cannot find module '../../../services/adminService' or its corresponding type declarations.
+packages/admin/src/pages/Compliance/DSRList.tsx(10,31): error TS2307: Cannot find module '../../../types/admin' or its corresponding type declarations.
+packages/admin/src/pages/Dashboard.tsx(3,26): error TS2307: Cannot find module '../../components/Dashboard/StatCard' or its corresponding type declarations.
+packages/admin/src/pages/Dashboard.tsx(4,30): error TS2307: Cannot find module '../../services/adminService' or its corresponding type declarations.
+packages/admin/src/pages/Dashboard.tsx(5,33): error TS2307: Cannot find module '../../types/admin' or its corresponding type declarations.
+packages/admin/src/pages/Tenants/TenantForm.tsx(2,30): error TS2307: Cannot find module '../../../services/adminService' or its corresponding type declarations.
+packages/admin/src/pages/Tenants/TenantForm.tsx(6,40): error TS2307: Cannot find module '../../../types/admin' or its corresponding type declarations.
+packages/admin/src/pages/Tenants/TenantList.tsx(4,30): error TS2307: Cannot find module '../../../services/adminService' or its corresponding type declarations.
+packages/admin/src/pages/Tenants/TenantList.tsx(10,29): error TS2307: Cannot find module '../../../types/admin' or its corresponding type declarations.
+packages/admin/src/pages/Users/RoleAssignModal.tsx(2,30): error TS2307: Cannot find module '../../../services/adminService' or its corresponding type declarations.
+packages/admin/src/pages/Users/RoleAssignModal.tsx(6,43): error TS2307: Cannot find module '../../../types/admin' or its corresponding type declarations.
+packages/admin/src/pages/Users/UserList.tsx(4,30): error TS2307: Cannot find module '../../../services/adminService' or its corresponding type declarations.
+packages/admin/src/pages/Users/UserList.tsx(10,40): error TS2307: Cannot find module '../../../types/admin' or its corresponding type declarations.
+packages/admin/src/pages/Users/UserList.tsx(95,42): error TS7006: Parameter 'roleId' implicitly has an 'any' type.
+packages/admin/src/types/admin.ts(2,26): error TS2307: Cannot find module './dsr' or its corresponding type declarations.

@@ -1,0 +1,191 @@
+﻿packages/control-centre/src/components/Breach/BreachForm.tsx(2,24): error TS2307: Cannot find module '../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/Breach/BreachStatusBadge.tsx(1,29): error TS2307: Cannot find module '../common/StatusBadge' or its corresponding type declarations.
+packages/control-centre/src/components/Breach/CertInReportModal.tsx(1,23): error TS2307: Cannot find module '../common/Modal' or its corresponding type declarations.
+packages/control-centre/src/components/Breach/CertInReportModal.tsx(2,24): error TS2307: Cannot find module '../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/NoticeForm.tsx(3,24): error TS2307: Cannot find module '../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/TranslationManagementModal.tsx(4,24): error TS2307: Cannot find module '../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/TranslationManagementModal.tsx(5,29): error TS2307: Cannot find module '../common/StatusBadge' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/TranslationManagementModal.tsx(6,23): error TS2307: Cannot find module '../common/Modal' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/TranslationOverrideModal.tsx(4,24): error TS2307: Cannot find module '../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(3,24): error TS2307: Cannot find module '../ui/button' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(4,23): error TS2307: Cannot find module '../ui/input' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(5,23): error TS2307: Cannot find module '../ui/label' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(12,8): error TS2307: Cannot find module '../ui/select' or its corresponding type declarations.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(129,44): error TS7006: Parameter 'e' implicitly has an 'any' type.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(137,44): error TS7006: Parameter 'e' implicitly has an 'any' type.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(145,49): error TS7006: Parameter 'val' implicitly has an 'any' type.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(189,56): error TS7006: Parameter 'e' implicitly has an 'any' type.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(195,52): error TS7006: Parameter 'e' implicitly has an 'any' type.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(208,56): error TS7006: Parameter 'e' implicitly has an 'any' type.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(214,52): error TS7006: Parameter 'e' implicitly has an 'any' type.
+packages/control-centre/src/components/Consent/WidgetBuilder.tsx(237,49): error TS7006: Parameter 'val' implicitly has an 'any' type.
+packages/control-centre/src/components/Dashboard/StatCard.tsx(2,35): error TS2307: Cannot find module '../ui/card' or its corresponding type declarations.
+packages/control-centre/src/components/DataSources/GoogleScopeConfig.tsx(3,24): error TS2307: Cannot find module '../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(1,23): error TS2307: Cannot find module '../common/Modal' or its corresponding type declarations.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(2,27): error TS2307: Cannot find module '../DataTable/DataTable' or its corresponding type declarations.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(3,29): error TS2307: Cannot find module '../common/StatusBadge' or its corresponding type declarations.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(6,29): error TS2307: Cannot find module '../DataTable/DataTable' or its corresponding type declarations.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(20,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(26,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(32,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(38,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(48,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/components/DataSources/ScanHistoryModal.tsx(70,36): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/components/DSR/CreateDSRModal.tsx(2,23): error TS2307: Cannot find module '../common/Modal' or its corresponding type declarations.
+packages/control-centre/src/components/DSR/CreateDSRModal.tsx(3,24): error TS2307: Cannot find module '../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/Lineage/NodeDetailsPanel.tsx(4,29): error TS2307: Cannot find module '../../common/StatusBadge' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/Lineage/NodeDetailsPanel.tsx(5,24): error TS2307: Cannot find module '../../common/Button' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(4,24): error TS2307: Cannot find module '../ui/button' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(5,23): error TS2307: Cannot find module '../ui/input' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(6,26): error TS2307: Cannot find module '../ui/textarea' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(14,8): error TS2307: Cannot find module '../ui/form' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(21,8): error TS2307: Cannot find module '../ui/select' or its corresponding type declarations.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(60,32): error TS7031: Binding element 'field' implicitly has an 'any' type.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(74,32): error TS7031: Binding element 'field' implicitly has an 'any' type.
+packages/control-centre/src/components/Governance/PolicyForm.tsx(98,32): error TS7031: Binding element 'field' implicitly has an 'any' type.
+packages/control-centre/src/pages/Breach/BreachDashboard.tsx(5,26): error TS2305: Module '"@datalens/shared"' has no exported member 'Column'.
+packages/control-centre/src/pages/Breach/BreachDashboard.tsx(22,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/Breach/BreachDashboard.tsx(32,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/Breach/BreachDashboard.tsx(45,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/Breach/BreachDashboard.tsx(50,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/Breach/BreachDashboard.tsx(55,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/Breach/BreachDashboard.tsx(76,25): error TS2322: Type '{ children: string; icon: Element; onClick: () => void | Promise<void>; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Breach/BreachDetail.tsx(81,25): error TS2322: Type '{ children: string; variant: "outline"; icon: Element; onClick: () => void | Promise<void>; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Breach/BreachDetail.tsx(88,25): error TS2322: Type '{ children: string; variant: "secondary"; icon: Element; onClick: () => void; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Breach/IncidentDetail.tsx(85,33): error TS2322: Type '{ children: string; icon: Element; onClick: () => Promise<void>; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Compliance/DarkPatternLab.tsx(103,33): error TS2322: Type '{ children: string; variant: "secondary"; onClick: () => void; disabled: boolean; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Compliance/DarkPatternLab.tsx(110,33): error TS2322: Type '{ children: string[]; onClick: () => void; disabled: boolean; isLoading: boolean; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Compliance/GrievanceDetail.tsx(49,41): error TS2322: Type '{ children: string; variant: "secondary"; icon: Element; onClick: () => void | Promise<void>; className: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Compliance/GrievanceDetail.tsx(72,37): error TS2322: Type '"danger"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/Compliance/GrievanceDetail.tsx(79,37): error TS2322: Type '"primary"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/Compliance/GrievanceDetail.tsx(156,33): error TS2322: Type '"danger"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/Compliance/GrievanceList.tsx(74,21): error TS2322: Type '{ children: string; size: "sm"; variant: "secondary"; icon: Element; onClick: () => void | Promise<void>; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Compliance/IdentitySettings.tsx(95,33): error TS2322: Type '{ children: string; icon: Element; onClick: () => void; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Compliance/NotificationHistory.tsx(73,25): error TS2322: Type '{ size: "sm"; variant: "secondary"; icon: Element; onClick: () => void; title: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Compliance/NotificationHistory.tsx(81,29): error TS2322: Type '{ size: "sm"; variant: "secondary"; icon: Element; onClick: () => Promise<void>; title: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Consent/NoticeManager.tsx(85,33): error TS2322: Type '{ children: string; size: "sm"; variant: "secondary"; icon: Element; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Consent/NoticeManager.tsx(92,33): error TS2322: Type '"primary"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/Consent/NoticeManager.tsx(107,25): error TS2322: Type '{ size: "sm"; variant: "secondary"; icon: Element; onClick: () => void; title: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Consent/NoticeManager.tsx(115,29): error TS2322: Type '{ size: "sm"; variant: "secondary"; icon: Element; onClick: () => void; title: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Consent/NoticeManager.tsx(123,29): error TS2322: Type '"danger"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/Consent/NoticeManager.tsx(145,25): error TS2322: Type '{ children: string; icon: Element; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/ConsentWidgets.tsx(4,24): error TS2307: Cannot find module '../components/ui/button' or its corresponding type declarations.
+packages/control-centre/src/pages/ConsentWidgets.tsx(12,8): error TS2307: Cannot find module '../components/ui/dialog' or its corresponding type declarations.
+packages/control-centre/src/pages/Dashboard.tsx(4,24): error TS2307: Cannot find module '../components/ui/button' or its corresponding type declarations.
+packages/control-centre/src/pages/Dashboard.tsx(5,58): error TS2307: Cannot find module '../components/ui/card' or its corresponding type declarations.
+packages/control-centre/src/pages/Dashboard.tsx(11,10): error TS2305: Module '"@datalens/shared"' has no exported member 'SectionErrorFallback'.
+packages/control-centre/src/pages/DataSourceConfig.tsx(130,25): error TS2322: Type '{ children: string; onClick: () => void; isLoading: boolean; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSourceDetail.tsx(84,29): error TS2322: Type '{ children: string; variant: "ghost"; icon: Element; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSourceDetail.tsx(92,59): error TS2322: Type '{ children: string; variant: "outline"; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSourceDetail.tsx(99,29): error TS2322: Type '{ children: string; icon: Element; onClick: () => void; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(5,26): error TS2305: Module '"@datalens/shared"' has no exported member 'Column'.
+packages/control-centre/src/pages/DataSources.tsx(10,10): error TS2305: Module '"@datalens/shared"' has no exported member 'SectionErrorFallback'.
+packages/control-centre/src/pages/DataSources.tsx(68,13): error TS2322: Type '{ children: string; variant: "outline"; size: "sm"; onClick: (e: MouseEvent<Element, MouseEvent>) => void; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(228,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DataSources.tsx(253,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DataSources.tsx(267,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DataSources.tsx(274,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DataSources.tsx(286,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DataSources.tsx(295,25): error TS2322: Type '{ variant: "ghost"; size: "sm"; onClick: (e: MouseEvent<HTMLButtonElement, MouseEvent>) => void; icon: Element; title: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(306,25): error TS2322: Type '{ variant: "ghost"; size: "sm"; onClick: (e: MouseEvent<HTMLButtonElement, MouseEvent>) => void; icon: Element; title: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(327,73): error TS2322: Type '{ children: string; variant: "outline"; onClick: () => Promise<QueryObserverResult<DataSource[], Error>>; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(330,29): error TS2322: Type '{ children: string; icon: Element; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(357,64): error TS2322: Type '{ children: string; type: "submit"; form: string; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(414,63): error TS2322: Type '{ children: string; type: "submit"; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(430,41): error TS2322: Type '{ children: string; type: "submit"; isLoading: boolean; className: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DataSources.tsx(563,29): error TS2322: Type '{ children: string; className: string; onClick: () => Promise<void>; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DSRDetail.tsx(13,15): error TS2305: Module '"@datalens/shared"' has no exported member 'Column'.
+packages/control-centre/src/pages/DSRDetail.tsx(110,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRDetail.tsx(119,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRDetail.tsx(124,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRDetail.tsx(129,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRDetail.tsx(136,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRDetail.tsx(221,41): error TS2322: Type '{ children: string; icon: Element; onClick: () => void; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DSRDetail.tsx(228,41): error TS2322: Type '"danger"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/DSRDetail.tsx(238,37): error TS2322: Type '{ children: string; icon: Element; onClick: () => void; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/DSRDetail.tsx(375,29): error TS2322: Type '"danger"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/DSRList.tsx(10,15): error TS2305: Module '"@datalens/shared"' has no exported member 'Column'.
+packages/control-centre/src/pages/DSRList.tsx(69,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRList.tsx(79,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRList.tsx(95,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRList.tsx(100,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRList.tsx(113,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRList.tsx(135,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/DSRList.tsx(165,25): error TS2322: Type '{ children: string; icon: Element; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/Governance/PolicyManager.tsx(11,8): error TS2307: Cannot find module '../../components/ui/dialog' or its corresponding type declarations.
+packages/control-centre/src/pages/Governance/PolicyManager.tsx(12,24): error TS2307: Cannot find module '../../components/ui/button' or its corresponding type declarations.
+packages/control-centre/src/pages/Governance/PolicyManager.tsx(97,35): error TS7006: Parameter 'e' implicitly has an 'any' type.
+packages/control-centre/src/pages/Governance/PurposeMapping.tsx(7,24): error TS2307: Cannot find module '../../components/ui/button' or its corresponding type declarations.
+packages/control-centre/src/pages/Governance/PurposeMapping.tsx(14,8): error TS2307: Cannot find module '../../components/ui/select' or its corresponding type declarations.
+packages/control-centre/src/pages/Governance/PurposeMapping.tsx(88,41): error TS7006: Parameter 'val' implicitly has an 'any' type.
+packages/control-centre/src/pages/Login.tsx(121,43): error TS2322: Type '{ children: string; type: "submit"; isLoading: boolean; style: { width: string; marginTop: string; }; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/PIIDiscovery.tsx(3,26): error TS2305: Module '"@datalens/shared"' has no exported member 'Column'.
+packages/control-centre/src/pages/PIIDiscovery.tsx(157,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/PIIDiscovery.tsx(169,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/PIIDiscovery.tsx(178,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/PIIDiscovery.tsx(187,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/PIIDiscovery.tsx(194,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/PIIDiscovery.tsx(205,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/PIIDiscovery.tsx(211,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/control-centre/src/pages/PIIDiscovery.tsx(332,57): error TS2322: Type '{ children: string; onClick: () => void; isLoading: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/PIIDiscovery.tsx(379,33): error TS2322: Type '"danger"' is not assignable to type '"default" | "secondary" | "destructive" | "outline" | "link" | "ghost" | null | undefined'.
+packages/control-centre/src/pages/Register.tsx(135,43): error TS2322: Type '{ children: string; type: "submit"; isLoading: boolean; style: { width: string; marginTop: string; }; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/WidgetDetail.tsx(64,25): error TS2322: Type '{ children: string; variant: "secondary"; onClick: () => Promise<void>; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/control-centre/src/pages/WidgetDetail.tsx(72,25): error TS2322: Type '{ children: string; variant: "ghost"; className: string; onClick: () => Promise<void>; icon: Element; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+packages/shared/src/components/Button.tsx(4,20): error TS2307: Cannot find module '../../utils/cn' or its corresponding type declarations.
+packages/shared/src/components/DataTable/DataTable.tsx(3,20): error TS2307: Cannot find module '../../utils/cn' or its corresponding type declarations.
+packages/shared/src/components/StatusBadge.tsx(1,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/components/StatusBadge.tsx(2,23): error TS2307: Cannot find module '@/components/ui/badge' or its corresponding type declarations.
+packages/shared/src/components/Toast.tsx(2,50): error TS2307: Cannot find module '../../stores/toastStore' or its corresponding type declarations.
+packages/shared/src/components/Toast.tsx(3,20): error TS2307: Cannot find module '../../utils/cn' or its corresponding type declarations.
+packages/shared/src/components/Toast.tsx(20,26): error TS7006: Parameter 't' implicitly has an 'any' type.
+packages/shared/src/index.ts(15,31): error TS2305: Module '"./components/ErrorFallbacks"' has no exported member 'RouteErrorFallback'.
+packages/shared/src/index.ts(16,10): error TS2305: Module '"./components/Toast"' has no exported member 'Toast'.
+packages/shared/src/index.ts(18,10): error TS2305: Module '"./components/Button"' has no exported member 'default'.
+packages/shared/src/ui/badge.tsx(4,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/button.tsx(5,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/card.tsx(3,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/dialog.tsx(5,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/form.tsx(13,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/form.tsx(14,23): error TS2307: Cannot find module '@/components/ui/label' or its corresponding type declarations.
+packages/shared/src/ui/input.tsx(3,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/label.tsx(7,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/select.tsx(5,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/table.tsx(3,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+packages/shared/src/ui/textarea.tsx(3,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.

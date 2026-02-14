@@ -1,12 +1,19 @@
 // DataLens 2.0 — API Server
 //
-// This is the main Control Centre API server entrypoint. It serves the REST API
-// for the web dashboard, handles authentication, and orchestrates
-// compliance operations.
+// This is the main API server entrypoint. It supports mode-based process splitting
+// via the --mode flag:
+//   - all     (default) — serves everything on one port (development)
+//   - cc      — Control Centre API only
+//   - admin   — Super Admin API only
+//   - portal  — Data Principal Portal + Consent Widget public APIs only
+//
+// In production, run 3 instances with different modes on different ports
+// for full process isolation, independent scaling, and crash domain separation.
 package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -48,6 +55,31 @@ import (
 )
 
 func main() {
+	// =========================================================================
+	// Command-Line Flags
+	// =========================================================================
+
+	mode := flag.String("mode", "all", "Server mode: all, cc, admin, portal")
+	portOverride := flag.Int("port", 0, "Override listen port (default: from config)")
+	flag.Parse()
+
+	// Validate mode
+	validModes := map[string]bool{"all": true, "cc": true, "admin": true, "portal": true}
+	if !validModes[*mode] {
+		fmt.Fprintf(os.Stderr, "Invalid mode %q: must be one of: all, cc, admin, portal\n", *mode)
+		os.Exit(1)
+	}
+
+	// Helper: check if a component should be initialized for the current mode
+	shouldInit := func(modes ...string) bool {
+		for _, m := range modes {
+			if *mode == m || *mode == "all" {
+				return true
+			}
+		}
+		return false
+	}
+
 	// Load .env in development
 	_ = godotenv.Load()
 
@@ -65,10 +97,11 @@ func main() {
 	log.Info("Starting DataLens API server",
 		"env", cfg.App.Env,
 		"port", cfg.App.Port,
+		"mode", *mode,
 	)
 
 	// =========================================================================
-	// Initialize Infrastructure
+	// Initialize Infrastructure (always needed)
 	// =========================================================================
 
 	// Database connection pool
@@ -107,7 +140,7 @@ func main() {
 	}
 
 	// =========================================================================
-	// Initialize Repositories
+	// Initialize Repositories (always needed — cheap struct wrappers)
 	// =========================================================================
 
 	dsRepo := repository.NewDataSourceRepo(dbPool)
@@ -122,8 +155,8 @@ func main() {
 	feedbackRepo := repository.NewDetectionFeedbackRepo(dbPool)
 	scanRunRepo := repository.NewScanRunRepo(dbPool)
 	dsrRepo := repository.NewDSRRepo(dbPool)
-	dprRepo := repository.NewDPRRequestRepo(dbPool)               // Added
-	profileRepo := repository.NewDataPrincipalProfileRepo(dbPool) // Added
+	dprRepo := repository.NewDPRRequestRepo(dbPool)
+	profileRepo := repository.NewDataPrincipalProfileRepo(dbPool)
 	consentWidgetRepo := repository.NewConsentWidgetRepo(dbPool)
 	consentNoticeRepo := repository.NewPostgresNoticeRepository(dbPool)
 	consentSessionRepo := repository.NewConsentSessionRepo(dbPool)
@@ -151,359 +184,409 @@ func main() {
 	}
 
 	// =========================================================================
-	// Initialize Domain Services
+	// Initialize Domain Services (conditional based on mode)
 	// =========================================================================
 
-	// Audit Service (Core dependency for others)
-	auditSvc := service.NewAuditService(auditRepo, slog.Default())
+	// --- Shared service variables (declared before conditional blocks) ---
+	var authSvc *service.AuthService
+	var apiKeySvc *service.APIKeyService
+	var authHandler *handler.AuthHandler
+	var rateLimiter *mw.RateLimiter
 
-	// Services Initialization - Order matters for dependencies
+	// CC-mode services & handlers
+	var dsHandler *handler.DataSourceHandler
+	var purposeHandler *handler.PurposeHandler
+	var discoveryHandler *handler.DiscoveryHandler
+	var feedbackHandler *handler.FeedbackHandler
+	var dashboardHandler *handler.DashboardHandler
+	var dsrHandler *handler.DSRHandler
+	var consentSvc *service.ConsentService
+	var consentHandler *handler.ConsentHandler
+	var noticeHandler *handler.NoticeHandler
+	var analyticsHandler *handler.AnalyticsHandler
+	var governanceHandler *handler.GovernanceHandler
+	var breachHandler *handler.BreachHandler
+	var m365Handler *handler.M365Handler
+	var googleHandler *handler.GoogleHandler
+	var identityHandler *handler.IdentityHandler
+	var grievanceSvc *service.GrievanceService
+	var grievanceHandler *handler.GrievanceHandler
+	var notificationHandler *handler.NotificationHandler
 
-	purposeSvc := service.NewPurposeService(purposeRepo, eb, slog.Default())
-	authSvc := service.NewAuthService(
-		userRepo,
-		roleRepo,
-		cfg.JWT.Secret,
-		cfg.JWT.AccessTokenExpiry,
-		cfg.JWT.RefreshTokenExpiry,
+	// Admin-mode
+	var adminHandler *handler.AdminHandler
 
-		slog.Default(),
-		auditSvc,
-	)
-	tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
-	apiKeySvc := service.NewAPIKeyService(dbPool, slog.Default())
-	feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
-	m365AuthSvc := service.NewM365AuthService(cfg, dsRepo, eb, slog.Default())
-	googleAuthSvc := service.NewGoogleAuthService(cfg, dsRepo, eb, slog.Default())
-	var dsrSvc *service.DSRService // Will be initialized after DSR queue is created
-	consentSvc := service.NewConsentService(
-		consentWidgetRepo,
-		consentSessionRepo,
-		consentHistoryRepo,
-		eb,
-		consentCache,
-		cfg.Consent.SigningKey,
-		slog.Default(),
-		cfg.Consent.CacheTTL,
-	)
+	// Portal-mode
+	var portalHandler *handler.PortalHandler
 
-	consentExpirySvc := service.NewConsentExpiryService(
-		consentSessionRepo,
-		consentRenewalRepo,
-		consentHistoryRepo,
-		consentWidgetRepo,
-		eb,
-		slog.Default(),
-		consentSvc,
-	)
+	// =========================================================================
+	// Auth + APIKey (CC + Admin modes)
+	// =========================================================================
 
-	noticeSvc := service.NewNoticeService(consentNoticeRepo, consentWidgetRepo, eb, slog.Default())
-	translationSvc := service.NewTranslationService(translationRepo, consentNoticeRepo, eb, "", "")
-	dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
-	analyticsSvc := analytics.NewConsentAnalyticsService(consentSessionRepo)
+	if shouldInit("cc", "admin") {
+		auditSvc := service.NewAuditService(auditRepo, slog.Default())
 
-	// --- AI Gateway Wiring ---
-	// 1. Build Provider Configs
-	var aiProviders []ai.ProviderConfig
+		authSvc = service.NewAuthService(
+			userRepo,
+			roleRepo,
+			cfg.JWT.Secret,
+			cfg.JWT.AccessTokenExpiry,
+			cfg.JWT.RefreshTokenExpiry,
+			slog.Default(),
+			auditSvc,
+		)
+		tenantSvc := service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default())
+		apiKeySvc = service.NewAPIKeyService(dbPool, slog.Default())
+		authHandler = handler.NewAuthHandler(authSvc, tenantSvc)
+		rateLimiter = mw.NewRateLimiter(100, time.Minute, 200)
 
-	// OpenAI
-	if cfg.AI.OpenAI.APIKey != "" {
+		log.Info("Auth services initialized", "mode", *mode)
+	}
+
+	// =========================================================================
+	// CC Mode — Full Control Centre services, scanners, workers, subscribers
+	// =========================================================================
+
+	if shouldInit("cc") {
+		// Audit Service for CC (may already exist from cc+admin block — create fresh for CC-only deps)
+		auditSvc := service.NewAuditService(auditRepo, slog.Default())
+
+		purposeSvc := service.NewPurposeService(purposeRepo, eb, slog.Default())
+		feedbackSvc := service.NewFeedbackService(feedbackRepo, piiRepo, eb, slog.Default())
+		m365AuthSvc := service.NewM365AuthService(cfg, dsRepo, eb, slog.Default())
+		googleAuthSvc := service.NewGoogleAuthService(cfg, dsRepo, eb, slog.Default())
+
+		consentSvc = service.NewConsentService(
+			consentWidgetRepo,
+			consentSessionRepo,
+			consentHistoryRepo,
+			eb,
+			consentCache,
+			cfg.Consent.SigningKey,
+			slog.Default(),
+			cfg.Consent.CacheTTL,
+		)
+
+		consentExpirySvc := service.NewConsentExpiryService(
+			consentSessionRepo,
+			consentRenewalRepo,
+			consentHistoryRepo,
+			consentWidgetRepo,
+			eb,
+			slog.Default(),
+			consentSvc,
+		)
+
+		noticeSvc := service.NewNoticeService(consentNoticeRepo, consentWidgetRepo, eb, slog.Default())
+		translationSvc := service.NewTranslationService(translationRepo, consentNoticeRepo, eb, "", "")
+		dashboardSvc := service.NewDashboardService(dsRepo, piiRepo, scanRunRepo, slog.Default())
+		analyticsSvc := analytics.NewConsentAnalyticsService(consentSessionRepo)
+
+		// --- AI Gateway Wiring ---
+		var aiProviders []ai.ProviderConfig
+
+		// OpenAI
+		if cfg.AI.OpenAI.APIKey != "" {
+			aiProviders = append(aiProviders, ai.ProviderConfig{
+				Name:              "openai",
+				Type:              ai.ProviderTypeOpenAICompatible,
+				APIKey:            cfg.AI.OpenAI.APIKey,
+				Endpoint:          "https://api.openai.com/v1",
+				DefaultModel:      cfg.AI.OpenAI.Model,
+				RequestsPerMinute: 500,
+				TokensPerMinute:   100000,
+			})
+		}
+
+		// Anthropic
+		if cfg.AI.Anthropic.APIKey != "" {
+			aiProviders = append(aiProviders, ai.ProviderConfig{
+				Name:              "anthropic",
+				Type:              ai.ProviderTypeAnthropic,
+				APIKey:            cfg.AI.Anthropic.APIKey,
+				DefaultModel:      cfg.AI.Anthropic.Model,
+				RequestsPerMinute: 500,
+				TokensPerMinute:   100000,
+			})
+		}
+
+		// Hugging Face (Generic HTTP)
+		if cfg.AI.HuggingFace.APIKey != "" {
+			aiProviders = append(aiProviders, ai.ProviderConfig{
+				Name:                "huggingface",
+				Type:                ai.ProviderTypeGenericHTTP,
+				APIKey:              cfg.AI.HuggingFace.APIKey,
+				Endpoint:            cfg.AI.HuggingFace.Endpoint + "/" + cfg.AI.HuggingFace.Model,
+				RequestBodyTemplate: `{"inputs": "{{.Prompt}}", "parameters": {"max_new_tokens": {{.MaxTokens}}, "temperature": {{.Temperature}}}}`,
+				ResponseContentPath: "0.generated_text",
+				DefaultModel:        cfg.AI.HuggingFace.Model,
+				RequestsPerMinute:   100,
+				TokensPerMinute:     10000,
+				Timeout:             30 * time.Second,
+			})
+		}
+
+		// Local LLM (Ollama)
 		aiProviders = append(aiProviders, ai.ProviderConfig{
-			Name:              "openai",
+			Name:              "local",
 			Type:              ai.ProviderTypeOpenAICompatible,
-			APIKey:            cfg.AI.OpenAI.APIKey,
-			Endpoint:          "https://api.openai.com/v1",
-			DefaultModel:      cfg.AI.OpenAI.Model,
-			RequestsPerMinute: 500,
-			TokensPerMinute:   100000,
+			Endpoint:          cfg.AI.LocalLLM.Endpoint + "/v1",
+			DefaultModel:      cfg.AI.LocalLLM.Model,
+			RequestsPerMinute: 1000,
+			TokensPerMinute:   1000000,
 		})
-	}
 
-	// Anthropic
-	if cfg.AI.Anthropic.APIKey != "" {
-		aiProviders = append(aiProviders, ai.ProviderConfig{
-			Name:              "anthropic",
-			Type:              ai.ProviderTypeAnthropic,
-			APIKey:            cfg.AI.Anthropic.APIKey,
-			DefaultModel:      cfg.AI.Anthropic.Model,
-			RequestsPerMinute: 500,
-			TokensPerMinute:   100000,
-		})
-	}
-
-	// Hugging Face (Generic HTTP)
-	if cfg.AI.HuggingFace.APIKey != "" {
-		aiProviders = append(aiProviders, ai.ProviderConfig{
-			Name:     "huggingface",
-			Type:     ai.ProviderTypeGenericHTTP,
-			APIKey:   cfg.AI.HuggingFace.APIKey,
-			Endpoint: cfg.AI.HuggingFace.Endpoint + "/" + cfg.AI.HuggingFace.Model,
-			// Hugging Face Inference API specific template
-			RequestBodyTemplate: `{"inputs": "{{.Prompt}}", "parameters": {"max_new_tokens": {{.MaxTokens}}, "temperature": {{.Temperature}}}}`,
-			ResponseContentPath: "0.generated_text",
-			DefaultModel:        cfg.AI.HuggingFace.Model,
-			RequestsPerMinute:   100, // Conservative default
-			TokensPerMinute:     10000,
-			Timeout:             30 * time.Second,
-		})
-	}
-
-	// Local LLM (Ollama)
-	aiProviders = append(aiProviders, ai.ProviderConfig{
-		Name:              "local",
-		Type:              ai.ProviderTypeOpenAICompatible,
-		Endpoint:          cfg.AI.LocalLLM.Endpoint + "/v1",
-		DefaultModel:      cfg.AI.LocalLLM.Model,
-		RequestsPerMinute: 1000,
-		TokensPerMinute:   1000000,
-	})
-
-	// 2. Build Registry
-	aiRegistry, err := ai.BuildRegistryFromConfig(aiProviders)
-	if err != nil {
-		log.Error("Failed to build AI registry", "error", err)
-		os.Exit(1)
-	}
-
-	// 3. Build Selector
-	fallbackChain := []string{cfg.AI.DefaultProvider, "openai", "anthropic", "local"}
-	aiSelector := ai.NewSelector(aiRegistry, fallbackChain, slog.Default())
-
-	// 4. Build Core Gateway
-	var aiGateway ai.Gateway = ai.NewDefaultGateway(aiSelector, slog.Default())
-
-	// 5. Wrap with Caching & Budgeting (if Redis is available)
-	if rdb != nil {
-		aiGateway = ai.NewCachedGateway(aiGateway, rdb, slog.Default(), cfg.AI)
-		log.Info("AI Gateway: Caching and Budgeting enabled")
-	} else {
-		log.Warn("AI Gateway: Caching disabled (Redis unavailable)")
-	}
-
-	// 6a. Parsing Service (for File Uploads / OCR)
-	parsingSvc := ai.NewParsingService(slog.Default())
-	defer func() {
-		if p, ok := parsingSvc.(interface{ Close() error }); ok {
-			p.Close()
+		aiRegistry, err := ai.BuildRegistryFromConfig(aiProviders)
+		if err != nil {
+			log.Error("Failed to build AI registry", "error", err)
+			os.Exit(1)
 		}
-	}()
 
-	// 6. Build Detector (Strategy Composer)
-	// We use the "Default" detector which includes Pattern + Heuristic.
-	// We add AI strategy if gateway is available.
-	detector := detection.NewDefaultDetector(aiGateway) // aiGateway is ai.Gateway interface (CachedGateway implements it)
+		fallbackChain := []string{cfg.AI.DefaultProvider, "openai", "anthropic", "local"}
+		aiSelector := ai.NewSelector(aiRegistry, fallbackChain, slog.Default())
 
-	// Connector Registry (Initialized above)
-	connRegistry := connector.NewConnectorRegistry(cfg, detector, parsingSvc)
-	// dataSourceMicrosoft365 is now registered in NewConnectorRegistry, or we can keep override if needed.
-	// But since we updated registry.go to include M365 with detector, we don't need manual registration here unless we want to be explicit.
-	// Leaving it for safety but registry.go has it now.
-	connRegistry.Register(types.DataSourceMicrosoft365, func() discovery.Connector {
-		return connector.NewM365Connector(detector)
-	})
-	log.Info("Connector registry initialized", "supported_types", connRegistry.SupportedTypes())
+		var aiGateway ai.Gateway = ai.NewDefaultGateway(aiSelector, slog.Default())
 
-	dsSvc := service.NewDataSourceService(dsRepo, connRegistry, eb, slog.Default())
-
-	// 7. Discovery Service
-	discoverySvc := service.NewDiscoveryService(
-		dsRepo,
-		inventoryRepo,
-		entityRepo,
-		fieldRepo,
-		piiRepo,
-		scanRunRepo,
-		connRegistry,
-		detector,
-		eb,
-		slog.Default(),
-	)
-
-	// 7b. Governance Context Engine
-	templateLoader, err := templates.NewLoader()
-	if err != nil {
-		log.Error("Failed to initialize template loader", "error", err)
-		os.Exit(1)
-	}
-	contextEngine := govService.NewContextEngine(templateLoader, aiGateway, slog.Default())
-
-	// 7c. Policy Engine
-	policySvc := service.NewPolicyService(
-		policyRepo,
-		violationRepo,
-		mappingRepo,
-		dsRepo,
-		piiRepo,
-		eb,
-		auditSvc,
-		slog.Default(),
-	)
-
-	// 7d. Lineage Engine
-	lineageRepo := repository.NewPostgresLineageRepository(dbPool)
-	lineageSvc := service.NewLineageService(lineageRepo, dsRepo, eb, slog.Default())
-
-	// 7e. Breach Management
-
-	// 7f. Identity Architecture
-	// DigiLocker Provider
-	digiLockerProvider := identityProvider.NewDigiLockerProvider(
-		cfg.Identity.DigiLocker.ClientID,
-		cfg.Identity.DigiLocker.ClientSecret,
-		cfg.Identity.DigiLocker.RedirectURI,
-	)
-
-	identitySvc := service.NewIdentityService(
-		identityProfileRepo,
-		[]identity.IdentityProvider{digiLockerProvider},
-		slog.Default(),
-	)
-
-	// 7g. Grievance Redressal
-	grievanceSvc := service.NewGrievanceService(grievanceRepo, eb, slog.Default())
-
-	// 7h. Notification System
-	clientRepo := service.NewPostgresClientRepository(dbPool)
-	notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
-
-	// 7e. Breach Management (Depends on Notification)
-	breachSvc := service.NewBreachService(breachRepo, profileRepo, notificationSvc, auditSvc, eb, slog.Default())
-
-	// 7i. Admin Service
-	adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, tenantSvc, slog.Default())
-
-	// 8. Scan Orchestrator
-	// Initialize Scan Queue (NATS)
-	scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
-	if err != nil {
-		log.Error("Failed to initialize scan queue", "error", err)
-		os.Exit(1)
-	}
-
-	// Initialize Scan Service
-	scanSvc := service.NewScanService(scanRunRepo, dsRepo, scanQueue, discoverySvc, slog.Default())
-
-	// Start Scan Worker
-	go func() {
-		if err := scanSvc.StartWorker(context.Background()); err != nil {
-			log.Error("Scan worker failed", "error", err)
-		}
-	}()
-
-	// 8b. Scan Scheduler
-	schedulerSvc := service.NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, consentExpirySvc, slog.Default())
-	if err := schedulerSvc.Start(context.Background()); err != nil {
-		log.Error("Failed to start scan scheduler", "error", err)
-	}
-	log.Info("Scan scheduler started")
-
-	// 9. DSR Execution Queue & Service
-	// Initialize DSR Queue (NATS)
-	dsrQueue, err := queue.NewNATSDSRQueue(natsConn, slog.Default())
-	if err != nil {
-		log.Error("Failed to initialize DSR queue", "error", err)
-		os.Exit(1)
-	}
-
-	// Update DSR Service with queue
-	// Update DSR Service with queue
-	dsrSvc = service.NewDSRService(dsrRepo, dsRepo, dsrQueue, dprRepo, eb, auditSvc, slog.Default())
-
-	// Initialize DSR Executor
-	dsrExecutor := service.NewDSRExecutor(dsrRepo, dsRepo, piiRepo, connRegistry, eb, slog.Default())
-
-	// Start DSR Worker
-	go func() {
-		if err := dsrQueue.Subscribe(context.Background(), func(ctx context.Context, dsrID string) error {
-			id, parseErr := types.ParseID(dsrID)
-			if parseErr != nil {
-				return fmt.Errorf("parse dsr id: %w", parseErr)
-			}
-			return dsrExecutor.ExecuteDSR(ctx, id)
-		}); err != nil {
-			log.Error("DSR worker failed", "error", err)
-		}
-	}()
-
-	// =========================================================================
-	// Initialize Event Subscribers
-	// =========================================================================
-
-	auditSub := subscriber.NewAuditSubscriber(dbPool, slog.Default())
-	if _, err := auditSub.Register(context.Background(), eb); err != nil {
-		log.Error("Failed to register audit subscriber", "error", err)
-		os.Exit(1)
-	}
-	log.Info("Audit subscriber registered")
-
-	// Initialize Notification Subscriber
-	notificationSub := service.NewNotificationSubscriber(notificationSvc, breachSvc, eb, slog.Default())
-	if err := notificationSub.Start(context.Background()); err != nil {
-		log.Error("Failed to start notification subscriber", "error", err)
-		os.Exit(1)
-	}
-	log.Info("Notification subscriber started")
-
-	// Initialize Consent Cache Subscriber
-	if consentCache != nil {
-		consentCacheSub := service.NewConsentCacheSubscriber(consentCache, eb, slog.Default(), cfg.Consent.CacheTTL)
-		if err := consentCacheSub.Start(context.Background()); err != nil {
-			log.Error("Failed to start consent cache subscriber", "error", err)
-			// Don't exit, just log error? Or exit?
-			// Cache is optional but if we have it, we want it consistent.
-			// Ideally we retry or exit. For now, log error.
+		if rdb != nil {
+			aiGateway = ai.NewCachedGateway(aiGateway, rdb, slog.Default(), cfg.AI)
+			log.Info("AI Gateway: Caching and Budgeting enabled")
 		} else {
-			log.Info("Consent cache subscriber started")
+			log.Warn("AI Gateway: Caching disabled (Redis unavailable)")
 		}
+
+		// Parsing Service (for File Uploads / OCR)
+		parsingSvc := ai.NewParsingService(slog.Default())
+		defer func() {
+			if p, ok := parsingSvc.(interface{ Close() error }); ok {
+				p.Close()
+			}
+		}()
+
+		// Detector (Strategy Composer)
+		detector := detection.NewDefaultDetector(aiGateway)
+
+		// Connector Registry
+		connRegistry := connector.NewConnectorRegistry(cfg, detector, parsingSvc)
+		connRegistry.Register(types.DataSourceMicrosoft365, func() discovery.Connector {
+			return connector.NewM365Connector(detector)
+		})
+		log.Info("Connector registry initialized", "supported_types", connRegistry.SupportedTypes())
+
+		dsSvc := service.NewDataSourceService(dsRepo, connRegistry, eb, slog.Default())
+
+		// Discovery Service
+		discoverySvc := service.NewDiscoveryService(
+			dsRepo,
+			inventoryRepo,
+			entityRepo,
+			fieldRepo,
+			piiRepo,
+			scanRunRepo,
+			connRegistry,
+			detector,
+			eb,
+			slog.Default(),
+		)
+
+		// Governance Context Engine
+		templateLoader, err := templates.NewLoader()
+		if err != nil {
+			log.Error("Failed to initialize template loader", "error", err)
+			os.Exit(1)
+		}
+		contextEngine := govService.NewContextEngine(templateLoader, aiGateway, slog.Default())
+
+		// Policy Engine
+		policySvc := service.NewPolicyService(
+			policyRepo,
+			violationRepo,
+			mappingRepo,
+			dsRepo,
+			piiRepo,
+			eb,
+			auditSvc,
+			slog.Default(),
+		)
+
+		// Lineage Engine
+		lineageRepo := repository.NewPostgresLineageRepository(dbPool)
+		lineageSvc := service.NewLineageService(lineageRepo, dsRepo, eb, slog.Default())
+
+		// Identity Architecture
+		digiLockerProvider := identityProvider.NewDigiLockerProvider(
+			cfg.Identity.DigiLocker.ClientID,
+			cfg.Identity.DigiLocker.ClientSecret,
+			cfg.Identity.DigiLocker.RedirectURI,
+		)
+		identitySvc := service.NewIdentityService(
+			identityProfileRepo,
+			[]identity.IdentityProvider{digiLockerProvider},
+			slog.Default(),
+		)
+
+		// Grievance Redressal
+		grievanceSvc = service.NewGrievanceService(grievanceRepo, eb, slog.Default())
+
+		// Notification System
+		clientRepo := service.NewPostgresClientRepository(dbPool)
+		notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
+
+		// Breach Management
+		breachSvc := service.NewBreachService(breachRepo, profileRepo, notificationSvc, auditSvc, eb, slog.Default())
+
+		// --- Scan Orchestrator ---
+		scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
+		if err != nil {
+			log.Error("Failed to initialize scan queue", "error", err)
+			os.Exit(1)
+		}
+
+		scanSvc := service.NewScanService(scanRunRepo, dsRepo, scanQueue, discoverySvc, slog.Default())
+
+		// Start Scan Worker
+		go func() {
+			if err := scanSvc.StartWorker(context.Background()); err != nil {
+				log.Error("Scan worker failed", "error", err)
+			}
+		}()
+
+		// Scan Scheduler
+		schedulerSvc := service.NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, consentExpirySvc, slog.Default())
+		if err := schedulerSvc.Start(context.Background()); err != nil {
+			log.Error("Failed to start scan scheduler", "error", err)
+		}
+		log.Info("Scan scheduler started")
+
+		// --- DSR Execution Queue ---
+		dsrQueue, err := queue.NewNATSDSRQueue(natsConn, slog.Default())
+		if err != nil {
+			log.Error("Failed to initialize DSR queue", "error", err)
+			os.Exit(1)
+		}
+
+		dsrSvc := service.NewDSRService(dsrRepo, dsRepo, dsrQueue, dprRepo, eb, auditSvc, slog.Default())
+
+		dsrExecutor := service.NewDSRExecutor(dsrRepo, dsRepo, piiRepo, connRegistry, eb, slog.Default())
+
+		// Start DSR Worker
+		go func() {
+			if err := dsrQueue.Subscribe(context.Background(), func(ctx context.Context, dsrID string) error {
+				id, parseErr := types.ParseID(dsrID)
+				if parseErr != nil {
+					return fmt.Errorf("parse dsr id: %w", parseErr)
+				}
+				return dsrExecutor.ExecuteDSR(ctx, id)
+			}); err != nil {
+				log.Error("DSR worker failed", "error", err)
+			}
+		}()
+
+		// --- Event Subscribers ---
+		auditSub := subscriber.NewAuditSubscriber(dbPool, slog.Default())
+		if _, err := auditSub.Register(context.Background(), eb); err != nil {
+			log.Error("Failed to register audit subscriber", "error", err)
+			os.Exit(1)
+		}
+		log.Info("Audit subscriber registered")
+
+		notificationSub := service.NewNotificationSubscriber(notificationSvc, breachSvc, eb, slog.Default())
+		if err := notificationSub.Start(context.Background()); err != nil {
+			log.Error("Failed to start notification subscriber", "error", err)
+			os.Exit(1)
+		}
+		log.Info("Notification subscriber started")
+
+		if consentCache != nil {
+			consentCacheSub := service.NewConsentCacheSubscriber(consentCache, eb, slog.Default(), cfg.Consent.CacheTTL)
+			if err := consentCacheSub.Start(context.Background()); err != nil {
+				log.Error("Failed to start consent cache subscriber", "error", err)
+			} else {
+				log.Info("Consent cache subscriber started")
+			}
+		}
+
+		// --- CC Handlers ---
+		dsHandler = handler.NewDataSourceHandler(dsSvc, scanSvc)
+		purposeHandler = handler.NewPurposeHandler(purposeSvc)
+		discoveryHandler = handler.NewDiscoveryHandler(discoverySvc, scanSvc, inventoryRepo, entityRepo, fieldRepo)
+		feedbackHandler = handler.NewFeedbackHandler(feedbackSvc)
+		dashboardHandler = handler.NewDashboardHandler(dashboardSvc)
+		dsrHandler = handler.NewDSRHandler(dsrSvc, dsrExecutor)
+		consentHandler = handler.NewConsentHandler(consentSvc, consentExpirySvc)
+		noticeHandler = handler.NewNoticeHandler(noticeSvc, translationSvc)
+		analyticsHandler = handler.NewAnalyticsHandler(analyticsSvc)
+		governanceHandler = handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
+		breachHandler = handler.NewBreachHandler(breachSvc)
+		m365Handler = handler.NewM365Handler(m365AuthSvc)
+		googleHandler = handler.NewGoogleHandler(googleAuthSvc)
+		identityHandler = handler.NewIdentityHandler(identitySvc)
+		grievanceHandler = handler.NewGrievanceHandler(grievanceSvc)
+		notificationHandler = handler.NewNotificationHandler(notificationSvc)
+
+		log.Info("CC services and handlers initialized")
 	}
 
 	// =========================================================================
-	// Initialize API Handlers
+	// Admin Mode — Cross-tenant admin operations
 	// =========================================================================
 
-	dsHandler := handler.NewDataSourceHandler(dsSvc, scanSvc)
-	purposeHandler := handler.NewPurposeHandler(purposeSvc)
-	authHandler := handler.NewAuthHandler(authSvc, tenantSvc)
-	discoveryHandler := handler.NewDiscoveryHandler(discoverySvc, scanSvc, inventoryRepo, entityRepo, fieldRepo)
-	feedbackHandler := handler.NewFeedbackHandler(feedbackSvc)
-	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
-	dsrHandler := handler.NewDSRHandler(dsrSvc, dsrExecutor)                  // dsrExecutor was created earlier
-	consentHandler := handler.NewConsentHandler(consentSvc, consentExpirySvc) // Updated constructor
-	noticeHandler := handler.NewNoticeHandler(noticeSvc, translationSvc)
-	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
-	governanceHandler := handler.NewGovernanceHandler(contextEngine, policySvc, lineageSvc)
-	breachHandler := handler.NewBreachHandler(breachSvc)
-	m365Handler := handler.NewM365Handler(m365AuthSvc)
-	googleHandler := handler.NewGoogleHandler(googleAuthSvc)
-	identityHandler := handler.NewIdentityHandler(identitySvc)
-	grievanceHandler := handler.NewGrievanceHandler(grievanceSvc)
-	notificationHandler := handler.NewNotificationHandler(notificationSvc)
-	adminHandler := handler.NewAdminHandler(adminSvc)
+	if shouldInit("admin") {
+		adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default()), slog.Default())
+		adminHandler = handler.NewAdminHandler(adminSvc)
 
-	// Portal Services
-	portalAuthSvc := service.NewPortalAuthService(
-		profileRepo,
-		rdb,
-		cfg.Portal.JWTSecret,
-		cfg.Portal.JWTExpiry,
-		slog.Default(),
-	)
-	dataPrincipalSvc := service.NewDataPrincipalService(
-		profileRepo,
-		dprRepo,
-		dsrRepo,
-		consentHistoryRepo,
-		eb,
-		rdb,
-		slog.Default(),
-	)
-	portalHandler := handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc)
+		log.Info("Admin services initialized")
+	}
 
 	// =========================================================================
-	// Rate Limiter
+	// Portal Mode — Data Principal Portal + Consent Widget public APIs
 	// =========================================================================
 
-	rateLimiter := mw.NewRateLimiter(100, time.Minute, 200)
+	if shouldInit("portal") {
+		portalAuthSvc := service.NewPortalAuthService(
+			profileRepo,
+			rdb,
+			cfg.Portal.JWTSecret,
+			cfg.Portal.JWTExpiry,
+			slog.Default(),
+		)
+		dataPrincipalSvc := service.NewDataPrincipalService(
+			profileRepo,
+			dprRepo,
+			dsrRepo,
+			consentHistoryRepo,
+			eb,
+			rdb,
+			slog.Default(),
+		)
+		portalHandler = handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc)
+
+		// Portal also needs ConsentService for widget APIs (if not already initialized by CC mode)
+		if consentSvc == nil {
+			consentSvc = service.NewConsentService(
+				consentWidgetRepo,
+				consentSessionRepo,
+				consentHistoryRepo,
+				eb,
+				consentCache,
+				cfg.Consent.SigningKey,
+				slog.Default(),
+				cfg.Consent.CacheTTL,
+			)
+		}
+		if consentHandler == nil {
+			consentHandler = handler.NewConsentHandler(consentSvc, nil)
+		}
+
+		// Portal also needs GrievanceService for portal grievances (if not already initialized by CC mode)
+		if grievanceSvc == nil {
+			grievanceSvc = service.NewGrievanceService(grievanceRepo, eb, slog.Default())
+		}
+		if grievanceHandler == nil {
+			grievanceHandler = handler.NewGrievanceHandler(grievanceSvc)
+		}
+
+		log.Info("Portal services initialized")
+	}
 
 	// =========================================================================
 	// HTTP Router
@@ -526,119 +609,53 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	// --- Health Check ---
+	// --- Health Check (always mounted) ---
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"healthy","version":"2.0.0-alpha"}`))
+		w.Write([]byte(`{"status":"healthy","version":"2.0.0-alpha","mode":"` + *mode + `"}`))
 	})
 
-	// --- API Routes ---
-	r.Route("/api/public", func(r chi.Router) {
-		// Consent Widget API (Public, Widget Key Auth)
-		r.Route("/consent", func(r chi.Router) {
-			r.Use(mw.WidgetAuthMiddleware(consentWidgetRepo))
-			r.Use(mw.WidgetCORSMiddleware())
-			r.Mount("/", consentHandler.PublicRoutes())
-		})
+	// --- Mount Routes Based on Mode ---
 
-		// Portal API (Public + Portal JWT Auth)
-		r.Mount("/portal", portalHandler.Routes())
+	// Shared routes (CC + Admin need auth endpoints)
+	if shouldInit("cc", "admin") {
+		mountSharedRoutes(r, authHandler)
+	}
 
-		// Portal Grievances (Public + Portal JWT Auth)
-		r.Mount("/portal/grievances", grievanceHandler.PortalRoutes())
-	})
+	// CC routes
+	if shouldInit("cc") {
+		mountCCRoutes(r, authSvc, apiKeySvc, rateLimiter,
+			dsHandler, purposeHandler, authHandler,
+			discoveryHandler, feedbackHandler, dashboardHandler,
+			dsrHandler, consentHandler, noticeHandler,
+			analyticsHandler, governanceHandler, breachHandler,
+			m365Handler, googleHandler, identityHandler,
+			grievanceHandler, notificationHandler,
+		)
+	}
 
-	r.Route("/api/v2", func(r chi.Router) {
+	// Admin routes
+	if shouldInit("admin") {
+		mountAdminRoutes(r, authSvc, apiKeySvc, rateLimiter, adminHandler)
+	}
 
-		// Public routes (no auth required)
-		r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{"pong":true}`))
-		})
-		r.Mount("/auth", authHandler.Routes())
-
-		// Admin routes (Platform Admin only, NO tenant isolation)
-		r.Route("/admin", func(r chi.Router) {
-			r.Use(mw.Auth(authSvc, apiKeySvc))
-			r.Use(mw.RequireRole(identity.RolePlatformAdmin))
-			r.Use(rateLimiter.Middleware())
-			r.Mount("/", adminHandler.Routes())
-		})
-
-		// Protected routes (auth + tenant isolation + rate limiting)
-		r.Group(func(r chi.Router) {
-			r.Use(mw.Auth(authSvc, apiKeySvc))
-			r.Use(mw.TenantIsolation())
-			r.Use(rateLimiter.Middleware())
-
-			// Data Sources
-			r.Mount("/data-sources", dsHandler.Routes())
-
-			// Purposes
-			r.Mount("/purposes", purposeHandler.Routes())
-
-			// Auth (protected: /me)
-			r.Mount("/users", authHandler.ProtectedRoutes())
-
-			// OAuth2 Connectors
-			r.Mount("/auth/m365", m365Handler.Routes())
-			r.Mount("/auth/google", googleHandler.Routes())
-
-			// Discovery (inventories, entities, fields)
-			r.Mount("/discovery", discoveryHandler.Routes())
-
-			// Detection Feedback (verify/correct/reject PII classifications)
-			r.Mount("/discovery/feedback", feedbackHandler.Routes())
-
-			// PII Classifications
-			r.Route("/classifications", func(r chi.Router) {
-				// TODO: Wire PII classification handlers (Sprint 2)
-			})
-
-			// DSR
-			r.Mount("/dsr", dsrHandler.Routes())
-
-			// Dashboard
-			r.Mount("/dashboard", dashboardHandler.Routes())
-
-			// Consent
-			r.Route("/consent", func(r chi.Router) {
-				r.Mount("/", consentHandler.Routes())
-				r.Mount("/notices", noticeHandler.Routes())
-			})
-
-			// Audit
-			r.Route("/audit", func(r chi.Router) {
-				// TODO: Wire audit log handlers (Sprint 2)
-			})
-
-			// Governance
-			r.Mount("/governance", governanceHandler.Routes())
-
-			// Breach
-			r.Mount("/breach", breachHandler.Routes())
-
-			// Identity
-			r.Mount("/identity", identityHandler.Routes())
-
-			// Grievances
-			r.Mount("/grievances", grievanceHandler.Routes())
-
-			// Notifications
-			r.Mount("/notifications", notificationHandler.Routes())
-
-			// Analytics
-			r.Mount("/analytics", analyticsHandler.Routes())
-
-		})
-	})
+	// Portal routes
+	if shouldInit("portal") {
+		mountPortalRoutes(r, consentHandler, portalHandler, grievanceHandler, consentWidgetRepo)
+	}
 
 	// =========================================================================
 	// Start Server
 	// =========================================================================
 
+	listenPort := cfg.App.Port
+	if *portOverride > 0 {
+		listenPort = *portOverride
+	}
+
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.App.Port),
+		Addr:         fmt.Sprintf(":%d", listenPort),
 		Handler:      r,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -668,7 +685,7 @@ func main() {
 		}
 	}()
 
-	log.Info("API server listening", "addr", srv.Addr)
+	log.Info("API server listening", "addr", srv.Addr, "mode", *mode)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Error("Server failed", "error", err)
 		os.Exit(1)

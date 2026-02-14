@@ -56,6 +56,30 @@
 
 ## Active Messages
 
+### [2026-02-14] [FROM: Backend] → [TO: ALL]
+**Subject**: Review Batch R2 — Mode-Based Process Splitting Complete
+**Type**: HANDOFF
+
+**Changes**:
+- **[NEW] `cmd/api/routes.go`** — 4 route-mounting functions: `mountSharedRoutes`, `mountCCRoutes`, `mountAdminRoutes`, `mountPortalRoutes`
+- **[MODIFIED] `cmd/api/main.go`** — `--mode` flag (`all|cc|admin|portal`), `--port` override, conditional service/handler initialization, `/health` includes mode
+
+**Usage**:
+- `go run cmd/api/main.go` — default `--mode=all`, serves everything (backward compatible)
+- `go run cmd/api/main.go --mode=cc --port=8080` — CC only
+- `go run cmd/api/main.go --mode=admin --port=8081` — Admin only
+- `go run cmd/api/main.go --mode=portal --port=8082` — Portal only
+
+**Verification**: `go build ./...` ✅ | `go vet` ✅ (pre-existing test errors in connector/service tests unrelated to this change)
+
+**Action Required**:
+- **DevOps (R3)**: Wire Nginx reverse proxy to route to 3 instances with different modes/ports
+- **Frontend (R1)**: No changes needed — API paths are unchanged
+
+**Known Pre-Existing Debt**:
+- 5 test files have stale `NewConnectorRegistry` calls (missing `parsingSvc` arg from Batch 20B)
+
+
 ### [2026-02-14] [FROM: Orchestrator] → [TO: AI/ML]
 **Subject**: Batch 20B — Outstanding: OCR & ScanService Integration
 **Type**: TODO

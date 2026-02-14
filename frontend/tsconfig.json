@@ -1,19 +1,17 @@
 {
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    }
-  },
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.app.json"
+      "path": "./packages/shared"
     },
     {
-      "path": "./tsconfig.node.json"
+      "path": "./packages/control-centre"
+    },
+    {
+      "path": "./packages/admin"
+    },
+    {
+      "path": "./packages/portal"
     }
   ]
 }

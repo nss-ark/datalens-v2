@@ -1,13 +1,13 @@
 {
-  "name": "frontend",
+  "name": "datalens-frontend",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev:cc": "npm run dev -w @datalens/control-centre",
+    "dev:admin": "npm run dev -w @datalens/admin",
+    "dev:portal": "npm run dev -w @datalens/portal",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
