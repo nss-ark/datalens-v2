@@ -2,8 +2,12 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/infrastructure/connector"
@@ -76,6 +80,59 @@ func (s *DataSourceService) Create(ctx context.Context, in CreateDataSourceInput
 
 	s.logger.InfoContext(ctx, "data source created", "id", ds.ID, "name", ds.Name)
 	return ds, nil
+}
+
+// CreateFromFileInput holds input for creating a file-based data source.
+type CreateFromFileInput struct {
+	TenantID types.ID
+	Name     string
+	Filename string
+	Content  io.Reader
+}
+
+// CreateFromFile saves an uploaded file and creates a data source record.
+func (s *DataSourceService) CreateFromFile(ctx context.Context, in CreateFromFileInput) (*discovery.DataSource, error) {
+	if in.Name == "" {
+		return nil, types.NewValidationError("name is required", nil)
+	}
+	if in.Filename == "" {
+		return nil, types.NewValidationError("filename is required", nil)
+	}
+
+	// Ensure upload directory exists
+	uploadDir := filepath.Join("uploads", fmt.Sprintf("tenant_%s", in.TenantID))
+	if err := os.MkdirAll(uploadDir, 0750); err != nil {
+		return nil, fmt.Errorf("create upload dir: %w", err)
+	}
+
+	// Generate safe filename
+	safeFilename := fmt.Sprintf("%s_%s", types.NewID(), filepath.Base(in.Filename))
+	filePath := filepath.Join(uploadDir, safeFilename)
+
+	// Save file
+	outFile, err := os.Create(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("create file: %w", err)
+	}
+	defer outFile.Close()
+
+	if _, err := io.Copy(outFile, in.Content); err != nil {
+		return nil, fmt.Errorf("write file: %w", err)
+	}
+
+	// Create JSON config with path
+	configMap := map[string]string{"path": filePath}
+	configBytes, _ := json.Marshal(configMap)
+
+	// Create DataSource
+	return s.Create(ctx, CreateDataSourceInput{
+		TenantID:    in.TenantID,
+		Name:        in.Name,
+		Type:        types.DataSourceFileUpload,
+		Description: fmt.Sprintf("Uploaded file: %s", in.Filename),
+		Config:      string(configBytes),
+		// Other fields empty
+	})
 }
 
 // GetByID retrieves a data source by ID.
@@ -184,6 +241,20 @@ func (s *DataSourceService) Delete(ctx context.Context, id types.ID) error {
 
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
+	}
+
+	// If it's a file upload, clean up the file
+	if ds.Type == types.DataSourceFileUpload {
+		var config map[string]string
+		if err := json.Unmarshal([]byte(ds.Config), &config); err == nil {
+			if path, ok := config["path"]; ok {
+				// We ignore errors here as the DB record is already deleted (soft deleted actually).
+				// If we want to be strict, we could log it.
+				if err := os.Remove(path); err != nil {
+					s.logger.WarnContext(ctx, "failed to delete file", "path", path, "error", err)
+				}
+			}
+		}
 	}
 
 	_ = s.eventBus.Publish(ctx, eventbus.NewEvent(

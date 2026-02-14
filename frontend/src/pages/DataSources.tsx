@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2, Globe } from 'lucide-react';
+import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2, Globe, Trash2, FileUp, X, UploadCloud } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { DataTable, type Column } from '../components/DataTable/DataTable';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -25,11 +25,12 @@ const DS_TYPE_OPTIONS: { value: DataSourceType; label: string }[] = [
     { value: 'azure_blob', label: 'Azure Blob' },
     { value: 'm365', label: 'Microsoft 365' },
     { value: 'google_workspace', label: 'Google Workspace' },
+    { value: 'local_file', label: 'File Upload' },
 ];
 
 const INITIAL_FORM = {
     name: '', type: 'postgresql' as DataSourceType, description: '',
-    host: '', port: 5432, database: '', credentials: '',
+    host: '', port: 5432, database: '', username: '', password: '', credentials: '',
 };
 
 // Component for the Scan Action button with polling
@@ -73,16 +74,50 @@ const ScanAction = ({ dataSource }: { dataSource: DataSource }) => {
 
 const DataSources = () => {
     const navigate = useNavigate();
-    const { data: dataSources = [], isLoading, refetch } = useDataSources();
+    const { data: apiData, isLoading, refetch } = useDataSources();
+    const dataSources = apiData || [];
     const { mutate: createMutate, isPending: isCreating } = useCreateDataSource();
 
     const [showModal, setShowModal] = useState(false);
     const [historyId, setHistoryId] = useState<string | null>(null);
+    const [deleteId, setDeleteId] = useState<string | null>(null); // For delete confirmation
+    const [isDeleting, setIsDeleting] = useState(false);
     const [form, setForm] = useState(INITIAL_FORM);
     const [isOAuthPending, setIsOAuthPending] = useState(false);
 
+    // File Upload State
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
+
     const handleCreate = async (e: FormEvent) => {
         e.preventDefault();
+
+        // Handle File Upload
+        if (form.type === 'local_file') {
+            if (!uploadFile) {
+                toast.error('No file selected', 'Please select a file to upload.');
+                return;
+            }
+
+            setIsUploading(true);
+            try {
+                await dataSourceService.upload(uploadFile, (percent) => setUploadProgress(percent));
+                toast.success('File Uploaded', 'Data source created from file.');
+                setShowModal(false);
+                setForm(INITIAL_FORM);
+                setUploadFile(null);
+                setUploadProgress(0);
+                refetch();
+            } catch (error) {
+                toast.error('Upload Failed', 'Could not upload file.');
+                console.error(error);
+            } finally {
+                setIsUploading(false);
+            }
+            return;
+        }
 
         // Handle OAuth Flows
         // Exception: Google Service Account (if credentials provided)
@@ -122,6 +157,12 @@ const DataSources = () => {
             return;
         }
 
+        // Construct credentials string based on type
+        let finalCredentials = form.credentials;
+        if (['postgresql', 'mysql', 'mongodb', 'mssql', 'oracle', 'sqlite', 'azure_sql', 'rds'].includes(form.type)) {
+            finalCredentials = `${form.username}:${form.password}`;
+        }
+
         // Handle Standard Database/Storage Flows
         createMutate({
             name: form.name,
@@ -130,7 +171,7 @@ const DataSources = () => {
             host: form.host,
             port: form.port,
             database: form.database,
-            credentials: form.credentials,
+            credentials: finalCredentials,
         }, {
             onSuccess: () => {
                 toast.success('Data source added', `"${form.name}" has been created.`);
@@ -139,6 +180,40 @@ const DataSources = () => {
             },
             onError: () => toast.error('Failed to create', 'Could not add the data source.'),
         });
+    };
+
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        setIsDeleting(true);
+        try {
+            await dataSourceService.delete(deleteId);
+            toast.success('Data Source Deleted', 'The data source has been removed.');
+            setDeleteId(null);
+            refetch();
+        } catch (error) {
+            toast.error('Delete Failed', 'Could not delete data source.');
+            console.error(error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            setUploadFile(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
     };
 
     const updateField = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -221,6 +296,16 @@ const DataSources = () => {
                         title="View History"
                     />
                     <ScanAction dataSource={row} />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteId(row.id);
+                        }}
+                        icon={<Trash2 size={14} className="text-red-500" />}
+                        title="Delete"
+                    />
                 </div>
             ),
         },
@@ -378,13 +463,116 @@ const DataSources = () => {
                                 <textarea value={form.description} onChange={updateField('description')} style={{ ...inputStyle, height: '60px', padding: '0.5rem 0.875rem', resize: 'vertical' }} placeholder="Brief description..." />
                             </div>
 
-                            <div>
-                                <label style={labelStyle}>Credentials</label>
-                                <input type="password" value={form.credentials} onChange={updateField('credentials')} required style={inputStyle} placeholder="Connection string or password" />
-                            </div>
+                            {['postgresql', 'mysql', 'mongodb', 'mssql', 'oracle', 'sqlite', 'azure_sql', 'rds'].includes(form.type) ? (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={labelStyle}>Username</label>
+                                        <input type="text" value={form.username} onChange={updateField('username')} required style={inputStyle} placeholder="admin" />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Password</label>
+                                        <input type="password" value={form.password} onChange={updateField('password')} required style={inputStyle} placeholder="••••••••" />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label style={labelStyle}>Credentials</label>
+                                    <input type="password" value={form.credentials} onChange={updateField('credentials')} required style={inputStyle} placeholder="Connection string or password" />
+                                </div>
+                            )}
                         </>
                     )}
+
+                    {form.type === 'local_file' && (
+                        <div>
+                            <label style={labelStyle}>Upload File</label>
+                            <div
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'
+                                    }`}
+                            >
+                                {uploadFile ? (
+                                    <div className="flex items-center justify-center gap-3">
+                                        <FileUp className="text-primary-600" size={32} />
+                                        <div className="text-left">
+                                            <div className="font-medium text-gray-900">{uploadFile.name}</div>
+                                            <div className="text-sm text-gray-500">{(uploadFile.size / 1024).toFixed(1)} KB</div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setUploadFile(null)}
+                                            className="ml-2 p-1 text-gray-400 hover:text-red-500"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <div className="mx-auto w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <UploadCloud className="text-gray-400" size={24} />
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                            <span className="text-primary-600 font-medium cursor-pointer">Click to upload</span> or drag and drop
+                                        </div>
+                                        <p className="text-xs text-gray-500">PDF, DOCX, XLSX, CSV up to 10MB</p>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            id="file-upload"
+                                            onChange={(e) => {
+                                                if (e.target.files?.[0]) setUploadFile(e.target.files[0]);
+                                            }}
+                                            accept=".pdf,.docx,.xlsx,.csv"
+                                        />
+                                        <label htmlFor="file-upload" className="absolute inset-0 cursor-pointer opacity-0" />
+                                    </div>
+                                )}
+                            </div>
+                            {isUploading && (
+                                <div className="mt-4">
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span>Uploading...</span>
+                                        <span>{uploadProgress}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                        <div
+                                            className="bg-primary-600 h-1.5 rounded-full transition-all duration-300"
+                                            style={{ width: `${uploadProgress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </form>
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                open={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                title="Delete Data Source"
+                footer={
+                    <>
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+                        <Button
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={handleDelete}
+                            isLoading={isDeleting}
+                        >
+                            Delete
+                        </Button>
+                    </>
+                }
+            >
+                <div className="p-4">
+                    <p className="text-gray-700">
+                        Are you sure you want to delete this data source? This action cannot be undone.
+                        All scanned data and history associated with this source will be permanently removed.
+                    </p>
+                </div>
             </Modal>
 
             {/* Scan History Modal */}

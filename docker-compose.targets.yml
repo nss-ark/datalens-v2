@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  # =========================================================================
+  # PostgreSQL Target — Corporate HR & Finance System
+  # =========================================================================
+  target-postgres:
+    image: postgres:16-alpine
+    container_name: datalens-target-postgres
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: hr_finance_db
+      POSTGRES_USER: scanuser
+      POSTGRES_PASSWORD: ScanPass123
+    volumes:
+      - ./testdata/seed_postgres.sql:/docker-entrypoint-initdb.d/01_seed.sql
+      - target_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U scanuser -d hr_finance_db" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # =========================================================================
+  # MySQL Target — E-commerce Platform
+  # =========================================================================
+  target-mysql:
+    image: mysql:8.0
+    container_name: datalens-target-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: ecommerce_db
+      MYSQL_USER: scanuser
+      MYSQL_PASSWORD: ScanPass123
+      MYSQL_ROOT_PASSWORD: RootPass123
+    volumes:
+      - ./testdata/seed_mysql.sql:/docker-entrypoint-initdb.d/01_seed.sql
+      - target_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "scanuser", "-pScanPass123" ]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  # =========================================================================
+  # MongoDB Target — Healthcare / Patient Records
+  # =========================================================================
+  target-mongo:
+    image: mongo:7
+    container_name: datalens-target-mongo
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: scanuser
+      MONGO_INITDB_ROOT_PASSWORD: ScanPass123
+      MONGO_INITDB_DATABASE: patient_records
+    volumes:
+      - ./testdata/seed_mongo.js:/docker-entrypoint-initdb.d/01_seed.js
+      - target_mongo_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  target_pg_data:
+  target_mysql_data:
+  target_mongo_data:

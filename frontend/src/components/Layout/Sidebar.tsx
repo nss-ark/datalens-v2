@@ -21,7 +21,8 @@ import {
     Gavel,
     ChevronLeft,
     ChevronRight,
-    Bell
+    Bell,
+    LogOut
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import styles from './Sidebar.module.css';
@@ -124,6 +125,25 @@ export const Sidebar = () => {
                 ))}
             </nav>
 
+            {/* Admin Portal Switcher - FORCE VISIBLE */}
+            <div style={{ padding: '0 12px 12px 12px' }}>
+                <NavLink
+                    to="/admin"
+                    className={cn(styles.item)}
+                    style={{
+                        backgroundColor: '#eff6ff',
+                        color: '#1d4ed8',
+                        border: '1px dashed #bfdbfe',
+                        justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
+                    }}
+                    title="Switch to Admin Portal"
+                >
+                    <ShieldCheck className={styles.itemIcon} size={20} />
+                    {!sidebarCollapsed && <span style={{ fontWeight: 600 }}>Admin Portal</span>}
+                </NavLink>
+            </div>
+
+
             <div className={styles.userProfile}>
                 <div className={styles.userAvatar}>
                     {user?.name?.charAt(0) || 'U'}
@@ -134,13 +154,27 @@ export const Sidebar = () => {
                         <div className={styles.userRole}>{user?.role_ids?.[0] || 'Viewer'}</div>
                     </div>
                 )}
-                <button
-                    onClick={toggleSidebar}
-                    className={styles.collapseBtn}
-                    style={{ marginLeft: 'auto', padding: '4px' }}
-                >
-                    {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-                </button>
+
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+                    <button
+                        onClick={() => {
+                            useAuthStore.getState().logout();
+                            window.location.href = '/login';
+                        }}
+                        className={styles.collapseBtn}
+                        style={{ padding: '4px' }}
+                        title="Logout"
+                    >
+                        <LogOut size={16} />
+                    </button>
+                    <button
+                        onClick={toggleSidebar}
+                        className={styles.collapseBtn}
+                        style={{ padding: '4px' }}
+                    >
+                        {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                    </button>
+                </div>
             </div>
         </aside>
     );

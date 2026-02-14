@@ -165,7 +165,7 @@ export default function UserList() {
                     onChange={(e) => setSelectedTenant(e.target.value)}
                 >
                     <option value="">All Organizations</option>
-                    {tenantsData?.items.map((tenant: Tenant) => (
+                    {tenantsData?.items?.map((tenant: Tenant) => (
                         <option key={tenant.id} value={tenant.id}>
                             {tenant.name}
                         </option>
@@ -204,12 +204,14 @@ export default function UserList() {
                 )}
             </div>
 
-            <RoleAssignModal
-                isOpen={isRoleModalOpen}
-                onClose={() => setIsRoleModalOpen(false)}
-                onSuccess={() => refetch()}
-                user={selectedUser}
-            />
+            {isRoleModalOpen && selectedUser && (
+                <RoleAssignModal
+                    isOpen={isRoleModalOpen}
+                    onClose={() => setIsRoleModalOpen(false)}
+                    onSuccess={() => refetch()}
+                    user={selectedUser}
+                />
+            )}
         </div>
     );
 }

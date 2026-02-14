@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -49,6 +50,11 @@ import (
 type OpenAICompatProvider struct {
 	config ProviderConfig
 	client *http.Client
+
+	// Health check state
+	mu              sync.RWMutex
+	isHealthy       bool
+	lastHealthCheck time.Time
 }
 
 // NewOpenAICompatProvider creates a provider for any OpenAI-compatible endpoint.
@@ -66,7 +72,63 @@ func NewOpenAICompatProvider(cfg ProviderConfig) *OpenAICompatProvider {
 func (p *OpenAICompatProvider) Name() string { return p.config.Name }
 
 func (p *OpenAICompatProvider) IsAvailable(ctx context.Context) bool {
-	return p.config.APIKey != "" || isLocalEndpoint(p.config.Endpoint)
+	// 1. Cloud Providers: check API key presence
+	if !isLocalEndpoint(p.config.Endpoint) {
+		return p.config.APIKey != ""
+	}
+
+	// 2. Local Providers (Ollama, etc.): check connectivity with cache
+	p.mu.RLock()
+	// If checked recently (within 1 minute), return cached status
+	if time.Since(p.lastHealthCheck) < 1*time.Minute {
+		healthy := p.isHealthy
+		p.mu.RUnlock()
+		return healthy
+	}
+	p.mu.RUnlock()
+
+	// Perform check
+	return p.checkHealth(ctx)
+}
+
+func (p *OpenAICompatProvider) checkHealth(ctx context.Context) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// Double-check after lock
+	if time.Since(p.lastHealthCheck) < 1*time.Minute {
+		return p.isHealthy
+	}
+
+	// Ping the endpoint root or version
+	// Ollama /v1 usually returns 404 or 200 depending on path, but / returns "Ollama is running"
+	// We'll try a HEAD request to the base endpoint
+	// Use a short timeout context
+	pingCtx, cancel := context.WithTimeout(ctx, 1*time.Second) // Fast fail
+	defer cancel()
+
+	endpoint := strings.TrimRight(p.config.Endpoint, "/")
+	// Ideally we ping root, but endpoint might be .../v1
+	// Let's try pinging the endpoint itself. Even 404 means it's reachable.
+	req, err := http.NewRequestWithContext(pingCtx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		p.isHealthy = false
+		p.lastHealthCheck = time.Now()
+		return false
+	}
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		// Connection failed
+		p.isHealthy = false
+	} else {
+		resp.Body.Close()
+		// Any response (even 404/401) means the service is reachable
+		p.isHealthy = true
+	}
+
+	p.lastHealthCheck = time.Now()
+	return p.isHealthy
 }
 
 // Complete sends a prompt to the OpenAI-compatible API and returns the response.

@@ -1,6 +1,6 @@
 import type { ID, BaseEntity } from './common';
 
-export type DataSourceType = 'postgresql' | 'mysql' | 'mongodb' | 'mssql' | 'oracle' | 'sqlite' | 's3' | 'gcs' | 'azure_blob' | 'google_workspace' | 'onedrive' | 'sharepoint' | 'outlook' | 'm365';
+export type DataSourceType = 'postgresql' | 'mysql' | 'mongodb' | 'mssql' | 'oracle' | 'sqlite' | 's3' | 'gcs' | 'azure_blob' | 'google_workspace' | 'onedrive' | 'sharepoint' | 'outlook' | 'm365' | 'local_file';
 
 export type ConnectionStatus = 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'TESTING';
 

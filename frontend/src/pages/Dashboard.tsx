@@ -135,7 +135,7 @@ const Dashboard = () => {
                         <h2 className="text-lg font-semibold text-gray-900">PII by Category</h2>
                     </div>
                     <ErrorBoundary FallbackComponent={SectionErrorFallback}>
-                        <PIIChart data={stats?.pii_stats.pii_by_category ?? {}} loading={isLoading} />
+                        <PIIChart data={stats?.pii_by_category ?? {}} loading={isLoading} />
                     </ErrorBoundary>
                 </div>
             </div>

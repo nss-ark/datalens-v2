@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Brand Colors - Premium Enterprise Blue */
   --primary-50: #eff6ff;

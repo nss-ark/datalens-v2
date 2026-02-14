@@ -17,14 +17,15 @@ export function useLogin() {
             // Fetch full user profile
             try {
                 const user = await authService.getMe();
-                login(user, tokenPair.access_token, user.tenant_id);
+                login(user, tokenPair.access_token, user.tenant_id, tokenPair.refresh_token);
                 navigate('/dashboard');
             } catch {
                 // If getMe fails, still store what we have
                 login(
                     { id: '', name: '', email: '', status: 'ACTIVE', role_ids: [], tenant_id: '', mfa_enabled: false },
                     tokenPair.access_token,
-                    ''
+                    '',
+                    tokenPair.refresh_token
                 );
                 navigate('/dashboard');
             }
@@ -42,7 +43,10 @@ export function useRefreshToken() {
     return useMutation({
         mutationFn: (refreshToken: string) => authService.refreshToken(refreshToken),
         onSuccess: (tokenPair) => {
-            useAuthStore.setState({ token: tokenPair.access_token });
+            useAuthStore.setState({
+                token: tokenPair.access_token,
+                refreshToken: tokenPair.refresh_token
+            });
         },
     });
 }

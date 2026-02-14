@@ -211,6 +211,7 @@ const (
 	DataSourceIMAP            DataSourceType = "IMAP"
 	DataSourceFileSystem      DataSourceType = "FILE_SYSTEM"
 	DataSourceAPI             DataSourceType = "API"
+	DataSourceFileUpload      DataSourceType = "FILE_UPLOAD"
 )
 
 // =============================================================================

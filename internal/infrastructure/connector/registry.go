@@ -9,6 +9,7 @@ import (
 	"github.com/complyark/datalens/internal/infrastructure/connector/aws"
 	"github.com/complyark/datalens/internal/infrastructure/connector/azure"
 	"github.com/complyark/datalens/internal/infrastructure/connector/m365"
+	"github.com/complyark/datalens/internal/service/ai"
 	"github.com/complyark/datalens/internal/service/detection"
 	"github.com/complyark/datalens/pkg/types"
 )
@@ -25,7 +26,7 @@ type ConnectorRegistry struct {
 }
 
 // NewConnectorRegistry creates a registry pre-loaded with built-in connectors.
-func NewConnectorRegistry(cfg *config.Config, detector *detection.ComposableDetector) *ConnectorRegistry {
+func NewConnectorRegistry(cfg *config.Config, detector *detection.ComposableDetector, parser ai.ParsingService) *ConnectorRegistry {
 	r := &ConnectorRegistry{
 		factories: make(map[types.DataSourceType]ConnectorFactory),
 	}
@@ -76,6 +77,12 @@ func NewConnectorRegistry(cfg *config.Config, detector *detection.ComposableDete
 	r.Register(types.DataSourceGoogleDrive, func() discovery.Connector {
 		return NewGoogleConnector(cfg, detector)
 	})
+	r.Register(types.DataSourceGoogleWorkspace, func() discovery.Connector {
+		return NewGoogleConnector(cfg, detector)
+	})
+
+	// File Upload Connector
+	r.Register(types.DataSourceFileUpload, NewFileUploadConnectorFactory(parser, detector))
 
 	return r
 }

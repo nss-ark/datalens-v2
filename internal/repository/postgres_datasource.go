@@ -41,7 +41,7 @@ func (r *DataSourceRepo) Create(ctx context.Context, ds *discovery.DataSource) e
 
 func (r *DataSourceRepo) GetByID(ctx context.Context, id types.ID) (*discovery.DataSource, error) {
 	query := `
-		SELECT id, tenant_id, name, type, description, host, port, database_name, credentials,
+		SELECT id, tenant_id, name, type, description, host, port, database_name, COALESCE(credentials, ''),
 		       config, scan_schedule, status, last_sync_at, error_message, created_at, updated_at
 		FROM data_sources
 		WHERE id = $1 AND deleted_at IS NULL`
@@ -63,7 +63,7 @@ func (r *DataSourceRepo) GetByID(ctx context.Context, id types.ID) (*discovery.D
 
 func (r *DataSourceRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]discovery.DataSource, error) {
 	query := `
-		SELECT id, tenant_id, name, type, description, host, port, database_name, credentials,
+		SELECT id, tenant_id, name, type, description, host, port, database_name, COALESCE(credentials, ''),
 		       config, scan_schedule, status, last_sync_at, error_message, created_at, updated_at
 		FROM data_sources
 		WHERE tenant_id = $1 AND deleted_at IS NULL
@@ -75,7 +75,7 @@ func (r *DataSourceRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]
 	}
 	defer rows.Close()
 
-	var results []discovery.DataSource
+	results := []discovery.DataSource{}
 	for rows.Next() {
 		var ds discovery.DataSource
 		if err := rows.Scan(

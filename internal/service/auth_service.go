@@ -126,24 +126,35 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*TokenPair, err
 	var user *identity.User
 	var err error
 
-	// If TenantID is empty, try to find user by email globally
-	if in.TenantID.String() == "" {
+	// If TenantID is zero (no domain provided), try to find user by email globally
+	var zeroID types.ID
+	if in.TenantID == zeroID {
+		s.logger.InfoContext(ctx, "login: tenant not specified, searching globally",
+			slog.String("email", in.Email))
 		user, err = s.userRepo.GetByEmailGlobal(ctx, in.Email)
 	} else {
+		s.logger.InfoContext(ctx, "login: searching within tenant",
+			slog.String("email", in.Email),
+			slog.String("tenant_id", in.TenantID.String()))
 		user, err = s.userRepo.GetByEmail(ctx, in.TenantID, in.Email)
 	}
 
 	if err != nil {
-		// Differentiate between "user not found" and actual errors?
-		// Security practice: consistent error message
+		s.logger.WarnContext(ctx, "login: user lookup failed",
+			slog.String("email", in.Email),
+			slog.String("error", err.Error()))
 		return nil, types.NewUnauthorizedError("invalid email or password")
 	}
 
 	if user.Status != identity.UserActive {
+		s.logger.WarnContext(ctx, "login: account not active",
+			slog.String("email", in.Email),
+			slog.String("status", string(user.Status)))
 		return nil, types.NewForbiddenError("account is not active")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password)); err != nil {
+		s.logger.WarnContext(ctx, "login: password mismatch", slog.String("email", in.Email))
 		s.auditService.Log(ctx, user.ID, "LOGIN_FAILED", "USER", user.ID, nil, map[string]any{"reason": "invalid password"}, user.TenantID)
 		return nil, types.NewUnauthorizedError("invalid email or password")
 	}

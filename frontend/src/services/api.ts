@@ -28,12 +28,46 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
     (response) => response,
-    (error: AxiosError<{ message?: string; error?: { message?: string } }>) => {
+    async (error: AxiosError<{ message?: string; error?: { message?: string } }>) => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
         const status = error.response?.status;
 
-        // Handle 401 Unauthorized globally
-        if (status === 401) {
-            useAuthStore.getState().logout();
+        // Handle 401 Unauthorized globally with Token Refresh
+        if (status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+            const state = useAuthStore.getState();
+            const refreshToken = state.refreshToken;
+
+            if (refreshToken) {
+                try {
+                    // Call refresh endpoint with a clean axios instance to avoid interceptor loops
+                    const response = await axios.post<{ data: { access_token: string; refresh_token: string } }>(
+                        `${api.defaults.baseURL}/auth/refresh`,
+                        { refresh_token: refreshToken }
+                    );
+
+                    const { access_token, refresh_token } = response.data.data;
+
+                    // Update store
+                    useAuthStore.setState({
+                        token: access_token,
+                        refreshToken: refresh_token
+                    });
+
+                    // Update header and retry original request
+                    originalRequest.headers.Authorization = `Bearer ${access_token}`;
+                    return api(originalRequest);
+
+                } catch (refreshError) {
+                    console.error('Available refresh token failed to rotate:', refreshError);
+                    state.logout();
+                    window.location.href = '/login';
+                    return Promise.reject(refreshError);
+                }
+            }
+
+            // No refresh token available
+            state.logout();
             window.location.href = '/login';
             return Promise.reject(error);
         }
@@ -49,4 +83,3 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-

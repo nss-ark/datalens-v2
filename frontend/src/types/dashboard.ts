@@ -8,7 +8,7 @@ export interface DashboardStats {
     total_scans: number;
     total_pii_fields: number;
     pending_reviews: number;
-    pii_stats: PIIStats;
+    pii_by_category: Record<string, number>;
     recent_scans: ScanSummary[];
 }
 

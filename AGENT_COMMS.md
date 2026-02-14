@@ -44,26 +44,34 @@
 | **Event Mesh Refactoring** | Backend | [x] | 15 new constants, 9 services + 2 subscribers refactored |
 
 ## Active Messages
+
 ### [2026-02-13] [FROM: Orchestrator] → [TO: ALL]
-**Subject**: Batch 20A — UI/UX Review Sprint Starting
-**Type**: ANNOUNCEMENT
+**Subject**: Batch 20A — UI/UX Review Sprint — Task Specs Issued
+**Type**: SPRINT_GOALS
 
 **Status**:
 - Batch 20 is **COMPLETE** — both tasks verified.
-- Starting **Batch 20A**: Systematic UI/UX review sprint across all 3 portals.
+- **Batch 20A** task specs issued: 5 sequential review sessions + fix sprint.
+
+**Current Sprint Goals — Batch 20A**:
+
+| # | Task | Agent | Priority | Status | Depends On |
+|---|------|-------|----------|--------|------------|
+| 0 | Session 0: Exploration Walkthrough (30 mins) | UX Review + Human | P0 | [ ] | None |
+| 1 | Session 1: Auth + Dashboard + Discovery (8 screens) | UX Review + Human | P0 | [ ] | #0 |
+| 2 | Session 2: Compliance Pt.1 — DSR, Notices, Widgets (6 screens) | UX Review + Human | P0 | [ ] | #1 |
+| 3 | Session 3: Compliance Pt.2 — Analytics, Breach, Notifications (8 screens) | UX Review + Human | P0 | [ ] | #2 |
+| 4 | Session 4: Governance + Settings + Portal (10 screens) | UX Review + Human | P0 | [ ] | #3 |
+| 5 | Session 5: Admin Portal + Cross-Cutting Audit (5+ screens) | UX Review + Human | P1 | [ ] | #4 |
+
+**Execution**: Sessions are **SEQUENTIAL**. Fix Sprint starts after Session 5 produces the Master Fix List.
 
 **Process**:
-- **UX Review Agent** (`ux-review-agent.md`) guides the review
-- Human navigates the running app, provides screenshots and observations
-- Orchestrator converts findings into fix task specs for Frontend/Backend agents
-- 5 review sessions covering 36+ screens, followed by a fix sprint
-
-**Session Plan**:
-1. Auth + Dashboard + Discovery (8 screens)
-2. Compliance Part 1 — DSR, Notices, Widgets (6 screens)
-3. Compliance Part 2 — Analytics, Breach, Notifications (8 screens)
-4. Governance + Settings + Portal (10 screens)
-5. Admin Portal + Cross-Cutting Audit (5+ screens)
+- **UX Review Agent** (`ux-review-agent.md`) guides each session
+- Human navigates running app, provides screenshots and observations
+- Each session → structured review report artifact (`ux_review_sessionN.md`)
+- Session 5 → Master Fix List → Orchestrator decomposes into Frontend/Backend fix tasks
+- Fix Sprint → Re-Review verification
 
 ### [2026-02-13] [FROM: Backend] → [TO: ALL]
 **Subject**: Admin DSR Patch Complete

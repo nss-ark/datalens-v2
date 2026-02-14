@@ -231,6 +231,23 @@ func main() {
 		})
 	}
 
+	// Hugging Face (Generic HTTP)
+	if cfg.AI.HuggingFace.APIKey != "" {
+		aiProviders = append(aiProviders, ai.ProviderConfig{
+			Name:     "huggingface",
+			Type:     ai.ProviderTypeGenericHTTP,
+			APIKey:   cfg.AI.HuggingFace.APIKey,
+			Endpoint: cfg.AI.HuggingFace.Endpoint + "/" + cfg.AI.HuggingFace.Model,
+			// Hugging Face Inference API specific template
+			RequestBodyTemplate: `{"inputs": "{{.Prompt}}", "parameters": {"max_new_tokens": {{.MaxTokens}}, "temperature": {{.Temperature}}}}`,
+			ResponseContentPath: "0.generated_text",
+			DefaultModel:        cfg.AI.HuggingFace.Model,
+			RequestsPerMinute:   100, // Conservative default
+			TokensPerMinute:     10000,
+			Timeout:             30 * time.Second,
+		})
+	}
+
 	// Local LLM (Ollama)
 	aiProviders = append(aiProviders, ai.ProviderConfig{
 		Name:              "local",
@@ -263,13 +280,21 @@ func main() {
 		log.Warn("AI Gateway: Caching disabled (Redis unavailable)")
 	}
 
+	// 6a. Parsing Service (for File Uploads / OCR)
+	parsingSvc := ai.NewParsingService(slog.Default())
+	defer func() {
+		if p, ok := parsingSvc.(interface{ Close() error }); ok {
+			p.Close()
+		}
+	}()
+
 	// 6. Build Detector (Strategy Composer)
 	// We use the "Default" detector which includes Pattern + Heuristic.
 	// We add AI strategy if gateway is available.
 	detector := detection.NewDefaultDetector(aiGateway) // aiGateway is ai.Gateway interface (CachedGateway implements it)
 
 	// Connector Registry (Initialized above)
-	connRegistry := connector.NewConnectorRegistry(cfg, detector)
+	connRegistry := connector.NewConnectorRegistry(cfg, detector, parsingSvc)
 	// dataSourceMicrosoft365 is now registered in NewConnectorRegistry, or we can keep override if needed.
 	// But since we updated registry.go to include M365 with detector, we don't need manual registration here unless we want to be explicit.
 	// Leaving it for safety but registry.go has it now.
@@ -436,7 +461,7 @@ func main() {
 	// Initialize API Handlers
 	// =========================================================================
 
-	dsHandler := handler.NewDataSourceHandler(dsSvc)
+	dsHandler := handler.NewDataSourceHandler(dsSvc, scanSvc)
 	purposeHandler := handler.NewPurposeHandler(purposeSvc)
 	authHandler := handler.NewAuthHandler(authSvc, tenantSvc)
 	discoveryHandler := handler.NewDiscoveryHandler(discoverySvc, scanSvc, inventoryRepo, entityRepo, fieldRepo)

@@ -67,6 +67,15 @@ func TestConnectorRegistry_RegisterAndGet(t *testing.T) {
 	blobConn, err := registry.GetConnector(types.DataSourceAzureBlob)
 	require.NoError(t, err)
 	assert.NotNil(t, blobConn)
+
+	// Verify Google Connectors (Fix verification)
+	dwConn, err := registry.GetConnector(types.DataSourceGoogleWorkspace)
+	require.NoError(t, err)
+	assert.NotNil(t, dwConn)
+
+	gdConn, err := registry.GetConnector(types.DataSourceGoogleDrive)
+	require.NoError(t, err)
+	assert.NotNil(t, gdConn)
 }
 
 func TestConnectorRegistry_UnknownType(t *testing.T) {

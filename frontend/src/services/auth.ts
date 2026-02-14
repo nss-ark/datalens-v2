@@ -51,4 +51,18 @@ export const authService = {
         const res = await api.get<ApiResponse<User>>('/users/me');
         return res.data.data;
     },
+
+    async logout(): Promise<void> {
+        // Optimistically clear local storage first
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
+
+        try {
+            // Attempt to notify backend, but don't block on it
+            await api.post('/auth/logout');
+        } catch (error) {
+            // Ignore errors during logout (e.g. 401 if already expired)
+            console.warn('Backend logout failed', error);
+        }
+    }
 };

@@ -105,6 +105,7 @@ type AIConfig struct {
 	DefaultProvider string
 	OpenAI          OpenAIConfig
 	Anthropic       AnthropicConfig
+	HuggingFace     HuggingFaceConfig
 	LocalLLM        LocalLLMConfig
 }
 
@@ -119,6 +120,13 @@ type OpenAIConfig struct {
 type AnthropicConfig struct {
 	APIKey string
 	Model  string
+}
+
+// HuggingFaceConfig holds Hugging Face Inference API settings.
+type HuggingFaceConfig struct {
+	APIKey   string
+	Endpoint string
+	Model    string
 }
 
 // LocalLLMConfig holds local LLM (Ollama) settings.
@@ -193,6 +201,11 @@ func Load() (*Config, error) {
 			Anthropic: AnthropicConfig{
 				APIKey: getEnv("ANTHROPIC_API_KEY", ""),
 				Model:  getEnv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022"),
+			},
+			HuggingFace: HuggingFaceConfig{
+				APIKey:   getEnv("HUGGINGFACE_API_KEY", ""),
+				Endpoint: getEnv("HUGGINGFACE_ENDPOINT", "https://api-inference.huggingface.co/models"),
+				Model:    getEnv("HUGGINGFACE_MODEL", "mistralai/Mistral-7B-Instruct-v0.3"),
 			},
 			LocalLLM: LocalLLMConfig{
 				Endpoint: getEnv("LOCAL_LLM_ENDPOINT", "http://localhost:11434"),

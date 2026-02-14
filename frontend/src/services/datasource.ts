@@ -37,6 +37,24 @@ export const dataSourceService = {
         await api.delete(`/data-sources/${id}`);
     },
 
+    async upload(file: File, onProgress?: (percent: number) => void): Promise<DataSource> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await api.post<ApiResponse<DataSource>>('/data-sources/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            onUploadProgress: (progressEvent) => {
+                if (onProgress && progressEvent.total) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    onProgress(percentCompleted);
+                }
+            },
+        });
+        return res.data.data;
+    },
+
     async scan(id: ID): Promise<void> {
         await api.post(`/data-sources/${id}/scan`);
     },

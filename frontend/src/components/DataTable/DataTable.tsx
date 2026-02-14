@@ -34,7 +34,7 @@ interface DataTableProps<T> {
 
 export function DataTable<T>({
     columns,
-    data,
+    data = [],
     isLoading = false,
     onRowClick,
     emptyTitle = 'No data found',
@@ -56,8 +56,9 @@ export function DataTable<T>({
     };
 
     // Client-side sort if no onSort handler
+    const safeData = Array.isArray(data) ? data : [];
     const sortedData = !onSort && sort
-        ? [...data].sort((a, b) => {
+        ? [...safeData].sort((a, b) => {
             const aVal = (a as Record<string, unknown>)[sort.key];
             const bVal = (b as Record<string, unknown>)[sort.key];
             if (aVal == null) return 1;
@@ -65,7 +66,7 @@ export function DataTable<T>({
             const cmp = String(aVal).localeCompare(String(bVal));
             return sort.direction === 'asc' ? cmp : -cmp;
         })
-        : data;
+        : safeData;
 
     const renderSortIcon = (key: string) => {
         if (sort?.key !== key) return <ArrowUpDown size={14} />;
