@@ -31,6 +31,8 @@ import NotificationHistory from './pages/Compliance/NotificationHistory';
 import GrievanceList from './pages/Compliance/GrievanceList';
 import GrievanceDetail from './pages/Compliance/GrievanceDetail';
 import NoticeManager from './pages/Consent/NoticeManager';
+import PIIInventory from './pages/PIIInventory';
+import Settings from './pages/Settings';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -90,7 +92,7 @@ function App() {
                         <Route path="/breach/:id" element={<BreachDetail />} />
                         <Route path="/breach/:id/edit" element={<BreachEdit />} />
 
-                        <Route path="/pii/inventory" element={<PlaceholderPage title="PII Inventory" />} />
+                        <Route path="/pii/inventory" element={<PIIInventory />} />
                         <Route path="/governance/lineage" element={<DataLineage />} />
                         <Route path="/subjects" element={<PlaceholderPage title="Data Subjects" />} />
                         <Route path="/consent" element={<PlaceholderPage title="Consent Records" />} />
@@ -118,7 +120,7 @@ function App() {
                         <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
                         <Route path="/audit-logs" element={<PlaceholderPage title="Audit Logs" />} />
                         <Route path="/users" element={<PlaceholderPage title="User Management" />} />
-                        <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+                        <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<PlaceholderPage title="404 — Page Not Found" />} />
                     </Route>
                 </Routes>

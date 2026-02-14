@@ -14,7 +14,7 @@ import (
 
 func TestConnectors_ConnectSafety(t *testing.T) {
 	cfg := &config.Config{}
-	registry := NewConnectorRegistry(cfg, nil)
+	registry := NewConnectorRegistry(cfg, nil, nil)
 	supportedTypes := registry.SupportedTypes()
 
 	for _, dsType := range supportedTypes {

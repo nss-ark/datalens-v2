@@ -231,6 +231,7 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 
 			// 3. Save Classification
 			finding.FieldID = fieldID
+			finding.DataSourceID = ds.ID
 			finding.BaseEntity = types.BaseEntity{ID: types.NewID(), CreatedAt: time.Now(), UpdatedAt: time.Now()}
 			// Status default
 			if finding.Status == "" {

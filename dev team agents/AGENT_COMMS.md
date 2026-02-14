@@ -22,51 +22,56 @@
 
 ---
 
-## Active Sprint: Batch 20B (Partial ⚠️)
+## ✅ Completed: Batch 20B + Batch 2 (Architecture Stabilization)
 
 | Goal | Owner | Status | Details |
 |------|-------|--------|---------|
-| Logout API | Backend | ✅ | `POST /api/v2/auth/logout` |
-| File Upload API | Backend | ✅ | `POST /api/v2/datasources/upload`, cleanup on delete |
-| Logout UI | Frontend | ✅ | Sidebar button, token clear, redirect |
-| Delete Data Source UI | Frontend | ✅ | Trash icon, confirmation modal |
-| File Upload UI | Frontend | ✅ | Drag & drop for PDF/DOCX/XLSX/CSV |
-| **Document Parsing + OCR** | **AI/ML** | **⚠️ Blocked** | PDF/DOCX/XLSX extraction done. OCR disabled (Tesseract deps missing). ScanService integration pending. |
+| Logout API + UI | Backend/Frontend | ✅ | `POST /api/v2/auth/logout`, sidebar button |
+| File Upload API + UI | Backend/Frontend | ✅ | Upload, cleanup on delete, drag & drop UI |
+| Document Parsing | AI/ML | ✅ | PDF/DOCX/XLSX extraction done |
+| ScanService Wiring | Backend | ✅ | `ParsingService` → `ScanService` for `FILE_UPLOAD` data sources |
+| Stale Test Signatures | Backend | ✅ | `NewConnectorRegistry` calls fixed in all test files |
+| UX Re-Review (20A) | UX/Frontend | ✅ | PII Inventory + Settings implemented, Dashboard polish done |
+| OCR (Tesseract) | AI/ML | ⏸️ Deferred | Missing C libs. Decision pending: Tesseract vs Cloud Vision API |
+
+---
+
+## Active Sprint: Phase 3A — DPDPA Compliance Gaps
+
+**Next Tasks** (see `batch_3_task_specs.md` in orchestrator brain):
+
+| Task | Agent | Priority | Effort |
+|------|-------|----------|--------|
+| 3A-1: DPR Download endpoint | Backend | P1 | 2h |
+| 3A-2: DPR Appeal flow | Backend + Frontend | P1 | 5h |
+| 3A-3: Guardian consent (frontend) | Frontend | P1 | 2h |
+| 3A-4: DSR Auto-Verification | Backend | P2 | 4h |
+| 3A-5: Consent Receipt Generation | Backend | P2 | 3h |
+| 3B: Missing Connectors (SQL Server) | Backend | P3 | Sprint |
+| 3C: Observability Stack | DevOps | P3 | Sprint |
 
 ---
 
 ## Active Messages
 
-### [2026-02-14] [FROM: Orchestrator] → [TO: AI/ML]
-**Subject**: OCR & ScanService Integration Outstanding
-**Type**: TODO | **Priority**: P2
-
-1. **OCR**: Enable Tesseract (`gosseract`) or Cloud Vision API for scanned PDFs/images.
-2. **ScanService Integration**: Wire `ParsingService` into `ScanService` for `FILE_UPLOAD` data sources.
-3. **Tests**: Unit tests for `parsing_service.go` with sample files.
-
-### [2026-02-14] [FROM: Frontend] → [TO: ALL]
-**Subject**: UI/UX High Priority Polish (Phase 3) Complete
+### [2026-02-15] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 2 Complete — Moving to Phase 3
 **Type**: STATUS
 
-- KokonutUI (ShadCN/UI) fully integrated
-- Fixed: Policy Modal (H7), Consent Wizard (H5), Dashboard Layout (M1-M3), Breach Stats (M7-M8), Governance Overlaps (M10-M11)
-- TypeScript build passing. Visual verification pending.
+All stabilization work is done:
+- ✅ E2E smoke test passed (login, proxy routing, CORS)
+- ✅ Admin seeder fixed (port 5433)
+- ✅ Test signatures fixed (`NewConnectorRegistry` + `parsingSvc`)
+- ✅ ScanService wired for file uploads
+- ✅ UX re-review complete (PII Inventory, Settings, Dashboard polish)
+- **Next**: Phase 3A DPDPA compliance gaps
 
-### [2026-02-14] [FROM: Backend] → [TO: ALL]
-**Subject**: R2 — Mode-Based Process Splitting Complete
-**Type**: HANDOFF
+### [2026-02-14] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 20A Fixes Complete
+**Type**: STATUS
 
-- `cmd/api/routes.go` (NEW) — 4 route-mounting functions
-- `cmd/api/main.go` — `--mode` flag, conditional init, `/health` includes mode
-- `go build ./...` ✅ | `go vet` ✅
-- **Known debt**: 5 test files have stale `NewConnectorRegistry` calls (missing `parsingSvc` arg)
-
-### [2026-02-14] [FROM: DevOps] → [TO: ALL]
-**Subject**: R3 — Unified Local Dev & Prod Docker Complete
-**Type**: HANDOFF
-
-- `nginx/dev.conf` + `docker-compose.dev.yml` nginx service
-- `docker-compose.prod.yml` — 3 isolated backend instances + gateway
-- `scripts/start-all.ps1` — launches full stack
-- New dev URLs: `cc.localhost:8000`, `admin.localhost:8000`, `portal.localhost:8000`, `api.localhost:8000`
+- PII Inventory page: DataTable with confidence badges, sensitivity indicators
+- Settings page: Profile display with role badges
+- Sidebar: Truncation for long names/emails
+- Dashboard: Polished empty states
+- TypeScript build passing ✅

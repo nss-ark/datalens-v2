@@ -190,10 +190,10 @@ $backendCwd = (Get-Location).Path
 $frontendCwd = Join-Path $backendCwd "frontend"
 
 # Backend (Port 8080, all mode)
-Write-Host "  Clearing port 8080..."
-Kill-ProcessByPort 8080
+Write-Host "  Clearing port 8081..."
+Kill-ProcessByPort 8081
 Write-Host "  Starting Backend API (mode=all)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$backendCwd'; `$env:APP_PORT='8080'; go run cmd/api/main.go --mode=all --port=8080"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$backendCwd'; `$env:APP_PORT='8081'; go run ./cmd/api --mode=all --port=8081"
 
 # Frontend - Control Centre (Port 3000)
 Write-Host "  Clearing port 3000..."
@@ -225,7 +225,7 @@ Write-Host "  Portal:         http://portal.localhost:8000" -ForegroundColor Whi
 Write-Host "  API:            http://api.localhost:8000" -ForegroundColor White
 Write-Host ""
 Write-Host "  --- Direct Access (no proxy) ---" -ForegroundColor Gray
-Write-Host "  Backend API:    http://localhost:8080" -ForegroundColor Gray
+Write-Host "  Backend API:    http://localhost:8081" -ForegroundColor Gray
 Write-Host "  CC Frontend:    http://localhost:3000" -ForegroundColor Gray
 Write-Host "  Admin Frontend: http://localhost:3001" -ForegroundColor Gray
 Write-Host "  Portal Frontend:http://localhost:3002" -ForegroundColor Gray

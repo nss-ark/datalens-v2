@@ -60,7 +60,7 @@ func TestDiscoveryService_ScanDataSource_Success(t *testing.T) {
 	detector := detection.NewComposableDetector(mockStrategy)
 
 	// Setup Registry with Mock Connector
-	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
+	registry := connector.NewConnectorRegistry(&config.Config{}, detector, nil)
 	testDSType := types.DataSourceType("TEST_MOCK")
 	registry.Register(testDSType, func() discovery.Connector {
 		return connectorMock

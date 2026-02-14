@@ -120,7 +120,7 @@ const Dashboard = () => {
                                 isLoading={isLoading}
                                 keyExtractor={(row) => row.id}
                                 emptyTitle="No recent scans"
-                                emptyDescription="Start a scan from the Data Sources page"
+                                emptyDescription="Connect a data source and run a scan to see activity here."
                                 loadingRows={3}
                             />
                         </ErrorBoundary>

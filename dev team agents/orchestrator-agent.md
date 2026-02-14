@@ -360,7 +360,7 @@ e:\Comply Ark\Technical\Data Lens Application\DataLensApplication\Datalens v2.0\
 Go module is at the project root — there is NO separate `backend/` directory.
 Frontend is a **4-package monorepo** at `frontend/packages/` (shared, control-centre, admin, portal).
 Dev proxy: `cc.localhost:8000`, `admin.localhost:8000`, `portal.localhost:8000`.
-Backend: `go run cmd/api/main.go --mode=all` → `localhost:8080`.
+Backend: `go run cmd/api/main.go --mode=all` → `localhost:8081`.
 
 ## All Documentation
 

@@ -253,7 +253,7 @@ FROM_EMAIL=noreply@datalens.io
 - `VAR_NAME` — description, added to `.env.example`
 
 **Action Required**:
-- **Backend**: [Configuration changes needed]
+- **Backend**: `http://localhost:8081` (Go API) [Configuration changes needed]
 - **Test**: [CI changes that affect test execution]
 ```
 

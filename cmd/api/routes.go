@@ -22,12 +22,10 @@ func mountSharedRoutes(
 	r chi.Router,
 	authHandler *handler.AuthHandler,
 ) {
-	r.Route("/api/v2", func(r chi.Router) {
-		r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{"pong":true}`))
-		})
-		r.Mount("/auth", authHandler.Routes())
+	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"pong":true}`))
 	})
+	r.Mount("/auth", authHandler.Routes())
 }
 
 // mountCCRoutes mounts the Control Centre's protected API routes.
@@ -55,72 +53,70 @@ func mountCCRoutes(
 	grievanceHandler *handler.GrievanceHandler,
 	notificationHandler *handler.NotificationHandler,
 ) {
-	r.Route("/api/v2", func(r chi.Router) {
-		// Protected routes (auth + tenant isolation + rate limiting)
-		r.Group(func(r chi.Router) {
-			r.Use(mw.Auth(authSvc, apiKeySvc))
-			r.Use(mw.TenantIsolation())
-			r.Use(rateLimiter.Middleware())
+	// Protected routes (auth + tenant isolation + rate limiting)
+	r.Group(func(r chi.Router) {
+		r.Use(mw.Auth(authSvc, apiKeySvc))
+		r.Use(mw.TenantIsolation())
+		r.Use(rateLimiter.Middleware())
 
-			// Data Sources
-			r.Mount("/data-sources", dsHandler.Routes())
+		// Data Sources
+		r.Mount("/data-sources", dsHandler.Routes())
 
-			// Purposes
-			r.Mount("/purposes", purposeHandler.Routes())
+		// Purposes
+		r.Mount("/purposes", purposeHandler.Routes())
 
-			// Auth (protected: /me)
-			r.Mount("/users", authHandler.ProtectedRoutes())
+		// Auth (protected: /me)
+		r.Mount("/users", authHandler.ProtectedRoutes())
 
-			// OAuth2 Connectors
-			r.Mount("/auth/m365", m365Handler.Routes())
-			r.Mount("/auth/google", googleHandler.Routes())
+		// OAuth2 Connectors
+		r.Mount("/auth/m365", m365Handler.Routes())
+		r.Mount("/auth/google", googleHandler.Routes())
 
-			// Discovery (inventories, entities, fields)
-			r.Mount("/discovery", discoveryHandler.Routes())
+		// Discovery (inventories, entities, fields)
+		r.Mount("/discovery", discoveryHandler.Routes())
 
-			// Detection Feedback (verify/correct/reject PII classifications)
-			r.Mount("/discovery/feedback", feedbackHandler.Routes())
+		// Detection Feedback (verify/correct/reject PII classifications)
+		r.Mount("/discovery/feedback", feedbackHandler.Routes())
 
-			// PII Classifications
-			r.Route("/classifications", func(r chi.Router) {
-				// TODO: Wire PII classification handlers (Sprint 2)
-			})
+		// PII Classifications
+		// r.Route("/classifications", func(r chi.Router) {
+		// 	// TODO: Wire PII classification handlers (Sprint 2)
+		// })
 
-			// DSR
-			r.Mount("/dsr", dsrHandler.Routes())
+		// DSR
+		r.Mount("/dsr", dsrHandler.Routes())
 
-			// Dashboard
-			r.Mount("/dashboard", dashboardHandler.Routes())
+		// Dashboard
+		r.Mount("/dashboard", dashboardHandler.Routes())
 
-			// Consent
-			r.Route("/consent", func(r chi.Router) {
-				r.Mount("/", consentHandler.Routes())
-				r.Mount("/notices", noticeHandler.Routes())
-			})
-
-			// Audit
-			r.Route("/audit", func(r chi.Router) {
-				// TODO: Wire audit log handlers (Sprint 2)
-			})
-
-			// Governance
-			r.Mount("/governance", governanceHandler.Routes())
-
-			// Breach
-			r.Mount("/breach", breachHandler.Routes())
-
-			// Identity
-			r.Mount("/identity", identityHandler.Routes())
-
-			// Grievances
-			r.Mount("/grievances", grievanceHandler.Routes())
-
-			// Notifications
-			r.Mount("/notifications", notificationHandler.Routes())
-
-			// Analytics
-			r.Mount("/analytics", analyticsHandler.Routes())
+		// Consent
+		r.Route("/consent", func(r chi.Router) {
+			r.Mount("/", consentHandler.Routes())
+			r.Mount("/notices", noticeHandler.Routes())
 		})
+
+		// Audit
+		// r.Route("/audit", func(r chi.Router) {
+		// 	// TODO: Wire audit log handlers (Sprint 2)
+		// })
+
+		// Governance
+		r.Mount("/governance", governanceHandler.Routes())
+
+		// Breach
+		r.Mount("/breach", breachHandler.Routes())
+
+		// Identity
+		r.Mount("/identity", identityHandler.Routes())
+
+		// Grievances
+		r.Mount("/grievances", grievanceHandler.Routes())
+
+		// Notifications
+		r.Mount("/notifications", notificationHandler.Routes())
+
+		// Analytics
+		r.Mount("/analytics", analyticsHandler.Routes())
 	})
 }
 
@@ -133,13 +129,11 @@ func mountAdminRoutes(
 	rateLimiter *mw.RateLimiter,
 	adminHandler *handler.AdminHandler,
 ) {
-	r.Route("/api/v2", func(r chi.Router) {
-		r.Route("/admin", func(r chi.Router) {
-			r.Use(mw.Auth(authSvc, apiKeySvc))
-			r.Use(mw.RequireRole(identity.RolePlatformAdmin))
-			r.Use(rateLimiter.Middleware())
-			r.Mount("/", adminHandler.Routes())
-		})
+	r.Route("/admin", func(r chi.Router) {
+		r.Use(mw.Auth(authSvc, apiKeySvc))
+		r.Use(mw.RequireRole(identity.RolePlatformAdmin))
+		r.Use(rateLimiter.Middleware())
+		r.Mount("/", adminHandler.Routes())
 	})
 }
 

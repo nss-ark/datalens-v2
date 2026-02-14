@@ -42,7 +42,7 @@ func setupExecutorTest(t *testing.T) (*DSRExecutor, *mockDSRRepository, *mockDat
 	// Registry & Mock Connector
 	mockConn := new(MockConnector)
 	detector := detection.NewDefaultDetector(nil) // nil gateway is fine for tests that don't use AI
-	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
+	registry := connector.NewConnectorRegistry(&config.Config{}, detector, nil)
 	registry.Register(types.DataSourcePostgreSQL, func() discovery.Connector {
 		return mockConn
 	})

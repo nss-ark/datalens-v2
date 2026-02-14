@@ -18,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -34,7 +35,7 @@ func main() {
 
 	targets := strings.Split(*targetsFlag, ",")
 	if *targetsFlag == "all" {
-		targets = []string{"mysql", "postgres", "mongo"}
+		targets = []string{"mysql", "postgres", "mongo", "admin"}
 	}
 
 	for _, target := range targets {
@@ -50,6 +51,10 @@ func main() {
 		case "mongo":
 			if err := seedMongo(*rowsFlag, *dirtyFlag); err != nil {
 				slog.Error("Failed to seed MongoDB", "error", err)
+			}
+		case "admin":
+			if err := seedAdmin(); err != nil {
+				slog.Error("Failed to seed Admin User", "error", err)
 			}
 		}
 	}
@@ -358,6 +363,95 @@ func seedMongo(count int, dirty bool) error {
 		}
 	}
 	fmt.Println()
+
+	return nil
+}
+
+// --- Admin Seeder ---
+
+func seedAdmin() error {
+	// Main App DB (Postgres)
+	dsn := "postgres://datalens:datalens_dev@localhost:5433/datalens?sslmode=disable"
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return fmt.Errorf("connect app db: %w", err)
+	}
+	defer conn.Close(ctx)
+
+	slog.Info("Connected to App DB for Admin Seeding", "dsn", dsn)
+
+	// 1. Ensure Tenant exists
+	var tenantID string
+	err = conn.QueryRow(ctx, "SELECT id FROM tenants WHERE domain = $1", "datalens.io").Scan(&tenantID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			slog.Info("Creating default tenant...")
+			err = conn.QueryRow(ctx,
+				"INSERT INTO tenants (name, domain, plan) VALUES ($1, $2, $3) RETURNING id",
+				"DataLens Default", "datalens.io", "ENTERPRISE",
+			).Scan(&tenantID)
+			if err != nil {
+				return fmt.Errorf("create tenant: %w", err)
+			}
+		} else {
+			return fmt.Errorf("lookup tenant: %w", err)
+		}
+	}
+	slog.Info("Tenant ID", "id", tenantID)
+
+	// 2. Ensure Admin User exists
+	email := "admin@datalens.com"
+	var userID string
+	err = conn.QueryRow(ctx, "SELECT id FROM users WHERE email = $1 AND tenant_id = $2", email, tenantID).Scan(&userID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			slog.Info("Creating admin user...")
+			// Hash password
+			hash, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+			if err != nil {
+				return fmt.Errorf("hash password: %w", err)
+			}
+
+			err = conn.QueryRow(ctx,
+				"INSERT INTO users (tenant_id, email, name, password, status) VALUES ($1, $2, $3, $4, 'ACTIVE') RETURNING id",
+				tenantID, email, "System Admin", string(hash),
+			).Scan(&userID)
+			if err != nil {
+				return fmt.Errorf("create user: %w", err)
+			}
+			slog.Info("Admin user created", "email", email, "password", "password")
+		} else {
+			return fmt.Errorf("lookup user: %w", err)
+		}
+	}
+	slog.Info("User ID", "id", userID)
+
+	// 3. Assign ADMIN Role
+	var roleID string
+	err = conn.QueryRow(ctx, "SELECT id FROM roles WHERE name = 'ADMIN' AND is_system = TRUE LIMIT 1").Scan(&roleID)
+	if err != nil {
+		// Try looking up by tenant specific roles if system roles aren't global (schema says is_system is boolean, but tenant_id might be null? No, tenant_id is NOT NULL in schema usually unless global roles handled differently.
+		// Wait, migration 001 inserts roles with UUIDs but doesn't specify tenant_id?
+		// Line 419: INSERT INTO roles (id, name...) -> tenant_id is NOT NULL in schema (Line 33).
+		// Ah, migration 419 MIGHT FAIL if tenant_id is missing?
+		// Let's check schema again.
+		// Line 33: tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE
+		// Line 419: INSERT INTO roles (id, name, description, permissions, is_system) VALUES ...
+		// It SKIPS tenant_id!
+		// Either tenant_id is nullable (Line 33 doesn't say NOT NULL? It says: tenant_id UUID REFERENCES...)
+		// Standard SQL: if not specified NOT NULL, it is nullable.
+		// Let's assume nullable for system roles.
+		// If so, query: WHERE name='ADMIN' AND (tenant_id IS NULL OR is_system=TRUE)
+		return fmt.Errorf("lookup admin role: %w", err)
+	}
+
+	// Link
+	_, err = conn.Exec(ctx, "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", userID, roleID)
+	if err != nil {
+		return fmt.Errorf("assign role: %w", err)
+	}
+	slog.Info("Admin role assigned")
 
 	return nil
 }

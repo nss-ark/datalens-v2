@@ -20,7 +20,7 @@ func newTestDataSourceService() (*DataSourceService, *mockDataSourceRepo, *mockE
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	detector := detection.NewDefaultDetector(nil)
-	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
+	registry := connector.NewConnectorRegistry(&config.Config{}, detector, nil)
 
 	svc := NewDataSourceService(repo, registry, eb, logger)
 	return svc, repo, eb

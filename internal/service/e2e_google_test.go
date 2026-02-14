@@ -157,7 +157,7 @@ func TestGoogle_E2E_Mock(t *testing.T) {
 	detector := detection.NewComposableDetector(patternStrategy)
 
 	// Registry with detector
-	registry := connector.NewConnectorRegistry(cfg, detector)
+	registry := connector.NewConnectorRegistry(cfg, detector, nil)
 
 	// Discovery Service
 	discoverySvc := NewDiscoveryService(

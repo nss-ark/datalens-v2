@@ -553,7 +553,7 @@
 - [x] Session 4: Governance + Settings + Portal (10 screens)
 - [x] Session 5: Admin Portal + Cross-Cutting Audit (5+ screens)
 - [x] Fix sprint: Implement prioritized fixes from review findings (High + Medium Priority Done)
-- [ ] Re-review: Verify fixes meet standards
+- [x] Re-review: Verify fixes meet standards (Batch 2C — PII Inventory + Settings implemented, Dashboard polish)
 
 ### Batch 20B: Core Fixes & File Upload/OCR (Partial)
 - [x] **Backend**: Logout API — `POST /api/v2/auth/logout` in `internal/handler/auth_handler.go` (Batch 20B)
@@ -568,7 +568,7 @@
   - [x] PDF native text extraction
   - [x] DOCX/XLSX text extraction
   - [ ] OCR via Tesseract — disabled on current env (missing build deps)
-  - [ ] Integration with `ScanService` for `FILE_UPLOAD` sources
+  - [x] Integration with `ScanService` for `FILE_UPLOAD` sources (Batch 2B — ParsingService → ScanService wired)
 
 
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
@@ -611,4 +611,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 14, 2026 — Batch 20B (Core Fixes & File Upload/OCR) partially complete; Next: Batch 20A (UI/UX Review Sprint) + Batch 20B OCR completion
+> **Last Updated**: February 15, 2026 — Batch 2 (Stabilization) complete. ScanService wired for file uploads, UX fixes applied (PII Inventory, Settings). Next: Phase 3A DPDPA Compliance Gaps

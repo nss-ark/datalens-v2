@@ -49,7 +49,7 @@ func (m *MockConnector) Close() error {
 
 func TestConnectorRegistry_RegisterAndGet(t *testing.T) {
 	cfg := &config.Config{}
-	registry := NewConnectorRegistry(cfg, nil)
+	registry := NewConnectorRegistry(cfg, nil, nil)
 
 	// Verify built-in connectors are registered
 	pgConn, err := registry.GetConnector(types.DataSourcePostgreSQL)
@@ -91,7 +91,7 @@ func TestConnectorRegistry_UnknownType(t *testing.T) {
 	// The factories like `NewM365Connector` take detector.
 	// `NewM365Connector` stores it.
 
-	registry := NewConnectorRegistry(cfg, nil)
+	registry := NewConnectorRegistry(cfg, nil, nil)
 
 	_, err := registry.GetConnector("UNKNOWN_TYPE")
 	assert.Error(t, err)
@@ -100,7 +100,7 @@ func TestConnectorRegistry_UnknownType(t *testing.T) {
 
 func TestConnectorRegistry_SupportedTypes(t *testing.T) {
 	cfg := &config.Config{}
-	registry := NewConnectorRegistry(cfg, nil)
+	registry := NewConnectorRegistry(cfg, nil, nil)
 
 	supportedTypes := registry.SupportedTypes()
 	assert.Greater(t, len(supportedTypes), 0)

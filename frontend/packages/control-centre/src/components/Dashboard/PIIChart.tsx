@@ -1,5 +1,5 @@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PieChart } from 'lucide-react';
 
 interface PIIChartProps {
     data: Record<string, number>;
@@ -24,8 +24,12 @@ export const PIIChart = ({ data, loading }: PIIChartProps) => {
 
     if (chartData.length === 0) {
         return (
-            <div className="h-[300px] w-full flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-500">
-                No PII data found yet
+            <div className="h-[300px] w-full flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-500 gap-2">
+                <div className="p-3 bg-white rounded-full shadow-sm">
+                    <PieChart className="text-gray-400" size={24} />
+                </div>
+                <p className="font-medium">No PII data found yet</p>
+                <p className="text-xs text-gray-400">Scan results will appear here</p>
             </div>
         );
     }
@@ -49,7 +53,7 @@ export const PIIChart = ({ data, loading }: PIIChartProps) => {
                     />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
                         {chartData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            <Cell key={`cell - ${index} `} fill={COLORS[index % COLORS.length]} />
                         ))}
                     </Bar>
                 </BarChart>

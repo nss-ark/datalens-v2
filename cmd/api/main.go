@@ -111,7 +111,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer dbPool.Close()
-	log.Info("Database connected")
+	log.Info("Database connected", "host", cfg.DB.Host, "port", cfg.DB.Port, "db", cfg.DB.Name)
 
 	// NATS Connection
 	natsConn, err := eventbus.Connect(cfg.NATS.URL, slog.Default())
@@ -618,27 +618,30 @@ func main() {
 
 	// --- Mount Routes Based on Mode ---
 
-	// Shared routes (CC + Admin need auth endpoints)
-	if shouldInit("cc", "admin") {
-		mountSharedRoutes(r, authHandler)
-	}
+	// API v2 Group
+	r.Route("/api/v2", func(r chi.Router) {
+		// Shared routes (CC + Admin need auth endpoints)
+		if shouldInit("cc", "admin") {
+			mountSharedRoutes(r, authHandler)
+		}
 
-	// CC routes
-	if shouldInit("cc") {
-		mountCCRoutes(r, authSvc, apiKeySvc, rateLimiter,
-			dsHandler, purposeHandler, authHandler,
-			discoveryHandler, feedbackHandler, dashboardHandler,
-			dsrHandler, consentHandler, noticeHandler,
-			analyticsHandler, governanceHandler, breachHandler,
-			m365Handler, googleHandler, identityHandler,
-			grievanceHandler, notificationHandler,
-		)
-	}
+		// CC routes
+		if shouldInit("cc") {
+			mountCCRoutes(r, authSvc, apiKeySvc, rateLimiter,
+				dsHandler, purposeHandler, authHandler,
+				discoveryHandler, feedbackHandler, dashboardHandler,
+				dsrHandler, consentHandler, noticeHandler,
+				analyticsHandler, governanceHandler, breachHandler,
+				m365Handler, googleHandler, identityHandler,
+				grievanceHandler, notificationHandler,
+			)
+		}
 
-	// Admin routes
-	if shouldInit("admin") {
-		mountAdminRoutes(r, authSvc, apiKeySvc, rateLimiter, adminHandler)
-	}
+		// Admin routes
+		if shouldInit("admin") {
+			mountAdminRoutes(r, authSvc, apiKeySvc, rateLimiter, adminHandler)
+		}
+	})
 
 	// Portal routes
 	if shouldInit("portal") {

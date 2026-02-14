@@ -70,7 +70,7 @@ func TestIntegration_Postgres_Scanning_Flow(t *testing.T) {
 	detector := detection.NewComposableDetector(mockStrategy)
 
 	// 5. Registry
-	registry := connector.NewConnectorRegistry(&config.Config{}, detector)
+	registry := connector.NewConnectorRegistry(&config.Config{}, detector, nil)
 	registry.Register(types.DataSourcePostgreSQL, func() discovery.Connector {
 		return pgConn
 	})

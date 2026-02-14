@@ -203,7 +203,7 @@ You cannot see the application directly. The human is your eyes. To be effective
 ### Before Starting
 1. **Read `dev team agents/AGENT_COMMS.md`** — check for any messages about known issues
 2. **Read this page inventory** — understand what exists
-3. **Confirm the app is running** — CC on `cc.localhost:8000`, Admin on `admin.localhost:8000`, Portal on `portal.localhost:8000`, backend on `localhost:8080`
+3. **Confirm the app is running** — CC on `cc.localhost:8000`, Admin on `admin.localhost:8000`, Portal on `portal.localhost:8000`, backend on `localhost:8081`
 
 ### During Review (Screen-by-Screen)
 
