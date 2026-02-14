@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/internal/service"
 	"github.com/complyark/datalens/pkg/httputil"
 	"github.com/complyark/datalens/pkg/types"
@@ -13,11 +14,12 @@ import (
 // PortalAuthMiddleware handles JWT validation for portal requests.
 type PortalAuthMiddleware struct {
 	authService *service.PortalAuthService
+	profileRepo consent.DataPrincipalProfileRepository
 }
 
 // NewPortalAuthMiddleware creates a new PortalAuthMiddleware.
-func NewPortalAuthMiddleware(authService *service.PortalAuthService) *PortalAuthMiddleware {
-	return &PortalAuthMiddleware{authService: authService}
+func NewPortalAuthMiddleware(authService *service.PortalAuthService, profileRepo consent.DataPrincipalProfileRepository) *PortalAuthMiddleware {
+	return &PortalAuthMiddleware{authService: authService, profileRepo: profileRepo}
 }
 
 // PortalJWTAuth middleware validates the Bearer token and injects claims into context.
@@ -42,12 +44,16 @@ func (m *PortalAuthMiddleware) PortalJWTAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Inject configuration into context
-		ctx := context.WithValue(r.Context(), types.ContextKey("principal_id"), claims.PrincipalID)
+		// Inject principal_id and tenant_id into context
+		ctx := context.WithValue(r.Context(), types.ContextKeyPrincipalID, claims.PrincipalID)
 		ctx = context.WithValue(ctx, types.ContextKeyTenantID, claims.TenantID)
-		// We use types.ContextKeyTenantID because standard handlers might rely on it,
-		// but typically portal handlers should be specific.
-		// However, for TenantID, using the standard key allows reuse of multi-tenant logic if needed.
+
+		// Resolve subject_id from profile for downstream handlers (e.g. grievance listing)
+		if m.profileRepo != nil {
+			if profile, err := m.profileRepo.GetByID(ctx, claims.PrincipalID); err == nil && profile.SubjectID != nil {
+				ctx = context.WithValue(ctx, types.ContextKeySubjectID, *profile.SubjectID)
+			}
+		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

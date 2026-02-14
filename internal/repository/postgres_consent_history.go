@@ -155,5 +155,38 @@ func (r *ConsentHistoryRepo) GetLatestState(ctx context.Context, tenantID, subje
 	return &e, nil
 }
 
+// GetAllLatestBySubject returns the most recent consent entry per purpose for a subject.
+func (r *ConsentHistoryRepo) GetAllLatestBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]consent.ConsentHistoryEntry, error) {
+	query := `
+		SELECT DISTINCT ON (purpose_id)
+		       id, tenant_id, subject_id, widget_id, purpose_id, purpose_name,
+		       previous_status, new_status, source, ip_address,
+		       user_agent, notice_version, signature, created_at
+		FROM consent_history
+		WHERE tenant_id = $1 AND subject_id = $2
+		ORDER BY purpose_id, created_at DESC`
+
+	rows, err := r.pool.Query(ctx, query, tenantID, subjectID)
+	if err != nil {
+		return nil, fmt.Errorf("get all latest consent states: %w", err)
+	}
+	defer rows.Close()
+
+	var items []consent.ConsentHistoryEntry
+	for rows.Next() {
+		var e consent.ConsentHistoryEntry
+		if err := rows.Scan(
+			&e.ID, &e.TenantID, &e.SubjectID, &e.WidgetID,
+			&e.PurposeID, &e.PurposeName,
+			&e.PreviousStatus, &e.NewStatus, &e.Source, &e.IPAddress,
+			&e.UserAgent, &e.NoticeVersion, &e.Signature, &e.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan consent history: %w", err)
+		}
+		items = append(items, e)
+	}
+	return items, rows.Err()
+}
+
 // Compile-time interface check.
 var _ consent.ConsentHistoryRepository = (*ConsentHistoryRepo)(nil)

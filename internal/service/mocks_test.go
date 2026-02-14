@@ -1311,6 +1311,25 @@ func (r *mockHistoryRepo) GetLatestState(_ context.Context, tenantID, subjectID,
 	return latest, nil
 }
 
+func (r *mockHistoryRepo) GetAllLatestBySubject(_ context.Context, tenantID, subjectID types.ID) ([]consent.ConsentHistoryEntry, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	latest := make(map[types.ID]*consent.ConsentHistoryEntry)
+	for _, e := range r.entries {
+		if e.TenantID == tenantID && e.SubjectID == subjectID {
+			if existing, ok := latest[e.PurposeID]; !ok || e.CreatedAt.After(existing.CreatedAt) {
+				val := e
+				latest[e.PurposeID] = &val
+			}
+		}
+	}
+	var result []consent.ConsentHistoryEntry
+	for _, e := range latest {
+		result = append(result, *e)
+	}
+	return result, nil
+}
+
 // =============================================================================
 // Mock DSR Repository (Compliance)
 // =============================================================================

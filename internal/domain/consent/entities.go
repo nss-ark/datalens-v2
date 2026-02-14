@@ -329,6 +329,8 @@ type ConsentHistoryRepository interface {
 	GetBySubject(ctx context.Context, tenantID, subjectID types.ID, pagination types.Pagination) (*types.PaginatedResult[ConsentHistoryEntry], error)
 	GetByPurpose(ctx context.Context, tenantID, purposeID types.ID) ([]ConsentHistoryEntry, error)
 	GetLatestState(ctx context.Context, tenantID, subjectID, purposeID types.ID) (*ConsentHistoryEntry, error)
+	// GetAllLatestBySubject returns the most recent consent entry per purpose for the subject.
+	GetAllLatestBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]ConsentHistoryEntry, error)
 }
 
 // DPRRequestRepository defines persistence for portal DPR requests.

@@ -558,9 +558,8 @@ func main() {
 			rdb,
 			slog.Default(),
 		)
-		portalHandler = handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc)
 
-		// Portal also needs ConsentService for widget APIs (if not already initialized by CC mode)
+		// Portal needs ConsentService for consent management (if not already initialized by CC mode)
 		if consentSvc == nil {
 			consentSvc = service.NewConsentService(
 				consentWidgetRepo,
@@ -577,13 +576,13 @@ func main() {
 			consentHandler = handler.NewConsentHandler(consentSvc, nil)
 		}
 
-		// Portal also needs GrievanceService for portal grievances (if not already initialized by CC mode)
+		// Portal needs GrievanceService for grievance redressal (if not already initialized by CC mode)
 		if grievanceSvc == nil {
 			grievanceSvc = service.NewGrievanceService(grievanceRepo, eb, slog.Default())
 		}
-		if grievanceHandler == nil {
-			grievanceHandler = handler.NewGrievanceHandler(grievanceSvc)
-		}
+
+		// Create portal handler with all dependencies
+		portalHandler = handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc, consentSvc, grievanceSvc, profileRepo)
 
 		log.Info("Portal services initialized")
 	}
@@ -645,7 +644,7 @@ func main() {
 
 	// Portal routes
 	if shouldInit("portal") {
-		mountPortalRoutes(r, consentHandler, portalHandler, grievanceHandler, consentWidgetRepo)
+		mountPortalRoutes(r, consentHandler, portalHandler, consentWidgetRepo)
 	}
 
 	// =========================================================================

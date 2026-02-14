@@ -253,6 +253,9 @@ func (m *mockConsentHistoryRepo) GetByPurpose(ctx context.Context, t, p types.ID
 func (m *mockConsentHistoryRepo) GetLatestState(ctx context.Context, t, s, p types.ID) (*consent.ConsentHistoryEntry, error) {
 	return nil, nil
 }
+func (m *mockConsentHistoryRepo) GetAllLatestBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]consent.ConsentHistoryEntry, error) {
+	return nil, nil
+}
 
 type mockEventBus struct {
 	Events []eventbus.Event

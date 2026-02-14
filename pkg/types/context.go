@@ -6,20 +6,27 @@ import "context"
 type ContextKey string
 
 const (
-	ContextKeyUserID    ContextKey = "user_id"
-	ContextKeyTenantID  ContextKey = "tenant_id"
-	ContextKeyEmail     ContextKey = "email"
-	ContextKeyName      ContextKey = "name"
-	ContextKeyRoles     ContextKey = "roles"
-	ContextKeyWidgetID  ContextKey = "widget_id"
-	ContextKeyIP        ContextKey = "ip"
-	ContextKeyUserAgent ContextKey = "user_agent"
-	ContextKeySubjectID ContextKey = "subject_id"
+	ContextKeyUserID      ContextKey = "user_id"
+	ContextKeyTenantID    ContextKey = "tenant_id"
+	ContextKeyEmail       ContextKey = "email"
+	ContextKeyName        ContextKey = "name"
+	ContextKeyRoles       ContextKey = "roles"
+	ContextKeyWidgetID    ContextKey = "widget_id"
+	ContextKeyIP          ContextKey = "ip"
+	ContextKeyUserAgent   ContextKey = "user_agent"
+	ContextKeySubjectID   ContextKey = "subject_id"
+	ContextKeyPrincipalID ContextKey = "principal_id"
 )
 
 // SubjectIDFromContext extracts the subject ID from the request context.
 func SubjectIDFromContext(ctx context.Context) (ID, bool) {
 	id, ok := ctx.Value(ContextKeySubjectID).(ID)
+	return id, ok
+}
+
+// PrincipalIDFromContext extracts the data principal profile ID from the request context.
+func PrincipalIDFromContext(ctx context.Context) (ID, bool) {
+	id, ok := ctx.Value(ContextKeyPrincipalID).(ID)
 	return id, ok
 }
 

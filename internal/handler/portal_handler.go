@@ -3,9 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/complyark/datalens/internal/domain/consent"
 	"github.com/complyark/datalens/internal/middleware"
 	"github.com/complyark/datalens/internal/service"
 	"github.com/complyark/datalens/pkg/httputil"
@@ -16,6 +18,9 @@ import (
 type PortalHandler struct {
 	authService      *service.PortalAuthService
 	principalService *service.DataPrincipalService
+	consentService   *service.ConsentService
+	grievanceService *service.GrievanceService
+	profileRepo      consent.DataPrincipalProfileRepository
 	middleware       *middleware.PortalAuthMiddleware
 }
 
@@ -23,11 +28,17 @@ type PortalHandler struct {
 func NewPortalHandler(
 	authService *service.PortalAuthService,
 	principalService *service.DataPrincipalService,
+	consentService *service.ConsentService,
+	grievanceService *service.GrievanceService,
+	profileRepo consent.DataPrincipalProfileRepository,
 ) *PortalHandler {
 	return &PortalHandler{
 		authService:      authService,
 		principalService: principalService,
-		middleware:       middleware.NewPortalAuthMiddleware(authService),
+		consentService:   consentService,
+		grievanceService: grievanceService,
+		profileRepo:      profileRepo,
+		middleware:       middleware.NewPortalAuthMiddleware(authService, profileRepo),
 	}
 }
 
@@ -36,29 +47,54 @@ func NewPortalHandler(
 func (h *PortalHandler) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	// Public: Verification
+	// Public: Verification (original paths)
 	r.Post("/verify", h.initiateLogin)
 	r.Post("/verify/confirm", h.verifyLogin)
 
-	// Protected: Profile, Consent, DPR
+	// Public: Auth aliases (frontend uses /auth/otp and /auth/verify)
+	r.Post("/auth/otp", h.initiateLogin)
+	r.Post("/auth/verify", h.verifyLogin)
+
+	// Protected: Profile, Consent, DPR, Grievance, Identity
 	r.Group(func(r chi.Router) {
 		r.Use(h.middleware.PortalJWTAuth)
+
+		// Profile
 		r.Get("/profile", h.getProfile)
+
+		// Consent Management (DPDPA S6(4) — Right to Withdraw)
+		r.Get("/consents", h.getConsents)
 		r.Get("/consent-history", h.getConsentHistory)
+		r.Get("/history", h.getConsentHistory) // Alias for frontend
+		r.Post("/consent/withdraw", h.withdrawConsent)
+		r.Post("/consent/grant", h.grantConsent)
+
+		// DPR (Data Principal Rights)
 		r.Post("/dpr", h.submitDPR)
 		r.Get("/dpr", h.listDPRs)
 		r.Get("/dpr/{id}", h.getDPR)
-	})
 
-	// Guardian Verification (DPDPA Section 9)
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.PortalJWTAuth)
+		// Grievance Redressal (DPDPA S13(1))
+		r.Post("/grievance", h.submitGrievance)
+		r.Get("/grievance", h.listGrievances)
+		r.Get("/grievance/{id}", h.getGrievance)
+		r.Post("/grievance/{id}/feedback", h.submitGrievanceFeedback)
+
+		// Identity Verification
+		r.Get("/identity/status", h.getIdentityStatus)
+		r.Post("/identity/link", h.linkIdentity) // Phase 4 stub
+
+		// Guardian Verification (DPDPA Section 9)
 		r.Post("/guardian/verify-init", h.initiateGuardianVerify)
 		r.Post("/guardian/verify", h.verifyGuardian)
 	})
 
 	return r
 }
+
+// =============================================================================
+// Auth Handlers
+// =============================================================================
 
 type verifyRequest struct {
 	TenantID types.ID `json:"tenant_id"`
@@ -107,8 +143,12 @@ func (h *PortalHandler) verifyLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// =============================================================================
+// Profile Handler
+// =============================================================================
+
 func (h *PortalHandler) getProfile(w http.ResponseWriter, r *http.Request) {
-	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
 	if !ok {
 		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
 		return
@@ -123,19 +163,43 @@ func (h *PortalHandler) getProfile(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, profile)
 }
 
-func (h *PortalHandler) getConsentHistory(w http.ResponseWriter, r *http.Request) {
-	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+// =============================================================================
+// Consent Handlers (DPDPA S6(4))
+// =============================================================================
+
+func (h *PortalHandler) getConsents(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
 	if !ok {
 		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
 		return
 	}
 
-	// Simple pagination parsing, could use httputil.ParsePagination
-	page := 1
-	pageSize := 20
-	// TODO: Parse query params
+	summary, err := h.principalService.GetConsentSummary(r.Context(), principalID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
 
-	pagination := types.Pagination{Page: page, PageSize: pageSize}
+	httputil.JSON(w, http.StatusOK, summary)
+}
+
+func (h *PortalHandler) getConsentHistory(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	pagination := types.Pagination{Page: page, PageSize: limit}
 	history, err := h.principalService.GetConsentHistory(r.Context(), principalID, pagination)
 	if err != nil {
 		httputil.ErrorFromDomain(w, err)
@@ -145,8 +209,112 @@ func (h *PortalHandler) getConsentHistory(w http.ResponseWriter, r *http.Request
 	httputil.JSON(w, http.StatusOK, history)
 }
 
+type consentActionRequest struct {
+	PurposeID string `json:"purpose_id"`
+}
+
+func (h *PortalHandler) withdrawConsent(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	var req consentActionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "invalid json body")
+		return
+	}
+
+	purposeID, err := types.ParseID(req.PurposeID)
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid purpose_id")
+		return
+	}
+
+	// Resolve SubjectID from principal profile
+	profile, err := h.profileRepo.GetByID(r.Context(), principalID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	if profile.SubjectID == nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "NO_SUBJECT", "no linked data subject found")
+		return
+	}
+
+	withdrawReq := service.WithdrawConsentRequest{
+		SubjectID: *profile.SubjectID,
+		PurposeID: purposeID,
+		Source:    "PORTAL",
+		IPAddress: r.RemoteAddr,
+		UserAgent: r.UserAgent(),
+	}
+
+	if err := h.consentService.WithdrawConsent(r.Context(), withdrawReq); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"message": "consent withdrawn"})
+}
+
+func (h *PortalHandler) grantConsent(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	var req consentActionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "invalid json body")
+		return
+	}
+
+	purposeID, err := types.ParseID(req.PurposeID)
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid purpose_id")
+		return
+	}
+
+	// Resolve SubjectID from principal profile
+	profile, err := h.profileRepo.GetByID(r.Context(), principalID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	if profile.SubjectID == nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "NO_SUBJECT", "no linked data subject found")
+		return
+	}
+
+	// Use WithdrawConsent with GRANTED status — the service records the state change
+	// We reuse the same approach as withdrawal but with a "re-grant" semantic.
+	// The ConsentService's RecordConsent needs a WidgetID which the portal doesn't have,
+	// so we use a direct history entry approach instead.
+	grantReq := service.WithdrawConsentRequest{
+		SubjectID: *profile.SubjectID,
+		PurposeID: purposeID,
+		Source:    "PORTAL",
+		IPAddress: r.RemoteAddr,
+		UserAgent: r.UserAgent(),
+	}
+
+	if err := h.consentService.GrantConsentFromPortal(r.Context(), grantReq); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"message": "consent granted"})
+}
+
+// =============================================================================
+// DPR Handlers
+// =============================================================================
+
 func (h *PortalHandler) submitDPR(w http.ResponseWriter, r *http.Request) {
-	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
 	if !ok {
 		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
 		return
@@ -168,7 +336,7 @@ func (h *PortalHandler) submitDPR(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PortalHandler) listDPRs(w http.ResponseWriter, r *http.Request) {
-	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
 	if !ok {
 		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
 		return
@@ -184,7 +352,7 @@ func (h *PortalHandler) listDPRs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PortalHandler) getDPR(w http.ResponseWriter, r *http.Request) {
-	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
 	if !ok {
 		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
 		return
@@ -206,14 +374,165 @@ func (h *PortalHandler) getDPR(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, dpr)
 }
 
-// Guardian Verification Handlers
+// =============================================================================
+// Grievance Handlers (DPDPA S13(1))
+// =============================================================================
+
+type portalGrievanceRequest struct {
+	Subject     string `json:"subject"`
+	Description string `json:"description"`
+	Category    string `json:"category"`
+}
+
+func (h *PortalHandler) submitGrievance(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	var req portalGrievanceRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "invalid json body")
+		return
+	}
+
+	// Resolve SubjectID from principal profile for the grievance record
+	profile, err := h.profileRepo.GetByID(r.Context(), principalID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	// Use principal ID as data_subject_id if no linked subject exists
+	dataSubjectID := principalID.String()
+	if profile.SubjectID != nil {
+		dataSubjectID = profile.SubjectID.String()
+	}
+
+	grievanceReq := service.CreateGrievanceRequest{
+		Subject:       req.Subject,
+		Description:   req.Description,
+		Category:      req.Category,
+		DataSubjectID: dataSubjectID,
+	}
+
+	grievance, err := h.grievanceService.SubmitGrievance(r.Context(), grievanceReq)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusCreated, grievance)
+}
+
+func (h *PortalHandler) listGrievances(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	// Resolve SubjectID from principal profile
+	profile, err := h.profileRepo.GetByID(r.Context(), principalID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	subjectID := principalID
+	if profile.SubjectID != nil {
+		subjectID = *profile.SubjectID
+	}
+
+	grievances, err := h.grievanceService.ListBySubject(r.Context(), subjectID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, grievances)
+}
+
+func (h *PortalHandler) getGrievance(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := types.ParseID(idStr)
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid grievance id")
+		return
+	}
+
+	grievance, err := h.grievanceService.GetGrievance(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, grievance)
+}
+
+type grievanceFeedbackRequest struct {
+	Rating  int    `json:"rating"`
+	Comment string `json:"comment"`
+}
+
+func (h *PortalHandler) submitGrievanceFeedback(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := types.ParseID(idStr)
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid grievance id")
+		return
+	}
+
+	var req grievanceFeedbackRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "invalid json body")
+		return
+	}
+
+	if err := h.grievanceService.SubmitFeedback(r.Context(), id, req.Rating, req.Comment); err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"message": "feedback submitted"})
+}
+
+// =============================================================================
+// Identity Handlers
+// =============================================================================
+
+func (h *PortalHandler) getIdentityStatus(w http.ResponseWriter, r *http.Request) {
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
+	if !ok {
+		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
+		return
+	}
+
+	status, err := h.principalService.GetIdentityStatus(r.Context(), principalID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, status)
+}
+
+func (h *PortalHandler) linkIdentity(w http.ResponseWriter, r *http.Request) {
+	// Phase 4 stub — external identity linking (DigiLocker, Aadhaar, etc.)
+	httputil.ErrorResponse(w, http.StatusNotImplemented, "NOT_IMPLEMENTED", "identity linking will be available in a future release")
+}
+
+// =============================================================================
+// Guardian Handlers (DPDPA Section 9)
+// =============================================================================
 
 type initiateGuardianRequest struct {
 	Contact string `json:"contact"` // Email or Phone
 }
 
 func (h *PortalHandler) initiateGuardianVerify(w http.ResponseWriter, r *http.Request) {
-	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
 	if !ok {
 		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
 		return
@@ -238,7 +557,7 @@ type verifyGuardianRequest struct {
 }
 
 func (h *PortalHandler) verifyGuardian(w http.ResponseWriter, r *http.Request) {
-	principalID, ok := r.Context().Value(types.ContextKey("principal_id")).(types.ID)
+	principalID, ok := types.PrincipalIDFromContext(r.Context())
 	if !ok {
 		httputil.ErrorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "principal context missing")
 		return

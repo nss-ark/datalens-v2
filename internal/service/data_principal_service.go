@@ -264,3 +264,69 @@ func (s *DataPrincipalService) VerifyGuardian(ctx context.Context, principalID t
 
 // generateOTP is already defined in portal_auth_service.go (same package)
 // We rely on that shared unexported helper.
+
+// ConsentSummaryItem represents the current consent state for a single purpose.
+type ConsentSummaryItem struct {
+	PurposeID   string `json:"purpose_id"`
+	PurposeName string `json:"purpose_name"`
+	Status      string `json:"status"` // GRANTED, WITHDRAWN, EXPIRED
+	UpdatedAt   string `json:"updated_at"`
+}
+
+// GetConsentSummary returns the latest consent state per purpose for the principal.
+func (s *DataPrincipalService) GetConsentSummary(ctx context.Context, principalID types.ID) ([]ConsentSummaryItem, error) {
+	profile, err := s.profileRepo.GetByID(ctx, principalID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If profile has no linked subject ID yet, return empty
+	if profile.SubjectID == nil {
+		return []ConsentSummaryItem{}, nil
+	}
+
+	entries, err := s.historyRepo.GetAllLatestBySubject(ctx, profile.TenantID, *profile.SubjectID)
+	if err != nil {
+		return nil, fmt.Errorf("get consent summary: %w", err)
+	}
+
+	items := make([]ConsentSummaryItem, 0, len(entries))
+	for _, e := range entries {
+		items = append(items, ConsentSummaryItem{
+			PurposeID:   e.PurposeID.String(),
+			PurposeName: e.PurposeName,
+			Status:      e.NewStatus,
+			UpdatedAt:   e.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	return items, nil
+}
+
+// IdentityStatusResponse is the response for identity verification status.
+type IdentityStatusResponse struct {
+	VerificationStatus string  `json:"verification_status"` // PENDING, VERIFIED, EXPIRED
+	VerifiedAt         *string `json:"verified_at,omitempty"`
+	Method             *string `json:"method,omitempty"` // EMAIL_OTP, PHONE_OTP
+	LinkedProviders    []any   `json:"linked_providers"` // Phase 4
+}
+
+// GetIdentityStatus returns the identity verification status for the principal.
+func (s *DataPrincipalService) GetIdentityStatus(ctx context.Context, principalID types.ID) (*IdentityStatusResponse, error) {
+	profile, err := s.profileRepo.GetByID(ctx, principalID)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &IdentityStatusResponse{
+		VerificationStatus: string(profile.VerificationStatus),
+		Method:             profile.VerificationMethod,
+		LinkedProviders:    []any{}, // Phase 4: DigiLocker, Aadhaar, etc.
+	}
+
+	if profile.VerifiedAt != nil {
+		t := profile.VerifiedAt.Format(time.RFC3339)
+		resp.VerifiedAt = &t
+	}
+
+	return resp, nil
+}

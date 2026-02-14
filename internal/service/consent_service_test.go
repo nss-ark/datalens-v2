@@ -392,3 +392,22 @@ func (r *mockConsentHistoryRepo) GetLatestState(_ context.Context, tenantID, sub
 	}
 	return latest, nil
 }
+
+func (r *mockConsentHistoryRepo) GetAllLatestBySubject(_ context.Context, tenantID, subjectID types.ID) ([]consent.ConsentHistoryEntry, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	latest := make(map[types.ID]*consent.ConsentHistoryEntry)
+	for i := range r.history {
+		h := &r.history[i]
+		if h.TenantID == tenantID && h.SubjectID == subjectID {
+			if existing, ok := latest[h.PurposeID]; !ok || h.CreatedAt.After(existing.CreatedAt) {
+				latest[h.PurposeID] = h
+			}
+		}
+	}
+	var result []consent.ConsentHistoryEntry
+	for _, e := range latest {
+		result = append(result, *e)
+	}
+	return result, nil
+}

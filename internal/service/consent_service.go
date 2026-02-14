@@ -518,6 +518,53 @@ func (s *ConsentService) WithdrawConsent(ctx context.Context, req WithdrawConsen
 	return nil
 }
 
+// GrantConsentFromPortal re-grants consent from the portal (no widget context).
+// This creates a history entry with GRANTED status directly.
+func (s *ConsentService) GrantConsentFromPortal(ctx context.Context, req WithdrawConsentRequest) error {
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return types.NewForbiddenError("tenant context required")
+	}
+
+	now := time.Now().UTC()
+
+	entry := &consent.ConsentHistoryEntry{
+		BaseEntity: types.BaseEntity{
+			ID:        types.NewID(),
+			CreatedAt: now,
+		},
+		TenantID:       tenantID,
+		SubjectID:      req.SubjectID,
+		PurposeID:      req.PurposeID,
+		PurposeName:    req.PurposeName,
+		PreviousStatus: types.Ptr("WITHDRAWN"),
+		NewStatus:      "GRANTED",
+		Source:         req.Source,
+		IPAddress:      req.IPAddress,
+		UserAgent:      req.UserAgent,
+		NoticeVersion:  req.NoticeVersion,
+		Signature:      s.signRecord(fmt.Sprintf("%s:GRANTED:%s:%s", req.PurposeID, tenantID, now.Format(time.RFC3339))),
+	}
+
+	if err := s.historyRepo.Create(ctx, entry); err != nil {
+		return fmt.Errorf("record consent grant: %w", err)
+	}
+
+	// Emit grant event
+	s.publishEvent(ctx, eventbus.EventConsentGranted, tenantID, map[string]any{
+		"subject_id": req.SubjectID.String(),
+		"purpose_id": req.PurposeID.String(),
+		"source":     "PORTAL",
+	})
+
+	s.logger.Info("consent granted from portal",
+		slog.String("tenant_id", tenantID.String()),
+		slog.String("purpose_id", req.PurposeID.String()),
+	)
+
+	return nil
+}
+
 // =============================================================================
 // Session Listing (for internal handler)
 // =============================================================================

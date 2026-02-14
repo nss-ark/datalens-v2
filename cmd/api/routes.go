@@ -143,7 +143,6 @@ func mountPortalRoutes(
 	r chi.Router,
 	consentHandler *handler.ConsentHandler,
 	portalHandler *handler.PortalHandler,
-	grievanceHandler *handler.GrievanceHandler,
 	consentWidgetRepo consent.ConsentWidgetRepository,
 ) {
 	r.Route("/api/public", func(r chi.Router) {
@@ -155,9 +154,7 @@ func mountPortalRoutes(
 		})
 
 		// Portal API (Public + Portal JWT Auth)
+		// All portal routes including grievances are handled by portalHandler.Routes()
 		r.Mount("/portal", portalHandler.Routes())
-
-		// Portal Grievances (Public + Portal JWT Auth)
-		r.Mount("/portal/grievances", grievanceHandler.PortalRoutes())
 	})
 }
