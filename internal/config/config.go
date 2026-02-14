@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -23,6 +24,12 @@ type Config struct {
 	Microsoft MicrosoftConfig
 	Google    GoogleConfig
 	Identity  IdentityConfig
+	CORS      CORSConfig
+}
+
+// CORSConfig holds Cross-Origin Resource Sharing settings.
+type CORSConfig struct {
+	AllowedOrigins []string
 }
 
 // IdentityConfig holds identity provider settings.
@@ -248,6 +255,16 @@ func Load() (*Config, error) {
 				RedirectURI:  getEnv("DIGILOCKER_REDIRECT_URI", "http://localhost:8080/api/v2/identity/digilocker/callback"),
 			},
 		},
+		CORS: CORSConfig{
+			AllowedOrigins: getEnvSlice("CORS_ALLOWED_ORIGINS", []string{
+				"http://localhost:3000",
+				"http://localhost:3001",
+				"http://localhost:3002",
+				"http://cc.localhost:8000",
+				"http://admin.localhost:8000",
+				"http://portal.localhost:8000",
+			}),
+		},
 	}
 
 	return cfg, cfg.validate()
@@ -285,6 +302,14 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 		if d, err := time.ParseDuration(v); err == nil {
 			return d
 		}
+	}
+	return fallback
+}
+
+func getEnvSlice(key string, fallback []string) []string {
+	if v := os.Getenv(key); v != "" {
+		// Import "strings" needed
+		return strings.Split(v, ",")
 	}
 	return fallback
 }

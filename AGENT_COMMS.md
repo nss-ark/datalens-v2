@@ -641,3 +641,24 @@
 - All packages build cleanly (`npm run build`).
 - Import paths updated and verified.
 
+### [2026-02-14] [FROM: DevOps] → [TO: ALL]
+**Subject**: Review Batch R3 — Unified Local Dev Environment & Prod Docker Setup
+**Type**: HANDOFF
+
+**Changes**:
+- **Infrastructure**: Added `nginx/dev.conf` and `docker-compose.dev.yml` service for a unified local dev proxy.
+- **Production**: Updated `docker-compose.prod.yml` to run 3 isolated backend instances + Nginx gateway.
+- **Build**: Updated `frontend/Dockerfile` and `frontend/nginx.conf` for serving 3 apps from one image.
+- **DX**: Updated `scripts/start-all.ps1` to launch the full stack (Backend mode=all + 3 Frontends).
+- **CORS**: Implemented environment-driven CORS configuration in backend.
+
+**New Local Dev URLs**:
+- **Control Centre**: `http://cc.localhost:8000`
+- **Admin Panel**: `http://admin.localhost:8000`
+- **Portal**: `http://portal.localhost:8000`
+- **API**: `http://api.localhost:8000`
+
+**Action Required**:
+- **All Agents**: Use the new Nginx proxy URLs for local development and testing.
+- **Frontend**: Verify HMR works correctly through the proxy.
+

@@ -189,25 +189,47 @@ Write-Host "--- Launching Services ---" -ForegroundColor Cyan
 $backendCwd = (Get-Location).Path
 $frontendCwd = Join-Path $backendCwd "frontend"
 
-# Backend (Port 8080)
+# Backend (Port 8080, all mode)
 Write-Host "  Clearing port 8080..."
 Kill-ProcessByPort 8080
-Write-Host "  Starting Backend API..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$backendCwd'; `$env:APP_PORT='8080'; go run cmd/api/main.go"
+Write-Host "  Starting Backend API (mode=all)..."
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$backendCwd'; `$env:APP_PORT='8080'; go run cmd/api/main.go --mode=all --port=8080"
 
-# Frontend (Port 3000)
+# Frontend - Control Centre (Port 3000)
 Write-Host "  Clearing port 3000..."
 Kill-ProcessByPort 3000
-Write-Host "  Starting Frontend..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$frontendCwd'; npm run dev"
+Write-Host "  Starting Control Centre frontend..."
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$frontendCwd'; npm run dev -w @datalens/control-centre"
+
+# Frontend - Admin (Port 3001)
+Write-Host "  Clearing port 3001..."
+Kill-ProcessByPort 3001
+Write-Host "  Starting Admin frontend..."
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$frontendCwd'; npm run dev -w @datalens/admin"
+
+# Frontend - Portal (Port 3002)
+Write-Host "  Clearing port 3002..."
+Kill-ProcessByPort 3002
+Write-Host "  Starting Portal frontend..."
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$frontendCwd'; npm run dev -w @datalens/portal"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  [DONE] Setup Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Backend API:  http://localhost:8080" -ForegroundColor White
-Write-Host "  Frontend:     http://localhost:3000" -ForegroundColor White
+Write-Host "  --- Via Reverse Proxy (recommended) ---" -ForegroundColor White
+Write-Host "  Control Centre: http://cc.localhost:8000" -ForegroundColor White
+Write-Host "  Admin Panel:    http://admin.localhost:8000" -ForegroundColor White
+Write-Host "  Portal:         http://portal.localhost:8000" -ForegroundColor White
+Write-Host "  API:            http://api.localhost:8000" -ForegroundColor White
+Write-Host ""
+Write-Host "  --- Direct Access (no proxy) ---" -ForegroundColor Gray
+Write-Host "  Backend API:    http://localhost:8080" -ForegroundColor Gray
+Write-Host "  CC Frontend:    http://localhost:3000" -ForegroundColor Gray
+Write-Host "  Admin Frontend: http://localhost:3001" -ForegroundColor Gray
+Write-Host "  Portal Frontend:http://localhost:3002" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Services are running in separate windows." -ForegroundColor Gray
+Write-Host "  Nginx proxy is running via Docker on :8000" -ForegroundColor Gray
 Write-Host ""
