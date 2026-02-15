@@ -14,6 +14,7 @@ import Profile from './pages/Profile';
 import ConsentManage from './pages/ConsentManage';
 import SubmitGrievance from './pages/Grievance/SubmitGrievance';
 import MyGrievances from './pages/Grievance/MyGrievances';
+import BreachNotifications from './pages/BreachNotifications';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -98,12 +99,19 @@ function App() {
                                 </PortalLayout>
                             </ErrorBoundary>
                         } />
+                        <Route path="/notifications/breach" element={
+                            <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                                <PortalLayout>
+                                    <BreachNotifications />
+                                </PortalLayout>
+                            </ErrorBoundary>
+                        } />
                     </Route>
 
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
-            </BrowserRouter>
-        </QueryClientProvider>
+            </BrowserRouter >
+        </QueryClientProvider >
     );
 }
 

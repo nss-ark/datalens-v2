@@ -16,6 +16,8 @@ const (
 	DSRStatusIdentityVerification DSRStatus = "IDENTITY_VERIFICATION"
 	DSRStatusApproved             DSRStatus = "APPROVED"
 	DSRStatusInProgress           DSRStatus = "IN_PROGRESS"
+	DSRStatusVerified             DSRStatus = "VERIFIED"
+	DSRStatusVerificationFailed   DSRStatus = "VERIFICATION_FAILED"
 	DSRStatusCompleted            DSRStatus = "COMPLETED"
 	DSRStatusRejected             DSRStatus = "REJECTED"
 	DSRStatusFailed               DSRStatus = "FAILED"
@@ -30,6 +32,7 @@ const (
 	RequestTypeCorrection  DSRRequestType = "CORRECTION"
 	RequestTypePortability DSRRequestType = "PORTABILITY"
 	RequestTypeNomination  DSRRequestType = "NOMINATION"
+	RequestTypeAppeal      DSRRequestType = "APPEAL" // DPDPA S18
 )
 
 // DSR represents a Data Subject Request.
@@ -47,6 +50,7 @@ type DSR struct {
 	Reason             string            `json:"reason,omitempty"` // For rejection or specific context
 	Notes              string            `json:"notes,omitempty"`
 	Metadata           types.Metadata    `json:"metadata,omitempty"` // Added back
+	Evidence           map[string]any    `json:"evidence,omitempty"` // Auto-verification evidence
 	CreatedAt          time.Time         `json:"created_at"`
 	UpdatedAt          time.Time         `json:"updated_at"`
 	CompletedAt        *time.Time        `json:"completed_at,omitempty"`
@@ -79,7 +83,11 @@ func (d *DSR) ValidateTransition(newStatus DSRStatus) error {
 		valid = newStatus == DSRStatusInProgress || newStatus == DSRStatusFailed
 	case DSRStatusInProgress:
 		valid = newStatus == DSRStatusCompleted || newStatus == DSRStatusFailed
-	case DSRStatusCompleted, DSRStatusRejected, DSRStatusFailed:
+	case DSRStatusCompleted:
+		valid = newStatus == DSRStatusVerified || newStatus == DSRStatusVerificationFailed
+	case DSRStatusVerificationFailed:
+		valid = newStatus == DSRStatusVerified // Allow retry of verification? Or manual override?
+	case DSRStatusRejected, DSRStatusFailed, DSRStatusVerified:
 		valid = false // Terminal states
 	}
 

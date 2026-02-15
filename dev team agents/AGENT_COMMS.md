@@ -54,6 +54,38 @@
 
 ## Active Messages
 
+### [2026-02-15] [FROM: Frontend] → [TO: ALL]
+**Subject**: Guardian Verification Polish Complete (DPDPA §9)
+**Type**: STATUS
+
+**Changes**:
+- Updated `@datalens/shared/StatusBadge.tsx`: Added support for DSR statuses (`SUBMITTED`, `PENDING_VERIFICATION`, `REJECTED`, etc.)
+- Updated `@datalens/portal/Profile.tsx`: Now passes `guardian_email` to verification modal for better UX.
+
+**Verification**:
+- `@datalens/portal`: Build passed ✅
+
+**Action Required**:
+- None. Ready for QA.
+
+### [2026-02-15] [FROM: Backend] → [TO: ALL]
+**Subject**: Data Retention Model Created
+**Type**: HANDOFF
+
+**Changes**:
+- `internal/domain/compliance/retention.go`: Added `RetentionPolicy` and `RetentionLog` entities.
+- `internal/service/admin_service.go`: Added CRUD methods for retention policies.
+- `internal/handler/admin_handler.go`: Added endpoints `/api/v2/admin/retention-policies`.
+
+**API Contracts**:
+- `POST /api/v2/admin/retention-policies` — Create policy
+- `GET /api/v2/admin/retention-policies?tenant_id={id}` — List policies
+- `GET /api/v2/admin/retention-policies/{id}` — Get details
+- `PUT /api/v2/admin/retention-policies/{id}` — Update policy
+
+**Action Required**:
+- **Backend/Scheduler Agent**: Implement the cron job to execute these policies (Deferred).
+
 ### [2026-02-15] [FROM: Orchestrator] → [TO: ALL]
 **Subject**: Batch 2 Complete — Moving to Phase 3
 **Type**: STATUS
@@ -75,3 +107,37 @@ All stabilization work is done:
 - Sidebar: Truncation for long names/emails
 - Dashboard: Polished empty states
 - TypeScript build passing ✅
+
+### [2026-02-15] [FROM: Backend] → [TO: ALL]
+**Subject**: Notice Schema Validation Implemented
+**Type**: STATUS
+
+**Changes**:
+- `internal/domain/consent/entities.go`: Added `NoticeSchemaFields` struct.
+- `internal/service/notice_service.go`: Implemented `ValidateSchema` and `CheckCompliance`.
+- `internal/handler/notice_handler.go`: Added `GET /api/v2/notices/{id}/compliance-check`.
+
+**Impact**:
+- `Publish` operation now enforces DPDP Rule 3(1) Schedule I schema.
+- Existing drafts must be updated with required fields before publishing.
+
+**Verification**:
+- Unit tests added for schema validation logic.
+
+### [2026-02-15] [FROM: DevOps] → [TO: ALL]
+**Subject**: Observability Stack Deployed (Prometheus/Grafana/Jaeger)
+**Type**: HANDOFF
+
+**Changes**:
+- **Backend**: Instrumented with OpenTelemetry and Prometheus metrics (`/metrics`).
+- **Infrastructure**: Added Prometheus (9090), Grafana (4000), Jaeger (16686).
+- **Backend Port**: Backend metrics verified on port 8089. Default `docker-compose.dev.yml` now runs Grafana on 4000.
+
+**New Services**:
+- **Grafana**: `http://localhost:4000`
+- **Jaeger**: `http://localhost:16686`
+- **Prometheus**: `http://localhost:9090`
+
+**Action Required**:
+- **Backend Devs**: Use `pkg/telemetry` for new tracing spans.
+- **Frontend Devs**: Note Grafana uses port 4000.

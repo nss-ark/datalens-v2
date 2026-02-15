@@ -218,6 +218,15 @@ func (s *TranslationService) GetTranslations(ctx context.Context, noticeID types
 	return s.repo.GetByNoticeAndVersion(ctx, noticeID, n.Version)
 }
 
+// GetTranslation returns a specific translation for a notice.
+func (s *TranslationService) GetTranslation(ctx context.Context, noticeID types.ID, langCode string) (*consent.ConsentNoticeTranslation, error) {
+	n, err := s.noticeRepo.GetByID(ctx, noticeID)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.GetByNoticeAndLang(ctx, noticeID, n.Version, langCode)
+}
+
 // callIndicTrans2 calls HuggingFace Inference API.
 // format: https://api-inference.huggingface.co/models/ai4bharat/indictrans2-en-indic-1B
 func (s *TranslationService) callIndicTrans2(ctx context.Context, text, srcLang, tgtLang string) (string, error) {

@@ -292,6 +292,7 @@ type ConsentWidgetRepository interface {
 // ConsentSessionRepository defines persistence for consent sessions.
 type ConsentSessionRepository interface {
 	Create(ctx context.Context, s *ConsentSession) error
+	GetByID(ctx context.Context, id types.ID) (*ConsentSession, error)
 	GetBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]ConsentSession, error)
 	GetConversionStats(ctx context.Context, tenantID types.ID, from, to time.Time, interval string) ([]ConversionStat, error)
 	GetPurposeStats(ctx context.Context, tenantID types.ID, from, to time.Time) ([]PurposeStat, error)
@@ -373,15 +374,51 @@ type ConsentRenewalRepository interface {
 // ConsentNotice represents a versioned privacy notice displayed to users.
 type ConsentNotice struct {
 	types.TenantEntity
-	SeriesID    types.ID     `json:"series_id" db:"series_id"` // Groups versions of the same notice
-	Title       string       `json:"title" db:"title"`
-	Content     string       `json:"content" db:"content"`       // Rich text (markdown/html)
-	Version     int          `json:"version" db:"version"`       // Auto-incremented on publish
-	Status      NoticeStatus `json:"status" db:"status"`         // DRAFT, PUBLISHED, ARCHIVED
-	Purposes    []types.ID   `json:"purposes" db:"purposes"`     // Linked purpose IDs
-	WidgetIDs   []types.ID   `json:"widget_ids" db:"widget_ids"` // Bound widgets
-	Regulation  string       `json:"regulation" db:"regulation"` // e.g., "DPDPA_2023"
-	PublishedAt *time.Time   `json:"published_at,omitempty" db:"published_at"`
+	SeriesID    types.ID           `json:"series_id" db:"series_id"` // Groups versions of the same notice
+	Title       string             `json:"title" db:"title"`
+	Content     string             `json:"content" db:"content"`       // Rich text (markdown/html)
+	Version     int                `json:"version" db:"version"`       // Auto-incremented on publish
+	Status      NoticeStatus       `json:"status" db:"status"`         // DRAFT, PUBLISHED, ARCHIVED
+	Purposes    []types.ID         `json:"purposes" db:"purposes"`     // Linked purpose IDs
+	WidgetIDs   []types.ID         `json:"widget_ids" db:"widget_ids"` // Bound widgets
+	Regulation  string             `json:"regulation" db:"regulation"` // e.g., "DPDPA_2023"
+	Schema      NoticeSchemaFields `json:"schema" db:"schema"`         // DPDP Rule 3(1) Schedule I fields
+	PublishedAt *time.Time         `json:"published_at,omitempty" db:"published_at"`
+}
+
+// NoticeSchemaFields defines the required fields for a privacy notice per DPDP Rule 3(1) Schedule I.
+type NoticeSchemaFields struct {
+	// 1. Data Types & Purposes
+	DataTypesCollected []string `json:"data_types_collected"` // e.g. ["Name", "Email", "Location"]
+	Purposes           []string `json:"purposes"`             // e.g. ["Service Delivery", "Marketing"]
+
+	// 2. Data Fiduciary Details
+	FiduciaryName    string `json:"fiduciary_name"`
+	FiduciaryContact string `json:"fiduciary_contact"` // Email or Phone
+
+	// 3. Data Principal Rights (Boolean flags to confirm inclusion in text)
+	RightsWithdraw   bool `json:"rights_withdraw"`
+	RightsAccess     bool `json:"rights_access"`
+	RightsCorrection bool `json:"rights_correction"`
+	RightsGrievance  bool `json:"rights_grievance"`
+	RightsNomination bool `json:"rights_nomination"`
+
+	// 4. Grievance Redressal
+	ComplaintMethod string `json:"complaint_method"` // How to complain
+	DPOName         string `json:"dpo_name"`         // Data Protection Officer Name
+	DPOContact      string `json:"dpo_contact"`      // DPO Email/Phone
+
+	// 5. Complaint to Board
+	BoardComplaintMethod string `json:"board_complaint_method"` // Manner of complaint to Board
+
+	// 6. Sharing
+	SharingCategories []string `json:"sharing_categories"` // Categories of 3rd parties shared with
+
+	// 7. Cross-Border
+	CrossBorderTransfer string `json:"cross_border_transfer"` // "No" or details of countries
+
+	// 8. Retention
+	RetentionPeriod string `json:"retention_period"` // Specific period or criteria
 }
 
 // NoticeStatus tracks the lifecycle of a privacy notice.

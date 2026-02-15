@@ -61,6 +61,29 @@ type WithdrawConsentRequest struct {
 	NoticeVersion string   `json:"notice_version"`
 }
 
+// ConsentReceipt is a tamper-proof receipt of consent recording.
+// DPDPA S6(6): Consent must be "recorded".
+// DPDP Rules R3(3): Consent given by the Data Principal shall be recorded.
+type ConsentReceipt struct {
+	ReceiptID           types.ID         `json:"receipt_id"`
+	SessionID           types.ID         `json:"session_id"`
+	PrincipalIdentifier string           `json:"principal_identifier"`
+	Purposes            []ReceiptPurpose `json:"purposes"`
+	NoticeVersion       string           `json:"notice_version"`
+	Timestamp           time.Time        `json:"timestamp"`
+	IPAddress           string           `json:"ip_address"`
+	WidgetID            types.ID         `json:"widget_id"`
+	Signature           string           `json:"signature"`
+	Verified            bool             `json:"verified"`
+}
+
+// ReceiptPurpose captures purpose-level consent status in a receipt.
+type ReceiptPurpose struct {
+	ID      types.ID `json:"id"`
+	Name    string   `json:"name"`
+	Granted bool     `json:"granted"`
+}
+
 // =============================================================================
 // ConsentService
 // =============================================================================
@@ -587,6 +610,100 @@ func (s *ConsentService) GetHistory(ctx context.Context, subjectID types.ID, pag
 	}
 
 	return s.historyRepo.GetBySubject(ctx, tenantID, subjectID, pagination)
+}
+
+// =============================================================================
+// Consent Receipt (DPDPA S6(6), R3(3))
+// =============================================================================
+
+// GenerateReceipt generates a tamper-proof consent receipt for a session.
+// The principalIdentifier (email/phone) and subjectID are resolved by the
+// caller (handler) so the service doesn't need a profile repository.
+func (s *ConsentService) GenerateReceipt(ctx context.Context, sessionID types.ID, subjectID types.ID, principalIdentifier string) (*ConsentReceipt, error) {
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, types.NewForbiddenError("tenant context required")
+	}
+
+	// 1. Fetch the session
+	session, err := s.sessionRepo.GetByID(ctx, sessionID)
+	if err != nil {
+		return nil, types.NewNotFoundError("consent session", sessionID)
+	}
+
+	// 2. Verify tenant isolation
+	if session.TenantID != tenantID {
+		return nil, types.NewNotFoundError("consent session", sessionID)
+	}
+
+	// 3. Verify principal ownership — session.SubjectID must match the caller
+	sessionSubjectID := s.resolveSubjectID(session.SubjectID)
+	if sessionSubjectID != subjectID {
+		return nil, types.NewForbiddenError("this receipt does not belong to the requesting principal")
+	}
+
+	// 4. Re-compute HMAC to verify integrity (tamper detection)
+	recomputed := s.signDecisions(session.Decisions, session.CreatedAt)
+	verified := recomputed == session.Signature
+
+	// 5. Build purpose list with names from widget config
+	purposes := make([]ReceiptPurpose, 0, len(session.Decisions))
+	widget, widgetErr := s.widgetRepo.GetByID(ctx, session.WidgetID)
+
+	// Build a lookup map from widget purposes if available
+	purposeNames := make(map[string]string)
+	if widgetErr == nil && widget != nil {
+		for _, p := range widget.Config.Purposes {
+			purposeNames[p.ID] = p.Name
+		}
+	}
+
+	for _, d := range session.Decisions {
+		name := purposeNames[d.PurposeID.String()]
+		if name == "" {
+			name = d.PurposeID.String() // Fallback to ID
+		}
+		purposes = append(purposes, ReceiptPurpose{
+			ID:      d.PurposeID,
+			Name:    name,
+			Granted: d.Granted,
+		})
+	}
+
+	receipt := &ConsentReceipt{
+		ReceiptID:           types.NewID(),
+		SessionID:           session.ID,
+		PrincipalIdentifier: principalIdentifier,
+		Purposes:            purposes,
+		NoticeVersion:       session.NoticeVersion,
+		Timestamp:           session.CreatedAt,
+		IPAddress:           session.IPAddress,
+		WidgetID:            session.WidgetID,
+		Signature:           session.Signature,
+		Verified:            verified,
+	}
+
+	// 6. Publish event (best-effort)
+	s.publishEvent(ctx, eventbus.EventConsentReceiptGenerated, tenantID, map[string]any{
+		"receipt_id": receipt.ReceiptID.String(),
+		"session_id": session.ID.String(),
+	})
+
+	s.logger.Info("consent receipt generated",
+		slog.String("tenant_id", tenantID.String()),
+		slog.String("session_id", session.ID.String()),
+		slog.Bool("verified", verified),
+	)
+
+	return receipt, nil
+}
+
+// VerifyReceiptSignature re-computes the HMAC-SHA256 signature for a set of
+// decisions and timestamp and compares it against the provided signature.
+// Returns true if the signature is valid (i.e., data has not been tampered).
+func (s *ConsentService) VerifyReceiptSignature(decisions []consent.ConsentDecision, timestamp time.Time, signature string) bool {
+	recomputed := s.signDecisions(decisions, timestamp)
+	return recomputed == signature
 }
 
 // =============================================================================

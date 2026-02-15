@@ -58,19 +58,21 @@ const (
 	EventScanFailed    = "scan.failed"
 
 	// DSR Events
-	EventDSRCreated   = "dsr.created"
-	EventDSRExecuting = "dsr.executing"
-	EventDSRCompleted = "dsr.completed"
-	EventDSRFailed    = "dsr.failed"
-	EventDSRVerified  = "dsr.verified"
-	EventDSRRejected  = "dsr.rejected"
+	EventDSRCreated            = "dsr.created"
+	EventDSRExecuting          = "dsr.executing"
+	EventDSRCompleted          = "dsr.completed"
+	EventDSRFailed             = "dsr.failed"
+	EventDSRVerified           = "dsr.verified"
+	EventDSRVerificationFailed = "dsr.verification_failed"
+	EventDSRRejected           = "dsr.rejected"
 
 	// Consent Events
-	EventConsentGranted       = "consent.granted"
-	EventConsentWithdrawn     = "consent.withdrawn"
-	EventConsentWidgetCreated = "consent.widget_created"
-	EventConsentExpiring      = "consent.expiring"
-	EventConsentExpired       = "consent.expired"
+	EventConsentGranted          = "consent.granted"
+	EventConsentWithdrawn        = "consent.withdrawn"
+	EventConsentWidgetCreated    = "consent.widget_created"
+	EventConsentExpiring         = "consent.expiring"
+	EventConsentExpired          = "consent.expired"
+	EventConsentReceiptGenerated = "consent.receipt_generated"
 
 	// Breach Events
 	EventBreachDetected = "breach.detected"

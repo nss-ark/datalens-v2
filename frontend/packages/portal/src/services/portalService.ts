@@ -7,7 +7,8 @@ import type {
     ConsentSummary,
     ConsentHistoryEntry,
     DPRRequest,
-    CreateDPRInput
+    CreateDPRInput,
+    BreachNotification
 } from '@/types/portal';
 import type { IdentityStatusResponse } from '@/types/identity';
 import type { CreateGrievanceRequest, Grievance } from '@/types/grievance';
@@ -15,11 +16,12 @@ import type { CreateGrievanceRequest, Grievance } from '@/types/grievance';
 export const portalService = {
     // --- Auth ---
     async requestOTP(identifier: { email?: string; phone?: string }): Promise<void> {
-        await portalApi.post('/public/portal/auth/otp', identifier);
+        await portalApi.post('/public/portal/auth/otp', { ...identifier, tenant_id: '05b8b3bd-a7ac-4802-847b-535e122097a0' });
     },
 
     async verifyOTP(data: VerifyOTPInput): Promise<AuthResponse> {
-        const res = await portalApi.post<ApiResponse<AuthResponse>>('/public/portal/auth/verify', data);
+        const payload = { ...data, tenant_id: '05b8b3bd-a7ac-4802-847b-535e122097a0' };
+        const res = await portalApi.post<ApiResponse<AuthResponse>>('/public/portal/auth/verify', payload);
         return res.data.data;
     },
 
@@ -61,6 +63,25 @@ export const portalService = {
     async getRequest(id: string): Promise<DPRRequest> {
         const res = await portalApi.get<ApiResponse<DPRRequest>>(`/public/portal/dpr/${id}`);
         return res.data.data;
+    },
+
+    async appealDPR(id: string, reason: string): Promise<DPRRequest> {
+        // Backend contract: POST /public/portal/dpr/{id}/appeal
+        const res = await portalApi.post<ApiResponse<DPRRequest>>(`/public/portal/dpr/${id}/appeal`, { reason });
+        return res.data.data;
+    },
+
+    async getAppeal(id: string): Promise<DPRRequest | null> {
+        // Backend contract: GET /public/portal/dpr/{id}/appeal
+        try {
+            const res = await portalApi.get<ApiResponse<DPRRequest>>(`/public/portal/dpr/${id}/appeal`);
+            return res.data.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
     },
 
     // --- Identity Verification ---
@@ -107,5 +128,11 @@ export const portalService = {
 
     async verifyGuardian(code: string): Promise<void> {
         await portalApi.post('/public/portal/guardian/verify', { code });
+    },
+
+    // --- Breach Notifications ---
+    async getBreachNotifications(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<BreachNotification>> {
+        const res = await portalApi.get<ApiResponse<PaginatedResponse<BreachNotification>>>('/public/portal/notifications/breach', { params });
+        return res.data.data;
     }
 };

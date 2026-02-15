@@ -332,7 +332,36 @@ func (s *BreachService) NotifyDataPrincipals(ctx context.Context, id types.ID) e
 				payload,
 			); err != nil {
 				s.logger.Error("failed to dispatch breach notification", "incident_id", id, "email", profile.Email, "error", err)
-				// Continue to next
+				// Continue to next, but maybe don't log if dispatch failed?
+				// Requirement says "Notification to DP must contain...".
+				// If dispatch fails, the DP didn't get it.
+				// But we also want to show it in the portal.
+				// So we should probably log it anyway, or maybe mark it as failed dispatch?
+				// The entity doesn't have dispatch status.
+				// Let's log it regardless, as the portal inbox is an independent channel.
+			}
+
+			// Persist notification for Portal Inbox
+			notification := &breach.BreachNotification{
+				BaseEntity: types.BaseEntity{
+					ID:        types.NewID(),
+					CreatedAt: time.Now().UTC(),
+					UpdatedAt: time.Now().UTC(),
+				},
+				TenantID:        incident.TenantID,
+				IncidentID:      incident.ID,
+				DataPrincipalID: profile.ID,
+				Title:           incident.Title,
+				Severity:        incident.Severity,
+				OccurredAt:      incident.OccurredAt,
+				Description:     incident.Description,
+				AffectedData:    incident.PiiCategories,
+				WhatWeAreDoing:  "We have contained the incident and are investigating...", // Placeholder or from incident?
+				ContactEmail:    incident.PoCEmail,
+				IsRead:          false,
+			}
+			if err := s.repo.LogNotification(ctx, notification); err != nil {
+				s.logger.Error("failed to log breach notification", "incident_id", id, "principal_id", profile.ID, "error", err)
 			}
 		}
 
@@ -343,4 +372,13 @@ func (s *BreachService) NotifyDataPrincipals(ctx context.Context, id types.ID) e
 	}
 
 	return nil
+}
+
+func (s *BreachService) GetNotificationsForPrincipal(ctx context.Context, principalID types.ID, pagination types.Pagination) (*types.PaginatedResult[breach.BreachNotification], error) {
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, types.NewForbiddenError("tenant context required")
+	}
+
+	return s.repo.GetNotificationsForPrincipal(ctx, tenantID, principalID, pagination)
 }

@@ -38,7 +38,11 @@ import (
 	"github.com/complyark/datalens/pkg/database"
 	"github.com/complyark/datalens/pkg/eventbus"
 	"github.com/complyark/datalens/pkg/logging"
+	pkgmw "github.com/complyark/datalens/pkg/middleware"
+	"github.com/complyark/datalens/pkg/telemetry"
 	"github.com/complyark/datalens/pkg/types"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/complyark/datalens/internal/infrastructure/cache"
 	"github.com/complyark/datalens/internal/infrastructure/connector"
@@ -99,6 +103,22 @@ func main() {
 		"port", cfg.App.Port,
 		"mode", *mode,
 	)
+
+	// =========================================================================
+	// Initialize Telemetry (OpenTelemetry)
+	// =========================================================================
+
+	otelShutdown, err := telemetry.SetupOTelSDK(context.Background(), "datalens-api", "2.0.0")
+	if err != nil {
+		log.Error("Failed to initialize OpenTelemetry", "error", err)
+	} else {
+		defer func() {
+			if err := otelShutdown(context.Background()); err != nil {
+				log.Error("Failed to shutdown OpenTelemetry", "error", err)
+			}
+		}()
+		log.Info("OpenTelemetry initialized")
+	}
 
 	// =========================================================================
 	// Initialize Infrastructure (always needed)
@@ -173,6 +193,7 @@ func main() {
 	grievanceRepo := repository.NewPostgresGrievanceRepository(dbPool)
 	notificationRepo := repository.NewPostgresNotificationRepository(dbPool)
 	notificationTemplateRepo := repository.NewPostgresNotificationTemplateRepository(dbPool)
+	dpoRepo := repository.NewPostgresDPOContactRepository(dbPool)
 
 	// Cache
 	var consentCache cache.ConsentCache
@@ -212,6 +233,11 @@ func main() {
 	var grievanceSvc *service.GrievanceService
 	var grievanceHandler *handler.GrievanceHandler
 	var notificationHandler *handler.NotificationHandler
+	var dpoSvc *service.DPOService
+	var dpoHandler *handler.DPOHandler
+	var noticeSvc *service.NoticeService
+	var translationSvc *service.TranslationService
+	var breachSvc *service.BreachService
 
 	// Admin-mode
 	var adminHandler *handler.AdminHandler
@@ -432,7 +458,10 @@ func main() {
 		notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
 
 		// Breach Management
-		breachSvc := service.NewBreachService(breachRepo, profileRepo, notificationSvc, auditSvc, eb, slog.Default())
+		breachSvc = service.NewBreachService(breachRepo, profileRepo, notificationSvc, auditSvc, eb, slog.Default())
+
+		// DPO Service
+		dpoSvc = service.NewDPOService(dpoRepo, eb, slog.Default())
 
 		// --- Scan Orchestrator ---
 		scanQueue, err := queue.NewNATSScanQueue(natsConn, slog.Default())
@@ -521,7 +550,9 @@ func main() {
 		googleHandler = handler.NewGoogleHandler(googleAuthSvc)
 		identityHandler = handler.NewIdentityHandler(identitySvc)
 		grievanceHandler = handler.NewGrievanceHandler(grievanceSvc)
+		grievanceHandler = handler.NewGrievanceHandler(grievanceSvc)
 		notificationHandler = handler.NewNotificationHandler(notificationSvc)
+		dpoHandler = handler.NewDPOHandler(dpoSvc)
 
 		log.Info("CC services and handlers initialized")
 	}
@@ -531,7 +562,7 @@ func main() {
 	// =========================================================================
 
 	if shouldInit("admin") {
-		adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default()), slog.Default())
+		adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, nil, service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default()), slog.Default())
 		adminHandler = handler.NewAdminHandler(adminSvc)
 
 		log.Info("Admin services initialized")
@@ -581,8 +612,48 @@ func main() {
 			grievanceSvc = service.NewGrievanceService(grievanceRepo, eb, slog.Default())
 		}
 
+		// Portal needs DPOService for public contact info
+		if dpoSvc == nil {
+			dpoSvc = service.NewDPOService(dpoRepo, eb, slog.Default())
+		}
+		if dpoHandler == nil {
+			dpoHandler = handler.NewDPOHandler(dpoSvc)
+		}
+
+		// Portal needs NoticeService and TranslationService for localized notices
+		if noticeSvc == nil {
+			noticeSvc = service.NewNoticeService(consentNoticeRepo, consentWidgetRepo, eb, slog.Default())
+		}
+		if translationSvc == nil {
+			translationSvc = service.NewTranslationService(translationRepo, consentNoticeRepo, eb, "", "")
+		}
+
+		// Portal needs BreachService for notifications
+		if breachSvc == nil {
+			// Ensure dependencies for BreachService are available
+			// NotificationService is needed.
+			// It might need initialization if not running in CC mode.
+			// But for Portal read-only access, maybe we don't need full NotificationService?
+			// BreachService uses NotificationService only in NotifyDataPrincipals, not in GetNotificationsForPrincipal.
+			// So passing nil might work IF the service method doesn't panic.
+			// However, NewBreachService might use it? No, it just assigns.
+			// Ideally we should init NotificationService too if we want to be safe,
+			// or we can init it fully.
+			// Let's check NotificationService deps: notificationRepo, notificationTemplateRepo, clientRepo.
+			// These are available.
+
+			// Init NotificationService if needed
+			clientRepo := service.NewPostgresClientRepository(dbPool) // Re-init is cheap
+			notificationSvc := service.NewNotificationService(notificationRepo, notificationTemplateRepo, clientRepo, slog.Default())
+
+			// AuditService also needed
+			auditSvc := service.NewAuditService(auditRepo, slog.Default())
+
+			breachSvc = service.NewBreachService(breachRepo, profileRepo, notificationSvc, auditSvc, eb, slog.Default())
+		}
+
 		// Create portal handler with all dependencies
-		portalHandler = handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc, consentSvc, grievanceSvc, profileRepo)
+		portalHandler = handler.NewPortalHandler(portalAuthSvc, dataPrincipalSvc, consentSvc, grievanceSvc, noticeSvc, translationSvc, breachSvc, profileRepo)
 
 		log.Info("Portal services initialized")
 	}
@@ -599,6 +670,7 @@ func main() {
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(30 * time.Second))
+	r.Use(pkgmw.ObservabilityMiddleware("datalens-api"))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   cfg.CORS.AllowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -614,6 +686,9 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"healthy","version":"2.0.0-alpha","mode":"` + *mode + `"}`))
 	})
+
+	// --- Metrics ---
+	r.Handle("/metrics", promhttp.Handler())
 
 	// --- Mount Routes Based on Mode ---
 
@@ -632,7 +707,7 @@ func main() {
 				dsrHandler, consentHandler, noticeHandler,
 				analyticsHandler, governanceHandler, breachHandler,
 				m365Handler, googleHandler, identityHandler,
-				grievanceHandler, notificationHandler,
+				grievanceHandler, notificationHandler, dpoHandler,
 			)
 		}
 
@@ -644,7 +719,7 @@ func main() {
 
 	// Portal routes
 	if shouldInit("portal") {
-		mountPortalRoutes(r, consentHandler, portalHandler, consentWidgetRepo)
+		mountPortalRoutes(r, consentHandler, portalHandler, dpoHandler, consentWidgetRepo)
 	}
 
 	// =========================================================================

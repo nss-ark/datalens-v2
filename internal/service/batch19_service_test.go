@@ -99,11 +99,12 @@ func TestBatch19_AdminDSR_Service(t *testing.T) {
 	tenantRepo := newMockTenantRepo() // AdminService needs these
 	userRepo := newMockUserRepo()
 	roleRepo := newMockRoleRepo()
+	retentionRepo := newMockRetentionPolicyRepo()
 	logger := newTestLogger()
 
 	// Needed for AdminService
 	tenantSvc := NewTenantService(tenantRepo, userRepo, roleRepo, nil, logger)
-	adminSvc := NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, tenantSvc, logger)
+	adminSvc := NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, retentionRepo, tenantSvc, logger)
 
 	// Create DSRs in Different Tenants
 	tenantA := types.NewID()

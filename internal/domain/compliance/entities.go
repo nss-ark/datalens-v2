@@ -149,8 +149,33 @@ const (
 )
 
 // =============================================================================
+// DPO Contact — Data Protection Officer details
+// =============================================================================
+
+// DPOContact represents the contact details of the Data Protection Officer.
+// Required by DPDPA S8(10) and R9 Schedule II.
+type DPOContact struct {
+	types.TenantEntity
+	OrgName    string    `json:"org_name" db:"org_name"`
+	DPOName    string    `json:"dpo_name" db:"dpo_name"`
+	DPOEmail   string    `json:"dpo_email" db:"dpo_email"`
+	DPOPhone   *string   `json:"dpo_phone,omitempty" db:"dpo_phone"`
+	Address    *string   `json:"address,omitempty" db:"address"`
+	WebsiteURL *string   `json:"website_url,omitempty" db:"website_url"`
+	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// =============================================================================
 // Repository Interfaces
 // =============================================================================
+
+// DPOContactRepository defines persistence for DPO contact details.
+type DPOContactRepository interface {
+	// Upsert creates or updates the DPO contact for a tenant.
+	Upsert(ctx context.Context, contact *DPOContact) error
+	// Get retrieves the DPO contact for a tenant.
+	Get(ctx context.Context, tenantID types.ID) (*DPOContact, error)
+}
 
 // DSRRepository defines persistence for DSR operations.
 

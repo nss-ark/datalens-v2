@@ -83,6 +83,7 @@ func TestBatch19_AdminHandler_ListDSRs(t *testing.T) {
 		&mockRoleRepo{},
 		dsrRepo,
 		nil,
+		nil,
 		slog.Default(),
 	)
 

@@ -112,6 +112,7 @@ const PortalProfile = () => {
                     refetch();
                     setGuardianModalOpen(false);
                 }}
+                guardianEmail={profile.guardian_email}
             />
         </div>
     );

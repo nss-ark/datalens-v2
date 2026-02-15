@@ -19,8 +19,13 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
                             DataLens Portal
                         </span>
                     </div>
-                    <div className="text-sm text-gray-500">
-                        Secure Privacy Portal
+                    <div className="flex gap-6 text-sm font-medium text-gray-500">
+                        <a href="/portal/dashboard" className="hover:text-blue-600 transition-colors">Dashboard</a>
+                        <a href="/portal/notifications/breach" className="hover:text-blue-600 transition-colors flex items-center gap-1">
+                            Notifications
+                            {/* TODO: Add badge if unread */}
+                        </a>
+                        <a href="/portal/profile" className="hover:text-blue-600 transition-colors">Profile</a>
                     </div>
                 </div>
             </header>

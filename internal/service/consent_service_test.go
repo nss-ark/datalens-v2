@@ -206,6 +206,108 @@ func TestConsentService_CheckConsent(t *testing.T) {
 	assert.False(t, granted)
 }
 
+func TestConsentService_GenerateReceipt(t *testing.T) {
+	svc, widgetRepo, sessionRepo, _, eventBus := newTestConsentService()
+	ctx := context.Background()
+	tenantID := types.NewID()
+	ctx = context.WithValue(ctx, types.ContextKeyTenantID, tenantID)
+
+	// Setup
+	purposeID1 := types.NewID()
+	purposeID2 := types.NewID()
+
+	widget := &consent.ConsentWidget{
+		TenantEntity: types.TenantEntity{
+			BaseEntity: types.BaseEntity{ID: types.NewID()},
+			TenantID:   tenantID,
+		},
+		Name: "Receipt Widget",
+		Config: consent.WidgetConfig{
+			Purposes: []consent.PurposeRef{
+				{ID: purposeID1.String(), Name: "Marketing"},
+				{ID: purposeID2.String(), Name: "Analytics"},
+			},
+		},
+	}
+	widgetRepo.Create(ctx, widget)
+
+	subjectID := types.NewID()
+	decisions := []consent.ConsentDecision{
+		{PurposeID: purposeID1, Granted: true},
+		{PurposeID: purposeID2, Granted: false},
+	}
+	now := time.Now().UTC()
+
+	// Create a valid session
+	sig := svc.signDecisions(decisions, now)
+	session := &consent.ConsentSession{
+		BaseEntity: types.BaseEntity{
+			ID:        types.NewID(),
+			CreatedAt: now,
+		},
+		TenantID:      tenantID,
+		WidgetID:      widget.ID,
+		SubjectID:     &subjectID,
+		Decisions:     decisions,
+		NoticeVersion: "v1.0",
+		Signature:     sig,
+		IPAddress:     "1.2.3.4",
+	}
+	sessionRepo.Create(ctx, session)
+
+	t.Run("success", func(t *testing.T) {
+		receipt, err := svc.GenerateReceipt(ctx, session.ID, subjectID, "user@example.com")
+		require.NoError(t, err)
+		assert.NotNil(t, receipt)
+		assert.Equal(t, session.ID, receipt.SessionID)
+		assert.Equal(t, "user@example.com", receipt.PrincipalIdentifier)
+		assert.Equal(t, "v1.0", receipt.NoticeVersion)
+		assert.Equal(t, "Marketing", receipt.Purposes[0].Name)
+		assert.True(t, receipt.Purposes[0].Granted)
+		assert.Equal(t, "Analytics", receipt.Purposes[1].Name)
+		assert.False(t, receipt.Purposes[1].Granted)
+		assert.True(t, receipt.Verified)
+
+		// Event published
+		assert.Len(t, eventBus.Events, 1)
+		assert.Equal(t, eventbus.EventConsentReceiptGenerated, eventBus.Events[0].Type)
+	})
+
+	t.Run("tampered data detection", func(t *testing.T) {
+		// Simulate tampering in DB: modify decisions without updating signature
+		tamperedSession := *session
+		tamperedSession.Decisions = []consent.ConsentDecision{
+			{PurposeID: purposeID1, Granted: false}, // Flipped decision
+		}
+		// Overwrite in repo (mock helper needed or just direct access since it's a test)
+		sessionRepo.mu.Lock()
+		for i, s := range sessionRepo.sessions {
+			if s.ID == session.ID {
+				sessionRepo.sessions[i] = tamperedSession
+			}
+		}
+		sessionRepo.mu.Unlock()
+
+		receipt, err := svc.GenerateReceipt(ctx, session.ID, subjectID, "user@example.com")
+		require.NoError(t, err)
+		assert.False(t, receipt.Verified, "receipt should be marked unverified due to signature mismatch")
+	})
+
+	t.Run("unauthorized access", func(t *testing.T) {
+		otherSubjectID := types.NewID()
+		_, err := svc.GenerateReceipt(ctx, session.ID, otherSubjectID, "hacker@example.com")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "does not belong to the requesting principal")
+	})
+
+	t.Run("tenant isolation", func(t *testing.T) {
+		otherTenantCtx := context.WithValue(context.Background(), types.ContextKeyTenantID, types.NewID())
+		_, err := svc.GenerateReceipt(otherTenantCtx, session.ID, subjectID, "user@example.com")
+		require.Error(t, err)
+		assert.True(t, types.IsNotFoundError(err))
+	})
+}
+
 // =============================================================================
 // Mocks (Local Implementation)
 // =============================================================================
@@ -308,6 +410,17 @@ func (r *mockConsentSessionRepo) Create(_ context.Context, s *consent.ConsentSes
 	}
 	r.sessions = append(r.sessions, *s)
 	return nil
+}
+
+func (r *mockConsentSessionRepo) GetByID(_ context.Context, id types.ID) (*consent.ConsentSession, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, s := range r.sessions {
+		if s.ID == id {
+			return &s, nil
+		}
+	}
+	return nil, types.NewNotFoundError("consent session", id)
 }
 
 func (r *mockConsentSessionRepo) GetBySubject(_ context.Context, tenantID, subjectID types.ID) ([]consent.ConsentSession, error) {

@@ -52,6 +52,7 @@ func mountCCRoutes(
 	identityHandler *handler.IdentityHandler,
 	grievanceHandler *handler.GrievanceHandler,
 	notificationHandler *handler.NotificationHandler,
+	dpoHandler *handler.DPOHandler,
 ) {
 	// Protected routes (auth + tenant isolation + rate limiting)
 	r.Group(func(r chi.Router) {
@@ -117,6 +118,9 @@ func mountCCRoutes(
 
 		// Analytics
 		r.Mount("/analytics", analyticsHandler.Routes())
+
+		// Compliance (DPO, etc.)
+		r.Mount("/compliance/dpo", dpoHandler.Routes())
 	})
 }
 
@@ -143,6 +147,7 @@ func mountPortalRoutes(
 	r chi.Router,
 	consentHandler *handler.ConsentHandler,
 	portalHandler *handler.PortalHandler,
+	dpoHandler *handler.DPOHandler,
 	consentWidgetRepo consent.ConsentWidgetRepository,
 ) {
 	r.Route("/api/public", func(r chi.Router) {
@@ -156,5 +161,8 @@ func mountPortalRoutes(
 		// Portal API (Public + Portal JWT Auth)
 		// All portal routes including grievances are handled by portalHandler.Routes()
 		r.Mount("/portal", portalHandler.Routes())
+
+		// Public DPO Contact
+		r.Mount("/compliance/dpo", dpoHandler.PublicRoutes())
 	})
 }

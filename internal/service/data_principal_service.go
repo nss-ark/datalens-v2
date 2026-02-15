@@ -185,6 +185,98 @@ func (s *DataPrincipalService) GetDPR(ctx context.Context, principalID, dprID ty
 	return dpr, nil
 }
 
+// AppealDPR creates an appeal for a rejected or completed DPR.
+// DPDPA S18: Right to appeal to the Board (simulated here as internal DPO review first).
+func (s *DataPrincipalService) AppealDPR(ctx context.Context, principalID, originalDPRID types.ID, reason string) (*consent.DPRRequest, error) {
+	// 1. Get original DPR
+	original, err := s.GetDPR(ctx, principalID, originalDPRID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Validate status
+	// Can only appeal if Rejected or Completed (e.g. partial fulfillment)
+	if original.Status != consent.DPRStatusRejected && original.Status != consent.DPRStatusCompleted {
+		return nil, types.NewValidationError("cannot appeal request in current status", map[string]any{"status": original.Status})
+	}
+
+	// Check if already appealed
+	existing, _ := s.GetAppeal(ctx, principalID, originalDPRID)
+	if existing != nil {
+		return nil, types.NewConflictError("DPR Appeal", originalDPRID.String(), "already exists")
+	}
+
+	// 3. Create Appeal DPR
+	appeal := &consent.DPRRequest{
+		BaseEntity: types.BaseEntity{
+			ID:        types.NewID(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+		},
+		TenantID:     original.TenantID,
+		ProfileID:    principalID,
+		Type:         original.Type, // Keep original type to preserve context
+		Status:       consent.DPRStatusAppealed,
+		SubmittedAt:  time.Now().UTC(),
+		IsEscalated:  true,
+		AppealOf:     &original.ID,
+		AppealReason: &reason,
+	}
+
+	if err := s.dprRepo.Create(ctx, appeal); err != nil {
+		return nil, fmt.Errorf("create appeal dpr: %w", err)
+	}
+
+	// 4. Create internal DSR for tracking the appeal
+	dsr := &compliance.DSR{
+		ID:          types.NewID(),
+		TenantID:    appeal.TenantID,
+		RequestType: compliance.RequestTypeAppeal,
+		Status:      compliance.DSRStatusPending, // Appeals start as Pending review
+		SubjectName: "Appeal for Request " + original.ID.String(),
+		Priority:    "HIGH",
+		Notes:       fmt.Sprintf("Appeal Reason: %s\nOriginal Request ID: %s", reason, original.ID),
+		SLADeadline: time.Now().AddDate(0, 0, 30), // Standard SLA
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
+		Metadata:    types.Metadata{"original_dpr_id": original.ID.String(), "appeal_dpr_id": appeal.ID.String()},
+	}
+
+	// We need subject details from profile
+	profile, _ := s.profileRepo.GetByID(ctx, principalID)
+	if profile != nil {
+		dsr.SubjectName = profile.Email // Profile doesn't have Name, use Email
+		dsr.SubjectEmail = profile.Email
+		// Identifiers...
+	}
+
+	if err := s.dsrRepo.Create(ctx, dsr); err != nil {
+		s.logger.Error("failed to create appeal DSR", "error", err)
+	} else {
+		// Link DPR to DSR
+		appeal.DSRID = &dsr.ID
+		s.dprRepo.Update(ctx, appeal)
+	}
+
+	return appeal, nil
+}
+
+// GetAppeal retrieves the appeal for a given original DPR, if it exists.
+func (s *DataPrincipalService) GetAppeal(ctx context.Context, principalID, originalDPRID types.ID) (*consent.DPRRequest, error) {
+	// Iterate to find appeal (naive but functional given low volume per user)
+	dprs, err := s.dprRepo.GetByProfile(ctx, principalID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range dprs {
+		if d.AppealOf != nil && *d.AppealOf == originalDPRID {
+			return &d, nil
+		}
+	}
+	return nil, nil // Not found
+}
+
 // InitiateGuardianVerification sends an OTP to the guardian contact.
 func (s *DataPrincipalService) InitiateGuardianVerification(ctx context.Context, principalID types.ID, contact string) error {
 	profile, err := s.profileRepo.GetByID(ctx, principalID)
@@ -329,4 +421,66 @@ func (s *DataPrincipalService) GetIdentityStatus(ctx context.Context, principalI
 	}
 
 	return resp, nil
+}
+
+// DPRDownloadResult is the response for downloading the result of a completed ACCESS DPR.
+type DPRDownloadResult struct {
+	DPRRequestID types.ID    `json:"dpr_request_id"`
+	RequestType  string      `json:"request_type"`
+	CompletedAt  *time.Time  `json:"completed_at"`
+	Summary      string      `json:"summary,omitempty"`
+	PersonalData interface{} `json:"personal_data"` // Aggregated task results from the DSR execution
+}
+
+// DownloadDPRData retrieves the completed result of an ACCESS-type DPR request.
+// DPDPA S11(1): Data Principal has the right to obtain a summary of personal data.
+func (s *DataPrincipalService) DownloadDPRData(ctx context.Context, principalID, dprID types.ID) (*DPRDownloadResult, error) {
+	// GetDPR already validates ownership (ProfileID == principalID) and returns 403 on mismatch
+	dpr, err := s.GetDPR(ctx, principalID, dprID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only allow download for completed requests
+	if dpr.Status != consent.DPRStatusCompleted {
+		return nil, types.NewForbiddenError("request is not yet completed — current status: " + string(dpr.Status))
+	}
+
+	result := &DPRDownloadResult{
+		DPRRequestID: dpr.ID,
+		RequestType:  dpr.Type,
+		CompletedAt:  dpr.CompletedAt,
+	}
+	if dpr.ResponseSummary != nil {
+		result.Summary = *dpr.ResponseSummary
+	}
+
+	// Compile personal data from the linked DSR's task results
+	if dpr.DSRID != nil {
+		tasks, err := s.dsrRepo.GetTasksByDSR(ctx, *dpr.DSRID)
+		if err != nil {
+			return nil, fmt.Errorf("fetch dsr tasks: %w", err)
+		}
+
+		taskResults := make([]map[string]interface{}, 0, len(tasks))
+		for _, task := range tasks {
+			if task.Result != nil {
+				taskResults = append(taskResults, map[string]interface{}{
+					"task_id":        task.ID,
+					"data_source_id": task.DataSourceID,
+					"status":         task.Status,
+					"result":         task.Result,
+					"completed_at":   task.CompletedAt,
+				})
+			}
+		}
+		result.PersonalData = taskResults
+	} else {
+		// No linked DSR — return empty data with note
+		result.PersonalData = map[string]string{
+			"note": "No linked data subject request found. The response summary contains all available information.",
+		}
+	}
+
+	return result, nil
 }

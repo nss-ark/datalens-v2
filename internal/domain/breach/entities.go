@@ -57,3 +57,21 @@ type BreachIncident struct {
 	PoCRole  string `json:"poc_role"`
 	PoCEmail string `json:"poc_email"`
 }
+
+type BreachNotification struct {
+	types.BaseEntity
+	TenantID        types.ID `json:"tenant_id"`
+	IncidentID      types.ID `json:"incident_id"`
+	DataPrincipalID types.ID `json:"data_principal_id"`
+
+	// Snapshot of incident details at time of notification
+	Title          string           `json:"title"`
+	Severity       IncidentSeverity `json:"severity"`
+	OccurredAt     time.Time        `json:"occurred_at"`
+	Description    string           `json:"description"`
+	AffectedData   []string         `json:"affected_data"`
+	WhatWeAreDoing string           `json:"what_we_are_doing"`
+	ContactEmail   string           `json:"contact_email"`
+
+	IsRead bool `json:"is_read"`
+}

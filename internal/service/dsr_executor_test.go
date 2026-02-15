@@ -502,3 +502,117 @@ func TestExecuteDSR_Erasure_Manual(t *testing.T) {
 	}
 	assert.True(t, foundManualEvent, "Expected dsr.manual_deletion_required event")
 }
+
+func TestExecuteDSR_AutoVerify_Erasure_Success(t *testing.T) {
+	// Setup
+	executor, dsrRepo, dsRepo, piiRepo, mockConn, eb := setupExecutorTest(t)
+	ctx := context.Background()
+
+	tenantID := types.NewID()
+	dsID := types.NewID() // Use same ID for both
+	dsrID := types.NewID()
+	taskID := types.NewID()
+
+	// 1. Create DSR
+	dsr := &compliance.DSR{
+		ID:                 dsrID,
+		TenantID:           tenantID,
+		RequestType:        compliance.RequestTypeErasure,
+		Status:             compliance.DSRStatusApproved,
+		SubjectIdentifiers: map[string]string{"email": "john@example.com"},
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
+	}
+	dsrRepo.Create(ctx, dsr)
+
+	// 2. Create Task
+	task := &compliance.DSRTask{
+		ID:           taskID,
+		DSRID:        dsrID,
+		DataSourceID: dsID,
+		TenantID:     tenantID,
+		TaskType:     compliance.RequestTypeErasure,
+		Status:       compliance.TaskStatusPending,
+		CreatedAt:    time.Now(),
+	}
+	dsrRepo.CreateTask(ctx, task)
+
+	// 3. Create Data Source
+	ds := &discovery.DataSource{
+		TenantEntity: types.TenantEntity{BaseEntity: types.BaseEntity{ID: dsID}, TenantID: tenantID},
+		Name:         "Postgres DB",
+		Type:         types.DataSourcePostgreSQL,
+	}
+	dsRepo.Create(ctx, ds)
+
+	// 4. Create PII
+	piiRepo.Create(ctx, &discovery.PIIClassification{
+		BaseEntity:   types.BaseEntity{ID: types.NewID()},
+		DataSourceID: dsID, // Correct ID
+		EntityName:   "users",
+		FieldName:    "email",
+	})
+
+	// 5. Mock Interactions
+	// Execution Connect/Delete/Close
+	// Note: Connect is called ONCE in execution_task and ONCE in verifyErasure
+	// Matcher strictly for context might fail if not careful with mock.Anything
+
+	// We expect 2 Connects (Execution + Verification)
+	mockConn.On("Connect", mock.Anything, mock.MatchedBy(func(d *discovery.DataSource) bool { return d.ID == dsID })).Return(nil).Times(2)
+
+	// Execution: Delete -> 1
+	mockConn.On("Delete", mock.Anything, "users", map[string]string{"email": "john@example.com"}).Return(int64(1), nil).Once()
+
+	// Verification: Export -> [] (Empty)
+	mockConn.On("Export", mock.Anything, "users", map[string]string{"email": "john@example.com"}).
+		Return([]map[string]interface{}{}, nil).Once()
+
+	// Close x2
+	mockConn.On("Close").Return(nil).Times(2)
+
+	// Execute
+	err := executor.ExecuteDSR(ctx, dsrID)
+	require.NoError(t, err)
+
+	// 6. Wait for AutoVerification (Async)
+	require.Eventually(t, func() bool {
+		d, err := dsrRepo.GetByID(ctx, dsrID)
+		if err != nil {
+			return false
+		}
+		// Also check evidence exists to be sure verify ran
+		return d.Status == compliance.DSRStatusVerified && d.Evidence != nil
+	}, 2*time.Second, 100*time.Millisecond, "DSR should transition to VERIFIED")
+
+	// Verify Evidence
+	updatedDSR, _ := dsrRepo.GetByID(ctx, dsrID)
+	require.NotNil(t, updatedDSR.Evidence)
+	results, ok := updatedDSR.Evidence["results"].(map[string]any)
+	require.True(t, ok)
+
+	// Check deep into the evidence structure (it's map[string]any so we need type assertion)
+	// The key is dsID.String()
+	dsResult, ok := results[dsID.String()].(map[string]any)
+	if !ok {
+		// Fallback: iterate if map key strictness is issue (shouldn't be strings are stable)
+		for k, v := range results {
+			if k == dsID.String() {
+				dsResult = v.(map[string]any)
+				break
+			}
+		}
+	}
+	require.NotNil(t, dsResult, "No result for datasource %s", dsID)
+	assert.True(t, dsResult["verified"].(bool))
+
+	// Verify Events
+	foundVerified := false
+	for _, e := range eb.Events {
+		if e.Type == eventbus.EventDSRVerified {
+			foundVerified = true
+			break
+		}
+	}
+	assert.True(t, foundVerified, "Expected DSRVerified event")
+}

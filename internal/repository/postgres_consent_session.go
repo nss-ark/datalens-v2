@@ -44,6 +44,31 @@ func (r *ConsentSessionRepo) Create(ctx context.Context, s *consent.ConsentSessi
 	).Scan(&s.CreatedAt)
 }
 
+// GetByID retrieves a consent session by its ID.
+func (r *ConsentSessionRepo) GetByID(ctx context.Context, id types.ID) (*consent.ConsentSession, error) {
+	query := `
+		SELECT id, tenant_id, widget_id, subject_id, decisions,
+		       ip_address, user_agent, page_url, widget_version,
+		       notice_version, signature, created_at
+		FROM consent_sessions
+		WHERE id = $1`
+
+	var s consent.ConsentSession
+	var decisionsJSON []byte
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&s.ID, &s.TenantID, &s.WidgetID, &s.SubjectID, &decisionsJSON,
+		&s.IPAddress, &s.UserAgent, &s.PageURL, &s.WidgetVersion,
+		&s.NoticeVersion, &s.Signature, &s.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get consent session by id: %w", err)
+	}
+	if err := json.Unmarshal(decisionsJSON, &s.Decisions); err != nil {
+		return nil, fmt.Errorf("unmarshal consent decisions: %w", err)
+	}
+	return &s, nil
+}
+
 // GetBySubject retrieves all consent sessions for a subject within a tenant.
 func (r *ConsentSessionRepo) GetBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]consent.ConsentSession, error) {
 	query := `

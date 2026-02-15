@@ -30,10 +30,12 @@ func (h *NoticeHandler) Routes() chi.Router {
 	r.Post("/{id}/publish", h.Publish)
 	r.Post("/{id}/archive", h.Archive)
 	r.Post("/{id}/bind", h.Bind)
+	r.Get("/{id}/compliance-check", h.CheckCompliance)
 
 	// Translation Routes
 	r.Post("/{id}/translate", h.Translate)
 	r.Get("/{id}/translations", h.GetTranslations)
+	r.Get("/{id}/translations/{lang}", h.GetTranslation)
 	r.Put("/{id}/translations/{lang}", h.OverrideTranslation)
 	return r
 }
@@ -205,4 +207,44 @@ func (h *NoticeHandler) OverrideTranslation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	httputil.JSON(w, http.StatusOK, map[string]bool{"success": true})
+}
+
+func (h *NoticeHandler) GetTranslation(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	lang := chi.URLParam(r, "lang")
+	if lang == "" {
+		httputil.ErrorFromDomain(w, types.NewValidationError("language code required", nil))
+		return
+	}
+
+	translation, err := h.translationService.GetTranslation(r.Context(), id, lang)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	if translation == nil {
+		httputil.ErrorResponse(w, http.StatusNotFound, "NOT_FOUND", "translation not found")
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, translation)
+}
+
+func (h *NoticeHandler) CheckCompliance(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	report, err := h.service.CheckCompliance(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, report)
 }

@@ -42,6 +42,8 @@ export interface DPRRequest extends TenantEntity {
     guardian_name?: string;
     guardian_email?: string;
     guardian_verified: boolean;
+    appeal_of?: ID;
+    appeal_reason?: string;
 }
 
 export interface CreateDPRInput {
@@ -68,4 +70,18 @@ export interface ConsentSummary {
     purpose_name: string;
     status: 'GRANTED' | 'DENIED' | 'WITHDRAWN';
     last_updated: string;
+}
+
+export interface BreachNotification extends TenantEntity {
+    incident_id: ID;
+    data_principal_id: ID;
+    title: string;
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    occurred_at: string;
+    description: string;
+    affected_data: string[];
+    what_we_are_doing: string;
+    contact_email: string;
+    is_read: boolean;
+    created_at: string;
 }

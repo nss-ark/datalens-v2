@@ -25,6 +25,13 @@ const STATUS_MAP: Record<string, BadgeVariant> = {
     FAILED: 'danger',
     SUSPENDED: 'danger',
     CANCELLED: 'neutral',
+    // DSR Statuses
+    SUBMITTED: 'info',
+    PENDING_VERIFICATION: 'warning',
+    IN_PROGRESS: 'info',
+    REJECTED: 'danger',
+    APPEALED: 'warning',
+    ESCALATED: 'danger',
 };
 
 const VARIANT_STYLES: Record<BadgeVariant, string> = {

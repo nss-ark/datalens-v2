@@ -38,6 +38,7 @@ func (h *DSRHandler) Routes() chi.Router {
 	r.Get("/{id}/result", h.GetResult)
 	r.Post("/{id}/execute", h.ExecuteManual)
 	r.Patch("/{id}/status", h.UpdateStatus)
+	r.Patch("/{id}/appeal/respond", h.RespondToAppeal) // Admin DPO response to appeal
 	return r
 }
 
@@ -222,4 +223,35 @@ func (h *DSRHandler) ExecuteManual(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, map[string]string{"status": "executed"})
+}
+
+// RespondToAppeal handles PATCH /api/v2/dsr/{id}/appeal/respond.
+func (h *DSRHandler) RespondToAppeal(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	var req struct {
+		Decision string `json:"decision"` // REVERSED, UPHELD
+		Notes    string `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
+		return
+	}
+
+	if req.Decision == "" {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "VALIDATION_ERROR", "decision is required")
+		return
+	}
+
+	dsr, err := h.service.RespondToAppeal(r.Context(), id, req.Decision, req.Notes)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, dsr)
 }

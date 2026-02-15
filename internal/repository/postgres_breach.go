@@ -172,3 +172,85 @@ func (r *PostgresBreachRepository) List(ctx context.Context, tenantID types.ID, 
 		TotalPages: int((total + int64(pagination.PageSize) - 1) / int64(pagination.PageSize)),
 	}, nil
 }
+
+func (r *PostgresBreachRepository) LogNotification(ctx context.Context, n *breach.BreachNotification) error {
+	query := `
+		INSERT INTO breach_notifications (
+			id, tenant_id, incident_id, data_principal_id,
+			title, severity, occurred_at, description,
+			affected_data, what_we_are_doing, contact_email,
+			is_read, created_at
+		) VALUES (
+			$1, $2, $3, $4,
+			$5, $6, $7, $8,
+			$9, $10, $11,
+			$12, $13
+		)
+	`
+	_, err := r.db.Exec(ctx, query,
+		n.ID, n.TenantID, n.IncidentID, n.DataPrincipalID,
+		n.Title, n.Severity, n.OccurredAt, n.Description,
+		n.AffectedData, n.WhatWeAreDoing, n.ContactEmail,
+		n.IsRead, n.CreatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to log breach notification: %w", err)
+	}
+	return nil
+}
+
+func (r *PostgresBreachRepository) GetNotificationsForPrincipal(ctx context.Context, tenantID types.ID, principalID types.ID, pagination types.Pagination) (*types.PaginatedResult[breach.BreachNotification], error) {
+	query := `
+		SELECT
+			id, tenant_id, incident_id, data_principal_id,
+			title, severity, occurred_at, description,
+			affected_data, what_we_are_doing, contact_email,
+			is_read, created_at
+		FROM breach_notifications
+		WHERE tenant_id = $1 AND data_principal_id = $2
+	`
+	args := []interface{}{tenantID, principalID}
+	argIdx := 3
+
+	// Count total
+	countQuery := "SELECT COUNT(*) FROM (" + query + ") AS count_q"
+	var total int64
+	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, fmt.Errorf("failed to count breach notifications: %w", err)
+	}
+
+	// Pagination
+	query += " ORDER BY created_at DESC"
+	offset := (pagination.Page - 1) * pagination.PageSize
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, pagination.PageSize, offset)
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list breach notifications: %w", err)
+	}
+	defer rows.Close()
+
+	var notifications []breach.BreachNotification
+	for rows.Next() {
+		var n breach.BreachNotification
+		err := rows.Scan(
+			&n.ID, &n.TenantID, &n.IncidentID, &n.DataPrincipalID,
+			&n.Title, &n.Severity, &n.OccurredAt, &n.Description,
+			&n.AffectedData, &n.WhatWeAreDoing, &n.ContactEmail,
+			&n.IsRead, &n.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan breach notification: %w", err)
+		}
+		notifications = append(notifications, n)
+	}
+
+	return &types.PaginatedResult[breach.BreachNotification]{
+		Items:      notifications,
+		Total:      int(total),
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
+		TotalPages: int((total + int64(pagination.PageSize) - 1) / int64(pagination.PageSize)),
+	}, nil
+}

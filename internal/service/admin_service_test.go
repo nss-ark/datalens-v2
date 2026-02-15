@@ -108,7 +108,7 @@ func newTestAdminService() (*AdminService, *mockTenantRepoExtended, *mockUserRep
 	authSvc := NewAuthService(userRepo, roleRepo, "test-secret-key-32chars!!", 15*time.Minute, 7*24*time.Hour, logger, auditSvc)
 	tenantSvc := NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, logger)
 
-	svc := NewAdminService(tenantRepo, userRepo, roleRepo, nil, tenantSvc, logger)
+	svc := NewAdminService(tenantRepo, userRepo, roleRepo, nil, nil, tenantSvc, logger)
 	return svc, tenantRepo, userRepo
 }
 

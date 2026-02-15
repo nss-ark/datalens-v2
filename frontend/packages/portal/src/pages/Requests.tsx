@@ -1,18 +1,28 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { portalService } from '@/services/portalService';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
-import { StatusBadge } from '@datalens/shared';
+import { StatusBadge, Button } from '@datalens/shared';
 import { useNavigate } from 'react-router-dom';
+import { AppealModal } from '@/components/AppealModal';
 
 const PortalRequests = () => {
     const navigate = useNavigate();
-    const { data: requests, isLoading } = useQuery({
+    const [appealId, setAppealId] = useState<string | null>(null);
+    const [isAppealOpen, setIsAppealOpen] = useState(false);
+
+    const { data: requests, isLoading, refetch } = useQuery({
         queryKey: ['portal-requests'],
         queryFn: () => portalService.listRequests(),
     });
 
     const items = requests?.items || [];
+
+    const handleOpenAppeal = (id: string) => {
+        setAppealId(id);
+        setIsAppealOpen(true);
+    };
 
     return (
         <div>
@@ -48,6 +58,7 @@ const PortalRequests = () => {
                                 <th className="px-6 py-4 font-medium text-gray-500">Description</th>
                                 <th className="px-6 py-4 font-medium text-gray-500">Date</th>
                                 <th className="px-6 py-4 font-medium text-gray-500">Status</th>
+                                <th className="px-6 py-4 font-medium text-gray-500">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -61,6 +72,25 @@ const PortalRequests = () => {
                                     <td className="px-6 py-4">
                                         <StatusBadge label={req.status} />
                                     </td>
+                                    <td className="px-6 py-4">
+                                        {req.status === 'REJECTED' && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleOpenAppeal(req.id)}
+                                                className="text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                                            >
+                                                <ShieldAlert size={14} className="mr-1" />
+                                                Appeal
+                                            </Button>
+                                        )}
+                                        {req.status === 'APPEALED' && (
+                                            <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full border border-orange-100 flex items-center w-fit gap-1">
+                                                <ShieldAlert size={12} />
+                                                Under Appeal
+                                            </span>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -68,6 +98,14 @@ const PortalRequests = () => {
                 )}
             </div>
 
+            {appealId && (
+                <AppealModal
+                    isOpen={isAppealOpen}
+                    dprId={appealId}
+                    onClose={() => setIsAppealOpen(false)}
+                    onSuccess={refetch}
+                />
+            )}
         </div>
     );
 };

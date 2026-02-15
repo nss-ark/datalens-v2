@@ -35,6 +35,12 @@ func (h *AdminHandler) Routes() chi.Router {
 	r.Get("/dsr", h.ListDSRs)
 	r.Get("/dsr/{id}", h.GetDSR)
 
+	// Retention Policies
+	r.Post("/retention-policies", h.CreateRetentionPolicy)
+	r.Get("/retention-policies", h.ListRetentionPolicies)
+	r.Get("/retention-policies/{id}", h.GetRetentionPolicy)
+	r.Put("/retention-policies/{id}", h.UpdateRetentionPolicy)
+
 	return r
 }
 
@@ -260,4 +266,92 @@ func (h *AdminHandler) GetDSR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, dsr)
+}
+
+// -------------------------------------------------------------------------
+// Retention Policies
+// -------------------------------------------------------------------------
+
+func (h *AdminHandler) CreateRetentionPolicy(w http.ResponseWriter, r *http.Request) {
+	var req compliance.RetentionPolicy
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	// Admin API: TenantID usually comes from context if tenant-scoped, but admin might explicitly set it?
+	// AdminService expects TenantID in req.
+	// If this is super-admin creating policy for a tenant, req.TenantID is needed.
+	if req.TenantID == (types.ID{}) {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "VALIDATION_ERROR", "tenant_id is required")
+		return
+	}
+
+	policy, err := h.service.CreateRetentionPolicy(r.Context(), req)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusCreated, policy)
+}
+
+func (h *AdminHandler) GetRetentionPolicy(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "Invalid policy ID")
+		return
+	}
+
+	policy, err := h.service.GetRetentionPolicy(r.Context(), id)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, policy)
+}
+
+func (h *AdminHandler) ListRetentionPolicies(w http.ResponseWriter, r *http.Request) {
+	tenantIDStr := r.URL.Query().Get("tenant_id")
+	if tenantIDStr == "" {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "VALIDATION_ERROR", "tenant_id query param is required")
+		return
+	}
+
+	tenantID, err := httputil.ParseID(tenantIDStr)
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "Invalid tenant_id")
+		return
+	}
+
+	policies, err := h.service.ListRetentionPolicies(r.Context(), tenantID)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, policies)
+}
+
+func (h *AdminHandler) UpdateRetentionPolicy(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.ParseID(chi.URLParam(r, "id"))
+	if err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "Invalid policy ID")
+		return
+	}
+
+	var req compliance.RetentionPolicy
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	policy, err := h.service.UpdateRetentionPolicy(r.Context(), id, req)
+	if err != nil {
+		httputil.ErrorFromDomain(w, err)
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, policy)
 }

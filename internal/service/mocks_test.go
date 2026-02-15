@@ -1186,6 +1186,17 @@ func (r *mockSessionRepo) Create(_ context.Context, s *consent.ConsentSession) e
 	return nil
 }
 
+func (r *mockSessionRepo) GetByID(_ context.Context, id types.ID) (*consent.ConsentSession, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	s, ok := r.sessions[id]
+	if !ok {
+		return nil, fmt.Errorf("session not found")
+	}
+	val := *s
+	return &val, nil
+}
+
 func (r *mockSessionRepo) GetBySubject(_ context.Context, tenantID, subjectID types.ID) ([]consent.ConsentSession, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -1630,4 +1641,92 @@ func (r *mockBreachRepo) List(ctx context.Context, tenantID types.ID, filter bre
 		items = append(items, *i)
 	}
 	return &types.PaginatedResult[breach.BreachIncident]{Items: items, Total: len(items)}, nil
+}
+
+// =============================================================================
+// Mock Retention Policy Repository
+// =============================================================================
+
+type mockRetentionPolicyRepo struct {
+	mu       sync.Mutex
+	policies map[types.ID]*compliance.RetentionPolicy
+	logs     []compliance.RetentionLog
+}
+
+func newMockRetentionPolicyRepo() *mockRetentionPolicyRepo {
+	return &mockRetentionPolicyRepo{
+		policies: make(map[types.ID]*compliance.RetentionPolicy),
+		logs:     []compliance.RetentionLog{},
+	}
+}
+
+func (r *mockRetentionPolicyRepo) Create(ctx context.Context, policy *compliance.RetentionPolicy) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if policy.ID == (types.ID{}) {
+		policy.ID = types.NewID()
+	}
+	r.policies[policy.ID] = policy
+	return nil
+}
+
+func (r *mockRetentionPolicyRepo) GetByID(ctx context.Context, id types.ID) (*compliance.RetentionPolicy, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	p, ok := r.policies[id]
+	if !ok {
+		return nil, fmt.Errorf("policy not found")
+	}
+	return p, nil
+}
+
+func (r *mockRetentionPolicyRepo) GetByTenant(ctx context.Context, tenantID types.ID) ([]compliance.RetentionPolicy, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []compliance.RetentionPolicy
+	for _, p := range r.policies {
+		if p.TenantID == tenantID {
+			result = append(result, *p)
+		}
+	}
+	return result, nil
+}
+
+func (r *mockRetentionPolicyRepo) Update(ctx context.Context, policy *compliance.RetentionPolicy) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.policies[policy.ID] = policy
+	return nil
+}
+
+func (r *mockRetentionPolicyRepo) Delete(ctx context.Context, id types.ID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.policies, id)
+	return nil
+}
+
+func (r *mockRetentionPolicyRepo) CreateLog(ctx context.Context, log *compliance.RetentionLog) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if log.ID == (types.ID{}) {
+		log.ID = types.NewID()
+	}
+	r.logs = append(r.logs, *log)
+	return nil
+}
+
+func (r *mockRetentionPolicyRepo) GetLogs(ctx context.Context, tenantID types.ID, policyID *types.ID, pagination types.Pagination) (*types.PaginatedResult[compliance.RetentionLog], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []compliance.RetentionLog
+	for _, l := range r.logs {
+		if l.TenantID == tenantID {
+			if policyID != nil && l.PolicyID != *policyID {
+				continue
+			}
+			items = append(items, l)
+		}
+	}
+	return &types.PaginatedResult[compliance.RetentionLog]{Items: items, Total: len(items)}, nil
 }
