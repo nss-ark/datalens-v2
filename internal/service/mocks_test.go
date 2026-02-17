@@ -875,6 +875,18 @@ func (r *mockAuditRepo) GetByTenant(_ context.Context, tenantID types.ID, limit 
 	return result, nil
 }
 
+func (r *mockAuditRepo) ListByTenant(_ context.Context, tenantID types.ID, filters audit.AuditFilters, pagination types.Pagination) (*types.PaginatedResult[audit.AuditLog], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []audit.AuditLog
+	for _, l := range r.logs {
+		if l.TenantID == tenantID {
+			result = append(result, l)
+		}
+	}
+	return &types.PaginatedResult[audit.AuditLog]{Items: result, Total: len(result), Page: 1, PageSize: 20, TotalPages: 1}, nil
+}
+
 // =============================================================================
 // Mock Connector (Testify)
 // =============================================================================

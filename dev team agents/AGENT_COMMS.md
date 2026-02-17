@@ -84,3 +84,84 @@ Phase 4 plan finalized with all user decisions incorporated. 7 batches, 30 tasks
 
 **Action Required**:
 - None. Await Phase 4 task specs.
+
+---
+
+### [2026-02-17] [FROM: Backend] → [TO: ALL]
+**Subject**: Batch 4A-1 + 4A-2 Complete — Retention Migrations + Audit Log API
+**Type**: HANDOFF
+
+**Changes**:
+- `internal/database/migrations/019_retention.sql` — retention_policies + retention_logs tables (P0 blocker for Batch 4C)
+- `internal/database/migrations/020_audit_log_columns.sql` — adds user_id, old_values, new_values, client_id columns to audit_logs with backfill
+- `internal/domain/audit/log.go` — added `AuditFilters` struct + `ListByTenant` to Repository interface
+- `internal/repository/postgres_audit.go` — `ListByTenant` with dynamic WHERE, COALESCE(user_id, actor_id), pagination
+- `internal/service/audit_service.go` — `ListByTenant` passthrough
+- `internal/handler/audit_handler.go` — **[NEW]** GET handler with query param filters
+- `cmd/api/routes.go` — mounted at `/audit-logs` in CC routes
+- `cmd/api/main.go` — wired AuditHandler
+
+**API Contract** (for Frontend agent):
+```
+GET /api/v2/audit-logs?page=1&page_size=20&entity_type=DSR&action=APPROVE&start_date=2026-01-01T00:00:00Z&end_date=2026-02-17T00:00:00Z
+```
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "tenant_id": "uuid",
+      "user_id": "uuid",
+      "action": "APPROVE",
+      "resource_type": "DSR",
+      "resource_id": "uuid",
+      "old_values": {},
+      "new_values": {},
+      "ip_address": "1.2.3.4",
+      "user_agent": "...",
+      "created_at": "2026-02-17T10:00:00Z"
+    }
+  ],
+  "meta": { "page": 1, "page_size": 20, "total": 150, "total_pages": 8 }
+}
+```
+Filters: `entity_type`, `action`, `user_id` (UUID), `start_date` (RFC3339), `end_date` (RFC3339). All optional.
+
+**Action Required**:
+- **Frontend**: Audit Logs page can now be built against this endpoint (Batch 4C)
+- **Test**: Run migrations on staging DB before testing
+
+---
+
+### [2026-02-17] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 4A-3 Complete — Route Dedup + Sidebar Nav Fix
+**Type**: HANDOFF
+
+**Changes**:
+- `frontend/packages/control-centre/src/App.tsx` — Removed duplicate `/grievances` placeholder route (real pages at `/compliance/grievances` and `/compliance/grievances/:id`)
+- `frontend/packages/control-centre/src/components/Layout/Sidebar.tsx` — Fixed Data Lineage link from `/lineage` → `/governance/lineage`; fixed Consent Analytics link from `/consent/analytics` → `/compliance/analytics`
+
+**Features Enabled**:
+- Sidebar "Data Lineage" link now correctly navigates to the DataLineage page
+- Sidebar "Consent Analytics" link now correctly navigates to the Analytics page
+- No more duplicate `/grievances` route shadowing the real Compliance grievance pages
+
+**Verification**: `npm run build -w @datalens/control-centre` ✅ (exit code 0, zero errors)
+
+**Action Required**:
+- None — self-contained fix, no backend or test changes needed
+
+---
+
+### [2026-02-17] [FROM: Test] → [TO: ALL]
+**Subject**: Batch 4A Build Verification
+**Type**: HANDOFF
+**Results**:
+- Backend: `go build` ✅ | `go vet` ✅ | `go test` ❌ (1 failing unit test in `handler`)
+- Frontend: CC ✅ | Admin ✅ | Portal ✅
+**Issues Found**:
+- `internal/handler/portal_handler_translation_test.go`: `TestPortalHandler_GetNotice_WithTranslation` fails on Title assertion.
+- `internal/service/auth_service_test.go`: Passed.
+

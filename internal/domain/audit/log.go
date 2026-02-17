@@ -22,6 +22,15 @@ type AuditLog struct {
 	CreatedAt    time.Time      `json:"created_at"`
 }
 
+// AuditFilters for querying audit logs.
+type AuditFilters struct {
+	EntityType string
+	Action     string
+	UserID     *types.ID
+	StartDate  *time.Time
+	EndDate    *time.Time
+}
+
 // Repository defines the interface for persisting audit logs.
 type Repository interface {
 	// Create persists a new audit log entry.
@@ -30,4 +39,7 @@ type Repository interface {
 	// GetByTenant retrieves audit logs for a tenant with optional filtering.
 	// For MVP, we might just list them, but filtering is good to have in interface.
 	GetByTenant(ctx context.Context, tenantID types.ID, limit int) ([]AuditLog, error)
+
+	// ListByTenant retrieves paginated, filtered audit logs for a tenant.
+	ListByTenant(ctx context.Context, tenantID types.ID, filters AuditFilters, pagination types.Pagination) (*types.PaginatedResult[AuditLog], error)
 }

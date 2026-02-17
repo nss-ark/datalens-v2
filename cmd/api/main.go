@@ -235,6 +235,7 @@ func main() {
 	var notificationHandler *handler.NotificationHandler
 	var dpoSvc *service.DPOService
 	var dpoHandler *handler.DPOHandler
+	var auditHandler *handler.AuditHandler
 	var noticeSvc *service.NoticeService
 	var translationSvc *service.TranslationService
 	var breachSvc *service.BreachService
@@ -554,6 +555,9 @@ func main() {
 		notificationHandler = handler.NewNotificationHandler(notificationSvc)
 		dpoHandler = handler.NewDPOHandler(dpoSvc)
 
+		// Audit Handler (for CC audit-logs endpoint)
+		auditHandler = handler.NewAuditHandler(auditSvc)
+
 		log.Info("CC services and handlers initialized")
 	}
 
@@ -708,6 +712,7 @@ func main() {
 				analyticsHandler, governanceHandler, breachHandler,
 				m365Handler, googleHandler, identityHandler,
 				grievanceHandler, notificationHandler, dpoHandler,
+				auditHandler,
 			)
 		}
 

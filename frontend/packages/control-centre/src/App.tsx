@@ -96,7 +96,6 @@ function App() {
                         <Route path="/governance/lineage" element={<DataLineage />} />
                         <Route path="/subjects" element={<PlaceholderPage title="Data Subjects" />} />
                         <Route path="/consent" element={<PlaceholderPage title="Consent Records" />} />
-                        <Route path="/grievances" element={<PlaceholderPage title="Grievances" />} />
                         <Route path="/nominations" element={<PlaceholderPage title="Nominations" />} />
 
                         {/* Governance Routes */}

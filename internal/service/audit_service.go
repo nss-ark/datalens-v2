@@ -78,3 +78,8 @@ func (s *AuditService) Log(
 		}
 	}()
 }
+
+// ListByTenant retrieves paginated, filtered audit logs for a tenant.
+func (s *AuditService) ListByTenant(ctx context.Context, tenantID types.ID, filters audit.AuditFilters, pagination types.Pagination) (*types.PaginatedResult[audit.AuditLog], error) {
+	return s.repo.ListByTenant(ctx, tenantID, filters, pagination)
+}

@@ -53,6 +53,7 @@ func mountCCRoutes(
 	grievanceHandler *handler.GrievanceHandler,
 	notificationHandler *handler.NotificationHandler,
 	dpoHandler *handler.DPOHandler,
+	auditHandler *handler.AuditHandler,
 ) {
 	// Protected routes (auth + tenant isolation + rate limiting)
 	r.Group(func(r chi.Router) {
@@ -96,10 +97,8 @@ func mountCCRoutes(
 			r.Mount("/notices", noticeHandler.Routes())
 		})
 
-		// Audit
-		// r.Route("/audit", func(r chi.Router) {
-		// 	// TODO: Wire audit log handlers (Sprint 2)
-		// })
+		// Audit Logs
+		r.Mount("/audit-logs", auditHandler.Routes())
 
 		// Governance
 		r.Mount("/governance", governanceHandler.Routes())

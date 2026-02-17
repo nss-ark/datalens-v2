@@ -43,7 +43,7 @@ const NAV_GROUPS = [
             { to: '/datasources', label: 'Data Sources', icon: Database },
             { to: '/pii/inventory', label: 'PII Inventory', icon: FileSearch },
             { to: '/pii/review', label: 'Review Queue', icon: CheckSquare },
-            { to: '/lineage', label: 'Data Lineage', icon: GitBranch },
+            { to: '/governance/lineage', label: 'Data Lineage', icon: GitBranch },
         ]
     },
     {
@@ -59,7 +59,7 @@ const NAV_GROUPS = [
             { to: '/consent/notices', label: 'Privacy Notices', icon: FileText },
             { to: '/consent/widgets', label: 'Consent Widgets', icon: ShieldCheck },
             { to: '/consent', label: 'Consent Records', icon: CheckSquare },
-            { to: '/consent/analytics', label: 'Consent Analytics', icon: BarChart3 },
+            { to: '/compliance/analytics', label: 'Consent Analytics', icon: BarChart3 },
             { to: '/compliance/lab', label: 'Dark Pattern Lab', icon: ShieldCheck },
             { to: '/compliance/notifications', label: 'Notification History', icon: Bell },
             { to: '/compliance/grievances', label: 'Grievances', icon: AlertTriangle },

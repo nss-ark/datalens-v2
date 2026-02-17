@@ -92,6 +92,10 @@ func (m *MockBreachAuditRepository) GetByTenant(ctx context.Context, tenantID ty
 	return nil, nil
 }
 
+func (m *MockBreachAuditRepository) ListByTenant(ctx context.Context, tenantID types.ID, filters audit.AuditFilters, pagination types.Pagination) (*types.PaginatedResult[audit.AuditLog], error) {
+	return &types.PaginatedResult[audit.AuditLog]{}, nil
+}
+
 // Tests
 
 func TestBreachService_CreateIncident(t *testing.T) {
