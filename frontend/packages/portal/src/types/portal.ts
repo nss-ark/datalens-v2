@@ -57,11 +57,15 @@ export interface CreateDPRInput {
 export interface VerifyOTPInput {
     email?: string;
     phone?: string;
-    otp: string;
+    code: string;
 }
 
 export interface AuthResponse {
-    token: string; // Session token
+    token: {
+        access_token: string;
+        expires_in: number;
+        token_type: string;
+    };
     profile: PortalProfile;
 }
 

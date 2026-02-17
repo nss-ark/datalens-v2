@@ -77,6 +77,8 @@ You receive task specifications from an Orchestrator agent and implement them pr
 **Batch 16**: `translation_service.go`, `notification_service.go`, `notification_subscriber.go`, `grievance_service.go`
 **Batch 17A/B**: `admin_service.go` (cross-tenant admin ops, `PLATFORM_ADMIN` role, user management)
 **Batch 18**: `data_principal_service.go` (guardian verification)
+**Phase 3A**: `dpo_service.go` (DPO contact CRUD), consent receipt generation, DSR auto-verification, appeal flow
+**Phase 3B**: SQL Server connector (`internal/infrastructure/connector/sqlserver.go`)
 
 ### Existing Handlers (in `internal/handler/`)
 `auth_handler.go`, `datasource_handler.go`, `discovery_handler.go`, `dsr_handler.go`, `feedback_handler.go`, `purpose_handler.go`, `dashboard_handler.go`, `consent_handler.go`, `portal_handler.go`, `governance_handler.go`, `breach_handler.go`, `m365_handler.go`, `google_handler.go`, `identity_handler.go`, `analytics_handler.go`
@@ -86,7 +88,7 @@ You receive task specifications from an Orchestrator agent and implement them pr
 **Batch 17A/B**: `admin_handler.go` (cross-tenant admin — mounted outside TenantIsolation middleware)
 
 ### Existing Connectors (in `internal/infrastructure/connector/`)
-`postgres.go`, `mysql.go`, `mongodb.go`, `s3.go`, `m365/` (OneDrive/SharePoint/Outlook), `google/` (Drive/Gmail), `shared/file_scanner.go`, `digilocker/` (Identity Provider)
+`postgres.go`, `mysql.go`, `mongodb.go`, `sqlserver.go`, `s3.go`, `m365/` (OneDrive/SharePoint/Outlook), `google/` (Drive/Gmail), `shared/file_scanner.go`, `digilocker/` (Identity Provider), `file_upload.go`
 
 ### Existing Domain Entities - Focus Areas
 `internal/domain/governance/entities.go` contains definitions for: `Policy`, `Violation`, `SectorTemplate`, `PurposeSuggestion`, `DataFlow`. **Implemented**: `DataPrincipalProfile`, `DPRRequest`, `ConsentWidget`, `Policy`, `Violation`, `AuditLog`, `BreachIncident`, `User`, `Site`, `IdentityProfile`.
@@ -404,6 +406,80 @@ r.Route("/api/public", func(r chi.Router) {
 **Action Required**:
 - **Test**: [What needs testing]
 - **Frontend**: [What endpoints are available]
+```
+
+---
+
+## Phase 4 Context — Key New Patterns
+
+### RoPA Version Control Pattern
+```go
+// RoPA documents have strict versioning:
+// - v1.0 = auto-generated
+// - v1.1, v1.2 = user edits (each save = new version)
+// - v2.0 = user-chosen major version
+// - Auto-regenerated = new version tagged as "auto-generated"
+// Every version change creates an AuditLog entry.
+type RoPAVersion struct {
+    Version     string    `json:"version"`
+    GeneratedBy string    `json:"generated_by"` // "auto" | user_id
+    CreatedAt   time.Time `json:"created_at"`
+    Content     RoPAContent `json:"content"`
+}
+```
+
+### Multi-Level Purpose Scoping Pattern
+```go
+// Purpose assignment now supports hierarchical scoping:
+type PurposeAssignment struct {
+    ScopeType string   `json:"scope_type"`  // COLUMN | TABLE | DATABASE | SERVER
+    ScopeID   types.ID `json:"scope_id"`    // ID of the column/table/database/server
+    PurposeID types.ID `json:"purpose_id"`
+    Inherited bool     `json:"inherited"`   // true if inherited from parent scope
+}
+// Server-level cascades down unless overridden at a lower level.
+```
+
+### OCR Adapter Interface
+```go
+type OCRProvider interface {
+    Name() string
+    ExtractText(ctx context.Context, image []byte) (string, error)
+}
+// Implement: TesseractProvider (local), SarvamProvider (API)
+// Config selects active provider via OCR_PROVIDER env var
+```
+
+### Department Entity (with notifications)
+```go
+type Department struct {
+    types.TenantEntity
+    Name             string    `json:"name"`
+    HeadName         string    `json:"head_name"`
+    HeadEmail        string    `json:"head_email"`
+    Responsibilities []string  `json:"responsibilities"`
+    DataSourceIDs    []types.ID `json:"data_source_ids"`
+}
+// On breach/DSR assignment/policy violation affecting dept's data sources,
+// send email notification to HeadEmail.
+```
+
+### Third-Party Dual-Mode
+```go
+// Mode A: Simple list (default)
+// Mode B: Full DPA tracking (user opts in via Settings)
+type ThirdParty struct {
+    types.TenantEntity
+    Name             string   `json:"name"`
+    Purpose          string   `json:"purpose"`
+    DataShared       []string `json:"data_shared"`
+    ContractStatus   string   `json:"contract_status"`
+    // Full DPA mode fields (nullable for simple mode):
+    DPADocumentID    *types.ID `json:"dpa_document_id,omitempty"`
+    SubProcessors    []string  `json:"sub_processors,omitempty"`
+    RetentionTerms   *string   `json:"retention_terms,omitempty"`
+    ContractExpiry   *time.Time `json:"contract_expiry,omitempty"`
+}
 ```
 
 ---

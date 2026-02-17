@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary, GlobalErrorFallback, ToastContainer } from '@datalens/shared';
 import { PortalLayout } from './components/PortalLayout';
+import { AuthLayout } from './components/AuthLayout';
 import { PortalProtectedRoute } from './components/PortalProtectedRoute';
 
 // Pages
@@ -34,9 +35,12 @@ function App() {
                     {/* Portal Login */}
                     <Route path="/login" element={
                         <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
-                            <PortalLayout>
+                            <AuthLayout
+                                title="Welcome back"
+                                subtitle="Enter your email or phone to access your privacy portal."
+                            >
                                 <PortalLogin />
-                            </PortalLayout>
+                            </AuthLayout>
                         </ErrorBoundary>
                     } />
 

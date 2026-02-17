@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, AlertTriangle } from 'lucide-react';
 import { portalService } from '@/services/portalService';
 import { Button } from '@datalens/shared';
-import { Modal } from '@datalens/shared'; // Using reusable modal
+import { Modal } from '@datalens/shared';
 import { toast } from 'react-toastify';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -26,7 +26,6 @@ export default function ConsentManage() {
         onError: () => toast.error('Failed to withdraw consent'),
     });
 
-    // We can also handle re-granting if the API supports it
     const grantMutation = useMutation({
         mutationFn: portalService.grantConsent,
         onSuccess: () => {
@@ -37,49 +36,55 @@ export default function ConsentManage() {
     });
 
     return (
-        <div className="p-6 max-w-4xl mx-auto">
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Manage Your Consent</h1>
-                <p className="text-gray-600">
-                    Review and control how your data is used. You can withdraw your consent at any time.
-                </p>
+        <div className="animate-fade-in">
+            <div className="page-header">
+                <h1>Manage Your Consent</h1>
+                <p>Review and control how your data is used. You can withdraw your consent at any time.</p>
             </div>
 
             {isLoading ? (
                 <div className="space-y-4">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-24 bg-gray-100 rounded animate-pulse" />
+                        <div key={i} className="portal-card p-6 flex justify-between items-center">
+                            <div className="space-y-2 flex-1">
+                                <div className="skeleton h-5 w-48" />
+                                <div className="skeleton h-4 w-32" />
+                            </div>
+                            <div className="skeleton h-9 w-36 rounded-lg" />
+                        </div>
                     ))}
                 </div>
             ) : consents.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                    <Shield className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No active consents</h3>
-                    <p className="mt-1 text-sm text-gray-500">You haven't granted any consents yet.</p>
+                <div className="portal-card p-12 text-center">
+                    <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                        <Shield className="w-7 h-7 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1.5">No active consents</h3>
+                    <p className="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">You haven't granted any consents yet.</p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 stagger-children">
                     {consents.map((consent) => (
                         <div
                             key={consent.purpose_id}
-                            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                            className="portal-card p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
                         >
                             <div>
-                                <div className="flex items-center space-x-2">
-                                    <h3 className="text-lg font-medium text-gray-900">
+                                <div className="flex items-center gap-2.5">
+                                    <h3 className="text-base font-semibold text-slate-900">
                                         {consent.purpose_name}
                                     </h3>
                                     {consent.status === 'GRANTED' ? (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
                                             Active
                                         </span>
                                     ) : (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 ring-1 ring-slate-200">
                                             Withdrawn
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-sm text-slate-500 mt-1.5">
                                     Last updated: {format(new Date(consent.last_updated), 'MMM d, yyyy')}
                                 </p>
                             </div>
@@ -87,7 +92,7 @@ export default function ConsentManage() {
                             <div className="flex-shrink-0">
                                 {consent.status === 'GRANTED' ? (
                                     <Button
-                                        variant="danger" // Or secondary/outline danger
+                                        variant="danger"
                                         size="sm"
                                         onClick={() => setWithdrawPurpose({ id: consent.purpose_id, name: consent.purpose_name })}
                                     >
@@ -95,7 +100,7 @@ export default function ConsentManage() {
                                     </Button>
                                 ) : (
                                     <Button
-                                        variant="primary" // Or secondary
+                                        variant="primary"
                                         size="sm"
                                         onClick={() => grantMutation.mutate(consent.purpose_id)}
                                     >
@@ -133,13 +138,13 @@ export default function ConsentManage() {
                 }
             >
                 <div className="space-y-4">
-                    <div className="flex items-start space-x-3 p-4 bg-amber-50 rounded-md">
-                        <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                        <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-amber-800">
                             Withdrawing consent for <strong>{withdrawPurpose?.name}</strong> may limit your experience.
                         </div>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-slate-600 leading-relaxed">
                         By withdrawing consent, we will stop processing your data for this purpose immediately.
                         Are you sure you want to proceed?
                     </p>

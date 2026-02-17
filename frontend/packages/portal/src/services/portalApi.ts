@@ -31,8 +31,8 @@ portalApi.interceptors.response.use(
         if (status === 401) {
             usePortalAuthStore.getState().logout();
             // Optional: Redirect to portal login if we have a way to know we are in portal context
-            if (window.location.pathname.startsWith('/portal') && !window.location.pathname.includes('/login')) {
-                window.location.href = '/portal/login';
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
             }
         }
         return Promise.reject(error);

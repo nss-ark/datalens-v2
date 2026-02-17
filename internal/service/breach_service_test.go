@@ -46,6 +46,19 @@ func (m *MockBreachRepository) List(ctx context.Context, tenantID types.ID, filt
 	return args.Get(0).(*types.PaginatedResult[breach.BreachIncident]), args.Error(1)
 }
 
+func (m *MockBreachRepository) LogNotification(ctx context.Context, notification *breach.BreachNotification) error {
+	args := m.Called(ctx, notification)
+	return args.Error(0)
+}
+
+func (m *MockBreachRepository) GetNotificationsForPrincipal(ctx context.Context, tenantID types.ID, principalID types.ID, pagination types.Pagination) (*types.PaginatedResult[breach.BreachNotification], error) {
+	args := m.Called(ctx, tenantID, principalID, pagination)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*types.PaginatedResult[breach.BreachNotification]), args.Error(1)
+}
+
 type MockBreachEventBus struct {
 	mock.Mock
 }

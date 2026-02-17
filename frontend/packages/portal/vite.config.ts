@@ -16,9 +16,11 @@ export default defineConfig({
     },
     server: {
         port: 3002,
+        strictPort: true, // Prevent port drift
+
         proxy: {
             '/api': {
-                target: 'http://localhost:8082',
+                target: 'http://localhost:8081',
                 changeOrigin: true,
             },
         },

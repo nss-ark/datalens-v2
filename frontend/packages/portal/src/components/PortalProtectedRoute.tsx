@@ -5,7 +5,7 @@ export const PortalProtectedRoute = ({ children }: { children?: React.ReactNode 
     const isAuthenticated = usePortalAuthStore((state) => state.isAuthenticated);
 
     if (!isAuthenticated) {
-        return <Navigate to="/portal/login" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     return children ? <>{children}</> : <Outlet />;

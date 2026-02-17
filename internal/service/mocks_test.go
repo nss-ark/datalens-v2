@@ -1643,6 +1643,14 @@ func (r *mockBreachRepo) List(ctx context.Context, tenantID types.ID, filter bre
 	return &types.PaginatedResult[breach.BreachIncident]{Items: items, Total: len(items)}, nil
 }
 
+func (r *mockBreachRepo) LogNotification(ctx context.Context, notification *breach.BreachNotification) error {
+	return nil // Mock
+}
+
+func (r *mockBreachRepo) GetNotificationsForPrincipal(ctx context.Context, tenantID types.ID, principalID types.ID, pagination types.Pagination) (*types.PaginatedResult[breach.BreachNotification], error) {
+	return &types.PaginatedResult[breach.BreachNotification]{Items: []breach.BreachNotification{}, Total: 0}, nil
+}
+
 // =============================================================================
 // Mock Retention Policy Repository
 // =============================================================================
@@ -1729,4 +1737,95 @@ func (r *mockRetentionPolicyRepo) GetLogs(ctx context.Context, tenantID types.ID
 		}
 	}
 	return &types.PaginatedResult[compliance.RetentionLog]{Items: items, Total: len(items)}, nil
+}
+
+// =============================================================================
+// Mock DPO Contact Repository
+// =============================================================================
+
+type mockDPOContactRepo struct {
+	mu       sync.Mutex
+	contacts map[types.ID]*compliance.DPOContact
+}
+
+func newMockDPOContactRepo() *mockDPOContactRepo {
+	return &mockDPOContactRepo{
+		contacts: make(map[types.ID]*compliance.DPOContact),
+	}
+}
+
+func (r *mockDPOContactRepo) Upsert(_ context.Context, contact *compliance.DPOContact) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.contacts[contact.TenantID] = contact
+	return nil
+}
+
+func (r *mockDPOContactRepo) Get(_ context.Context, tenantID types.ID) (*compliance.DPOContact, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	c, ok := r.contacts[tenantID]
+	if !ok {
+		return nil, fmt.Errorf("dpo contact not found")
+	}
+	return c, nil
+}
+
+// =============================================================================
+// Mock Consent Cache
+// =============================================================================
+
+type mockConsentCache struct {
+	mu    sync.Mutex
+	store map[string]bool
+}
+
+func newMockConsentCache() *mockConsentCache {
+	return &mockConsentCache{
+		store: make(map[string]bool),
+	}
+}
+
+func (c *mockConsentCache) GetConsentStatus(ctx context.Context, tenantID, subjectID, purposeID types.ID) (*bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	key := fmt.Sprintf("%s:%s:%s", tenantID, subjectID, purposeID)
+	val, ok := c.store[key]
+	if !ok {
+		return nil, nil // Cache miss
+	}
+	return &val, nil
+}
+
+func (c *mockConsentCache) SetConsentStatus(ctx context.Context, tenantID, subjectID, purposeID types.ID, granted bool, ttl time.Duration) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	key := fmt.Sprintf("%s:%s:%s", tenantID, subjectID, purposeID)
+	c.store[key] = granted
+	return nil
+}
+
+func (c *mockConsentCache) InvalidateSubject(ctx context.Context, tenantID, subjectID types.ID) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	// Naive invalidation for mock
+	prefix := fmt.Sprintf("%s:%s:", tenantID, subjectID)
+	for k := range c.store {
+		if len(k) >= len(prefix) && k[:len(prefix)] == prefix {
+			delete(c.store, k)
+		}
+	}
+	return nil
+}
+
+func (c *mockConsentCache) InvalidateAll(ctx context.Context, tenantID types.ID) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	prefix := fmt.Sprintf("%s:", tenantID)
+	for k := range c.store {
+		if len(k) >= len(prefix) && k[:len(prefix)] == prefix {
+			delete(c.store, k)
+		}
+	}
+	return nil
 }

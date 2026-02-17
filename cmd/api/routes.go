@@ -150,7 +150,7 @@ func mountPortalRoutes(
 	dpoHandler *handler.DPOHandler,
 	consentWidgetRepo consent.ConsentWidgetRepository,
 ) {
-	r.Route("/api/public", func(r chi.Router) {
+	r.Route("/api/v2/public", func(r chi.Router) {
 		// Consent Widget API (Public, Widget Key Auth)
 		r.Route("/consent", func(r chi.Router) {
 			r.Use(mw.WidgetAuthMiddleware(consentWidgetRepo))

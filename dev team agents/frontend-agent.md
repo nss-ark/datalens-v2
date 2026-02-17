@@ -227,11 +227,27 @@ To get started, ensure you have Node.js (v18+), npm, and Git installed.
 | `types/consent.ts` | `ConsentWidget`, `WidgetConfig`, `ThemeConfig`, `DataPrincipalProfile` |
 | `types/governance.ts` | `PurposeSuggestion`, `Policy`, `Violation` |
 
-### Upcoming Pages (Batch 15)
-| Page | Route | Batch | Notes |
-|------|-------|-------|-------|
-| Notice Manager | `/consent/notices` | 15 | Privacy notice CRUD, versioning, widget binding |
-| Consent Management (Portal) | `/portal/consent` | 15 | Per-purpose withdrawal with implications |
+### Phase 3A Completed Pages
+| Page | Route | Package | Notes |
+|------|-------|---------|-------|
+| Notice Manager | `/consent/notices` | control-centre | Privacy notice CRUD, versioning, widget binding |
+| Consent Management | `/consent` | portal | Per-purpose withdrawal with implications |
+| Grievance List | `/compliance/grievances` | control-centre | Grievance management |
+| Grievance Detail | `/compliance/grievances/:id` | control-centre | Grievance detail + resolution |
+| Breach Notifications | `/notifications/breach` | portal | User-facing breach inbox |
+
+### Upcoming Pages (Phase 4)
+| Page | Route | Batch | Package | Notes |
+|------|-------|-------|---------|-------|
+| Audit Logs | `/audit-logs` | 4C | control-centre | Log viewer with entity/action/date filters |
+| Consent Records | `/consent` | 4C | control-centre | Consent session list with filters |
+| Data Subjects | `/subjects` | 4C | control-centre | Subject list, link to DSRs/consent |
+| Retention Policies | `/retention` | 4C | control-centre | CRUD for retention rules |
+| RoPA | `/ropa` | 4D | control-centre | Auto-generated, version-controlled, inline edit |
+| Department | `/department` | 4E | control-centre | Dept CRUD with ownership + notifications |
+| Third Parties | `/third-parties` | 4E | control-centre | Dual-mode: simple list + full DPA |
+| Nominations | `/nominations` | 4E | control-centre | Nomination-type DPRs |
+| Reports | `/reports` | 4G | control-centre | Report generation + download |
 
 ---
 
@@ -476,6 +492,7 @@ Data Principal Portal is a **separate standalone route** (`/portal/*`) with its 
 - **Typography** — Inter or similar modern sans-serif from Google Fonts
 - **Micro-animations** — smooth transitions, hover effects, loading skeletons
 - **Dark mode support** — design with CSS variables for easy theming
+- **Phase 4 Design System Note**: Evaluate **Oat CSS** (`@knadh/oat`) as a lightweight alternative/complement to KokonutUI. Decision on unified approach happens in Batch 4B.
 
 ### 2. User-Friendly, Not Overwhelming
 - **Progressive disclosure** — show summary first, details on demand
@@ -617,4 +634,30 @@ You will receive a prioritized list of issues, each with:
 2. `npm run lint` — must pass
 3. For each fixed issue, note the file and what changed
 4. Post summary to `dev team agents/AGENT_COMMS.md` referencing which review issues were addressed
+
+---
+
+## UI Polish & Layout Fix Protocol (Visual Overhaul)
+
+When addressing "tightly bound" or "barebones" UI feedback, strictly adhere to these spacing rules:
+
+### 1. Global Container Spacing
+- **Main Wrapper**: Always use `max-w-7xl mx-auto`.
+- **Vertical Padding**: Use `py-12` (3rem) or `py-16` (4rem) for the main content area. Never use less than `py-8`.
+- **Background**: Ensure `bg-gray-50` or `bg-slate-50` is applied to the full page background to differentiate cards.
+
+### 2. Dashboard & Grid Layouts
+- **Grid Gaps**: Use `gap-8` (2rem) as the default for major section grids. `gap-4` is too tight.
+- **Section Spacing**: Use `space-y-12` between vertical sections (Hero -> Stats -> Actions).
+- **Card Padding**: Use `p-6` (1.5rem) minimum for cards. For high-importance cards (like Identity/Hero), use `p-8` or `p-10`.
+
+### 3. Navigation Bars
+- **Flex Spacing**: **NEVER** rely solely on margins (`ml-4`) for nav links. Use `gap-6`, `gap-8`, or `gap-12` on the parent flex container.
+- **Verification**: Check for "smashed" text where links touch each other. Ensure a minimum of 24px-32px visual separation between top-level nav items.
+
+### 4. Typography & Visual Hierarchy
+- **Headings**: Ensure clear separation between headings and content (`mb-4` or `mb-6`).
+- **Leading**: Use `leading-relaxed` for body text to improve readability.
+- **Whitesace**: "When in doubt, add more whitespace."
+
 

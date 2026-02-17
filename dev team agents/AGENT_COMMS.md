@@ -15,129 +15,51 @@
 | Batch | Change | Impact |
 |-------|--------|--------|
 | **R1** | Frontend monorepo split | `frontend/src/` deleted → `frontend/packages/{shared,control-centre,admin,portal}/` |
-| **R2** | Backend mode splitting | `cmd/api/main.go` → `--mode=all\|cc\|admin\|portal`, routes in `routes.go` |
+| **R2** | Backend mode splitting | `cmd/api/main.go` → `--mode=all|cc|admin|portal`, routes in `routes.go` |
 | **R3** | Nginx reverse proxy | `*.localhost:8000` sub-domains, env-driven CORS, 3 prod API instances |
 
 **Rules**: Frontend → work in `packages/<app>/`, import from `@datalens/shared`. Backend → new routes in `routes.go`, new services wrapped in `shouldInit()`. DevOps → ONE binary, mode via Docker `command:`.
 
 ---
 
-## ✅ Completed: Batch 20B + Batch 2 (Architecture Stabilization)
+## ✅ Completed: Phase 3A + 3B + 3C (Feb 14-17, 2026)
 
-| Goal | Owner | Status | Details |
-|------|-------|--------|---------|
-| Logout API + UI | Backend/Frontend | ✅ | `POST /api/v2/auth/logout`, sidebar button |
-| File Upload API + UI | Backend/Frontend | ✅ | Upload, cleanup on delete, drag & drop UI |
-| Document Parsing | AI/ML | ✅ | PDF/DOCX/XLSX extraction done |
-| ScanService Wiring | Backend | ✅ | `ParsingService` → `ScanService` for `FILE_UPLOAD` data sources |
-| Stale Test Signatures | Backend | ✅ | `NewConnectorRegistry` calls fixed in all test files |
-| UX Re-Review (20A) | UX/Frontend | ✅ | PII Inventory + Settings implemented, Dashboard polish done |
-| OCR (Tesseract) | AI/ML | ⏸️ Deferred | Missing C libs. Decision pending: Tesseract vs Cloud Vision API |
+| Task | Agent | Status | Key Files |
+|------|-------|--------|-----------|
+| 3A-1: Portal Backend API Wiring | Backend | ✅ | `portal_handler.go` (9 routes + 3 aliases) |
+| 3A-2: DPR Download Endpoint | Backend | ✅ | `portal_handler.go`, `dsr_service.go` (72h SLA) |
+| 3A-3: DPR Appeal Flow | Backend + Frontend | ✅ | `AppealModal.tsx`, `Requests.tsx`, `portal_handler.go` |
+| 3A-4: DSR Auto-Verification | Backend | ✅ | `dsr_executor.go` (AutoVerify), `dsr.go` (VERIFIED status) |
+| 3A-5: Consent Receipt | Backend | ✅ | `consent_service.go` (GenerateReceipt), HMAC-SHA256 |
+| 3A-6: DPO Contact Entity | Backend | ✅ | `dpo_service.go`, `dpo_handler.go`, migration |
+| 3A-7: Notice Schema Validation | Backend | ✅ | `notice_service.go` (ValidateSchema, compliance-check endpoint) |
+| 3A-8: Guardian Frontend Polish | Frontend | ✅ | `Profile.tsx`, `StatusBadge.tsx` |
+| 3A-9: Notice Translation API | Backend | ✅ | `notice_handler.go`, `portal_handler.go` |
+| 3A-10: Breach Portal Inbox | Backend + Frontend | ✅ | `BreachNotifications.tsx`, `breach_service.go` |
+| 3A-11: Data Retention Model | Backend | ✅ | `retention.go` (design only, scheduler deferred) |
+| 3A-E2E: Verification | QA | ✅ | `e2e_phase3a_test.go` — 6/6 tests passing |
+| 3B: SQL Server Connector | Backend | ✅ | `sqlserver.go`, `registry.go` |
+| 3C: Observability Stack | DevOps | ✅ | `pkg/telemetry`, `docker-compose.dev.yml` |
 
 ---
 
-## Active Sprint: Phase 3A — DPDPA Compliance Gaps
+## Active Sprint: Phase 4 — Comprehensive Build Sprint (PLANNING)
 
-**Next Tasks** (see `batch_3_task_specs.md` in orchestrator brain):
-
-| Task | Agent | Priority | Effort |
-|------|-------|----------|--------|
-| 3A-1: DPR Download endpoint | Backend | P1 | 2h |
-| 3A-2: DPR Appeal flow | Backend + Frontend | P1 | 5h |
-| 3A-3: Guardian consent (frontend) | Frontend | P1 | 2h |
-| 3A-4: DSR Auto-Verification | Backend | P2 | 4h |
-| 3A-5: Consent Receipt Generation | Backend | P2 | 3h |
-| 3B: Missing Connectors (SQL Server) | Backend | P3 | Sprint |
-| 3C: Observability Stack | DevOps | P3 | Sprint |
+**Status**: Orchestrator is performing a comprehensive gap analysis to plan Phase 4.
 
 ---
 
 ## Active Messages
 
-### [2026-02-15] [FROM: Frontend] → [TO: ALL]
-**Subject**: Guardian Verification Polish Complete (DPDPA §9)
+### [2026-02-17] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Phase 3A/3B/3C Complete — Entering Phase 4 Planning
 **Type**: STATUS
 
-**Changes**:
-- Updated `@datalens/shared/StatusBadge.tsx`: Added support for DSR statuses (`SUBMITTED`, `PENDING_VERIFICATION`, `REJECTED`, etc.)
-- Updated `@datalens/portal/Profile.tsx`: Now passes `guardian_email` to verification modal for better UX.
+All Phase 3 tasks complete. E2E verification passed (6/6 sub-tests). Comprehensive gap analysis underway to determine final build plan for a complete, working application.
 
-**Verification**:
-- `@datalens/portal`: Build passed ✅
+**Key Decisions Pending**:
+- Phase 4 sprint structure and task decomposition
+- Priority ordering for remaining placeholder pages vs backend gaps
 
 **Action Required**:
-- None. Ready for QA.
-
-### [2026-02-15] [FROM: Backend] → [TO: ALL]
-**Subject**: Data Retention Model Created
-**Type**: HANDOFF
-
-**Changes**:
-- `internal/domain/compliance/retention.go`: Added `RetentionPolicy` and `RetentionLog` entities.
-- `internal/service/admin_service.go`: Added CRUD methods for retention policies.
-- `internal/handler/admin_handler.go`: Added endpoints `/api/v2/admin/retention-policies`.
-
-**API Contracts**:
-- `POST /api/v2/admin/retention-policies` — Create policy
-- `GET /api/v2/admin/retention-policies?tenant_id={id}` — List policies
-- `GET /api/v2/admin/retention-policies/{id}` — Get details
-- `PUT /api/v2/admin/retention-policies/{id}` — Update policy
-
-**Action Required**:
-- **Backend/Scheduler Agent**: Implement the cron job to execute these policies (Deferred).
-
-### [2026-02-15] [FROM: Orchestrator] → [TO: ALL]
-**Subject**: Batch 2 Complete — Moving to Phase 3
-**Type**: STATUS
-
-All stabilization work is done:
-- ✅ E2E smoke test passed (login, proxy routing, CORS)
-- ✅ Admin seeder fixed (port 5433)
-- ✅ Test signatures fixed (`NewConnectorRegistry` + `parsingSvc`)
-- ✅ ScanService wired for file uploads
-- ✅ UX re-review complete (PII Inventory, Settings, Dashboard polish)
-- **Next**: Phase 3A DPDPA compliance gaps
-
-### [2026-02-14] [FROM: Frontend] → [TO: ALL]
-**Subject**: Batch 20A Fixes Complete
-**Type**: STATUS
-
-- PII Inventory page: DataTable with confidence badges, sensitivity indicators
-- Settings page: Profile display with role badges
-- Sidebar: Truncation for long names/emails
-- Dashboard: Polished empty states
-- TypeScript build passing ✅
-
-### [2026-02-15] [FROM: Backend] → [TO: ALL]
-**Subject**: Notice Schema Validation Implemented
-**Type**: STATUS
-
-**Changes**:
-- `internal/domain/consent/entities.go`: Added `NoticeSchemaFields` struct.
-- `internal/service/notice_service.go`: Implemented `ValidateSchema` and `CheckCompliance`.
-- `internal/handler/notice_handler.go`: Added `GET /api/v2/notices/{id}/compliance-check`.
-
-**Impact**:
-- `Publish` operation now enforces DPDP Rule 3(1) Schedule I schema.
-- Existing drafts must be updated with required fields before publishing.
-
-**Verification**:
-- Unit tests added for schema validation logic.
-
-### [2026-02-15] [FROM: DevOps] → [TO: ALL]
-**Subject**: Observability Stack Deployed (Prometheus/Grafana/Jaeger)
-**Type**: HANDOFF
-
-**Changes**:
-- **Backend**: Instrumented with OpenTelemetry and Prometheus metrics (`/metrics`).
-- **Infrastructure**: Added Prometheus (9090), Grafana (4000), Jaeger (16686).
-- **Backend Port**: Backend metrics verified on port 8089. Default `docker-compose.dev.yml` now runs Grafana on 4000.
-
-**New Services**:
-- **Grafana**: `http://localhost:4000`
-- **Jaeger**: `http://localhost:16686`
-- **Prometheus**: `http://localhost:9090`
-
-**Action Required**:
-- **Backend Devs**: Use `pkg/telemetry` for new tracing spans.
-- **Frontend Devs**: Note Grafana uses port 4000.
+- None. Await Phase 4 task specs.

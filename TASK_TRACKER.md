@@ -33,10 +33,10 @@
 - [ ] Create staging deployment workflow
 
 ### 0.4 Observability
-- [ ] Set up Prometheus metrics collection
-- [ ] Create Grafana dashboards (basic)
+- [x] Set up Prometheus metrics collection — `pkg/telemetry`, `/metrics` endpoint (Phase 3C)
+- [x] Create Grafana dashboards (basic) — Provisioned via `docker-compose.dev.yml` (Phase 3C)
 - [x] Configure structured logging (slog)
-- [ ] Set up Jaeger for distributed tracing
+- [x] Set up Jaeger for distributed tracing — OpenTelemetry middleware (Phase 3C)
 
 ### 0.5 Developer Experience
 - [ ] Write `CONTRIBUTING.md` with coding standards
@@ -140,7 +140,7 @@
 - [x] Implement PostgreSQL connector (parallel column scanning) — `internal/infrastructure/connector/postgres.go`
 - [x] Implement MySQL connector (parallel column scanning) — `internal/infrastructure/connector/mysql.go`
 - [x] Implement MongoDB connector — `internal/infrastructure/connector/mongodb.go`
-- [ ] Implement SQL Server connector (port from v1)
+- [x] Implement SQL Server connector — `internal/infrastructure/connector/sqlserver.go` (Phase 3B)
 - [x] Write integration tests per connector (testcontainers) — registry + MySQL tests
 
 #### 1.10 File & Cloud Connectors
@@ -191,10 +191,10 @@
 - [x] Execute across multiple data sources in parallel — semaphore-bounded (default 5), NATS queue (Batch 4)
 
 #### 2.3 DSR Auto-Verification (User Feedback P0)
-- [ ] Implement post-execution re-query verification
-- [ ] Auto-close on verification success
-- [ ] Alert + retry on verification failure
-- [ ] Generate evidence package on completion
+- [x] Implement post-execution re-query verification — `DSRExecutor.AutoVerify()` (Phase 3A-4)
+- [x] Auto-close on verification success — status → VERIFIED (Phase 3A-4)
+- [x] Alert + retry on verification failure — status → VERIFICATION_FAILED + event (Phase 3A-4)
+- [x] Generate evidence package on completion — `Evidence` field on DSR (Phase 3A-4)
 
 #### 2.4 DSR Identity Verification
 - [ ] Create identity matching service
@@ -209,7 +209,7 @@
 - [x] Create consent capture API (with proof recording) (Batch 5 - partial)
 - [x] Implement consent withdrawal flow — Public API + Widget Auth + CORS (Batch 15)
 - [x] Implement consent expiry management with notifications — Daily scheduler + renewal API (Batch 15)
-- [ ] Create consent receipt generation
+- [x] Create consent receipt generation — HMAC-SHA256 signed receipts, portal endpoint (Phase 3A-5)
 - [x] Implement consent enforcement (check before data processing) (Batch 5)
 
 #### 2.6 Embeddable Consent Widget (CMS)
@@ -250,17 +250,17 @@
 #### 2.8 DPR (Data Principal Rights) Flows
 - [x] Build DPR submission: `POST /api/public/portal/dpr` (Batch 6)
 - [x] Build DPR tracking: `GET /api/public/portal/dpr/{id}` (Batch 6)
-- [ ] Build DPR download: `GET /api/public/portal/dpr/{id}/download` (ACCESS)
+- [x] Build DPR download: `GET /api/public/portal/dpr/{id}/download` (ACCESS) — 72h SLA (Phase 3A-2)
 - [x] Link DPR request to internal `compliance.DSR` on creation (Batch 6)
-- [ ] Implement DPR status flow: SUBMITTED → PENDING_VERIFY → VERIFIED → IN_PROGRESS → COMPLETED
-- [ ] Implement guardian consent for minors (DPDPA Section 9)
-  - [ ] Guardian name, email, relation fields
-  - [ ] Guardian OTP verification flow
-  - [ ] Block request until guardian verifies
-- [ ] Implement appeal flow (DPDPA Section 18)
-  - [ ] `POST /api/public/portal/dpr/{id}/appeal`
-  - [ ] Appeal links to original DPR
-  - [ ] Escalation to DPA authority flag
+- [x] Implement DPR status flow: SUBMITTED → PENDING_VERIFY → VERIFIED → IN_PROGRESS → COMPLETED (Phase 3A-1)
+- [x] Implement guardian consent for minors (DPDPA Section 9) (Batch 18 + Phase 3A-8)
+  - [x] Guardian name, email, relation fields
+  - [x] Guardian OTP verification flow
+  - [x] Block request until guardian verifies
+- [x] Implement appeal flow (DPDPA Section 18) (Phase 3A-3)
+  - [x] `POST /api/public/portal/dpr/{id}/appeal`
+  - [x] Appeal links to original DPR
+  - [x] Escalation to DPA authority flag
 - [x] Implement SLA deadline tracking for DPR requests (Mocked in E2E)
 - [x] Write E2E tests for consent + DPR flows (Batch 7A - Portal E2E)
 
@@ -305,6 +305,26 @@
 ---
 
 ## Phase 3: Enterprise Features (Q3 2026 — Sprints 13-18)
+
+### Phase 3A: DPDPA Compliance Gaps (Feb 14-17, 2026)
+- [x] 3A-1: Portal Backend API Wiring — 9 missing routes + 3 aliases (consent, grievance, identity)
+- [x] 3A-2: DPR Download Endpoint — portal download + 72h ACCESS SLA
+- [x] 3A-3: DPR Appeal Flow — Backend + Frontend (DPDPA §18)
+- [x] 3A-4: DSR Auto-Verification — VERIFIED/VERIFICATION_FAILED statuses + Evidence
+- [x] 3A-5: Consent Receipt Generation — HMAC-SHA256 signed, verifiable
+- [x] 3A-6: DPO Contact Entity — tenant-level DPOContact CRUD + portal display
+- [x] 3A-7: Notice Schema Validation — DPDP R3(1) Schedule I compliance check
+- [x] 3A-8: Guardian Frontend Polish — StatusBadge DSR statuses, Profile UX
+- [x] 3A-9: Notice Translation API — translation endpoint wiring
+- [x] 3A-10: Breach Portal Inbox — user-facing breach notifications page
+- [x] 3A-11: Data Retention Model — RetentionPolicy + RetentionLog entities (scheduler deferred)
+- [x] 3A-E2E: Phase 3A E2E Verification — 6/6 sub-tests passing
+
+### Phase 3B: SQL Server Connector (Feb 17, 2026)
+- [x] 3B: SQL Server Connector — `sqlserver.go`, registered in ConnectorRegistry
+
+### Phase 3C: Observability Stack (Feb 15, 2026)
+- [x] 3C: Prometheus + Grafana + Jaeger — `pkg/telemetry`, `docker-compose.dev.yml`
 
 ### Sprint 13-14: Cloud Integrations (Weeks 27-30)
 
@@ -611,4 +631,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 15, 2026 — Batch 2 (Stabilization) complete. ScanService wired for file uploads, UX fixes applied (PII Inventory, Settings). Next: Phase 3A DPDPA Compliance Gaps
+> **Last Updated**: February 17, 2026 — Phase 3A (DPDPA Compliance Gaps, 11 tasks), 3B (SQL Server Connector), 3C (Observability) all COMPLETE. E2E verification passed. Next: Phase 4 — Comprehensive Build Sprint

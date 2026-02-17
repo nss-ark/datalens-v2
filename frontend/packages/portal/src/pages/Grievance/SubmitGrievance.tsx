@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { portalService } from '@/services/portalService';
-import { Button } from '@datalens/shared';
 import { toast } from 'react-toastify';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Send } from 'lucide-react';
 
 export default function SubmitGrievance() {
     const navigate = useNavigate();
@@ -16,7 +15,7 @@ export default function SubmitGrievance() {
         mutationFn: portalService.submitGrievance,
         onSuccess: () => {
             toast.success('Grievance submitted successfully');
-            navigate('/portal/history'); // Redirect to history/my-grievances
+            navigate('/history');
         },
         onError: () => toast.error('Failed to submit grievance')
     });
@@ -27,21 +26,25 @@ export default function SubmitGrievance() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-6">
-            <Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => navigate(-1)} className="mb-6">
+        <div className="max-w-2xl mx-auto animate-fade-in">
+            <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors mb-6"
+            >
+                <ArrowLeft size={16} />
                 Back
-            </Button>
+            </button>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Submit a Grievance</h1>
-            <p className="text-gray-600 mb-8">
-                If you have concerns about how your data is being processed, please submit a formal grievance below.
-            </p>
+            <div className="page-header">
+                <h1>Submit a Grievance</h1>
+                <p>If you have concerns about how your data is being processed, please submit a formal grievance below.</p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+            <form onSubmit={handleSubmit} className="portal-card p-8 space-y-6">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="form-label">Category</label>
                     <select
-                        className="w-full border rounded-md p-2"
+                        className="form-select"
                         value={category}
                         onChange={e => setCategory(e.target.value)}
                     >
@@ -54,11 +57,11 @@ export default function SubmitGrievance() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                    <label className="form-label">Subject</label>
                     <input
                         type="text"
                         required
-                        className="w-full border rounded-md p-2"
+                        className="form-input"
                         placeholder="Brief summary of your issue"
                         value={subject}
                         onChange={e => setSubject(e.target.value)}
@@ -66,21 +69,30 @@ export default function SubmitGrievance() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="form-label">Description</label>
                     <textarea
                         required
                         rows={6}
-                        className="w-full border rounded-md p-2"
+                        className="form-textarea"
                         placeholder="Please provide detailed information about your grievance..."
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                     />
                 </div>
 
-                <div className="flex justify-end">
-                    <Button type="submit" isLoading={mutation.isPending}>
+                <div className="flex justify-end pt-2">
+                    <button
+                        type="submit"
+                        disabled={mutation.isPending || !subject.trim() || !description.trim()}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {mutation.isPending ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <Send size={15} />
+                        )}
                         Submit Grievance
-                    </Button>
+                    </button>
                 </div>
             </form>
         </div>

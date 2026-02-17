@@ -16,11 +16,12 @@ import type { CreateGrievanceRequest, Grievance } from '@/types/grievance';
 export const portalService = {
     // --- Auth ---
     async requestOTP(identifier: { email?: string; phone?: string }): Promise<void> {
-        await portalApi.post('/public/portal/auth/otp', { ...identifier, tenant_id: '05b8b3bd-a7ac-4802-847b-535e122097a0' });
+        console.log('Requesting OTP with payload:', identifier);
+        await portalApi.post('/public/portal/auth/otp', { ...identifier, tenant_id: '32386341-3b74-42b7-8461-12c82362391c' });
     },
 
     async verifyOTP(data: VerifyOTPInput): Promise<AuthResponse> {
-        const payload = { ...data, tenant_id: '05b8b3bd-a7ac-4802-847b-535e122097a0' };
+        const payload = { ...data, tenant_id: '32386341-3b74-42b7-8461-12c82362391c' };
         const res = await portalApi.post<ApiResponse<AuthResponse>>('/public/portal/auth/verify', payload);
         return res.data.data;
     },

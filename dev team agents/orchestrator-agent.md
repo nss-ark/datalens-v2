@@ -172,6 +172,38 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 - **Vanilla JS Consent Widget**: Standalone ~11.5KB IIFE bundle (`frontend/widget/dist/consent.min.js`) — pure DOM, 5 layouts, cookie persistence, theming, multi-language
 - **Event Mesh Refactoring**: 15 new constants in `pkg/eventbus/eventbus.go`, 9 services + 2 subscribers refactored, zero inline string events remaining
 
+#### Architecture Refactoring (R1–R3)
+- **R1**: Frontend monorepo split → `frontend/packages/{shared,control-centre,admin,portal}/`
+- **R2**: Backend mode splitting → `cmd/api/main.go --mode=all|cc|admin|portal`, routes in `routes.go`
+- **R3**: Nginx reverse proxy → `*.localhost:8000` sub-domains, env-driven CORS
+
+#### Batch 20A/20B: UX Review + Core Fixes
+- **UX Review**: 5-session review of 36+ screens, fix sprint, re-review
+- **Logout**: API + UI button
+- **File Upload**: Upload API + Drag‑and‑Drop UI + Document Parsing (PDF/DOCX/XLSX)
+- **Delete Data Source**: Confirmation modal + API
+
+#### Phase 3A: DPDPA Compliance Gaps (11 tasks)
+- **Portal Backend API Wiring**: 9 missing routes + 3 aliases
+- **DPR Download + 72h SLA**: ACCESS-type download endpoint
+- **DPR Appeal Flow**: Backend + Frontend (DPDPA §18)
+- **DSR Auto-Verification**: VERIFIED/VERIFICATION_FAILED statuses + Evidence
+- **Consent Receipt**: HMAC-SHA256 signed, verifiable
+- **DPO Contact Entity**: Tenant-level contact, public portal display
+- **Notice Schema Validation**: DPDP R3(1) Schedule I
+- **Guardian Frontend Polish**: StatusBadge, Profile UX
+- **Notice Translation API**: Endpoint wiring
+- **Breach Portal Inbox**: User-facing breach notifications
+- **Data Retention Model**: RetentionPolicy + RetentionLog entities (scheduler deferred)
+
+#### Phase 3B: SQL Server Connector
+- **SQL Server**: `sqlserver.go`, registered in ConnectorRegistry
+
+#### Phase 3C: Observability Stack
+- **Prometheus**: `/metrics` endpoint + `promhttp`
+- **Grafana**: Dashboards provisioned via `docker-compose.dev.yml`
+- **Jaeger**: OpenTelemetry tracing middleware
+
 
 ### Known Technical Debt ⚠️
 1.  **Integration Tests**: CI pipeline integration needs final polish for Docker-in-Docker.
@@ -180,11 +212,15 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 4.  ~~**Consent Notifications**~~: ✅ Resolved in Batch 16
 5.  ~~**Translation Pipeline**~~: ✅ Resolved in Batch 16
 6.  ~~**Breach UI Not Integrated**~~: ✅ Resolved in Batch 19
+7.  **Retention Scheduler**: Model exists, cron job implementation → **Batch 4C**
+8.  **OCR**: Decision made → **Sarvam API + Tesseract**, extensible adapter pattern → **Batch 4F**
+9.  **Identity Link (stub)**: `POST /identity/link` → real implementation in **Batch 4F**
+10. **Placeholder Pages**: ~10 CC routes → implementations across **Batches 4C-4G**
 
 ### Deferred Items (Not Planned Yet) 📋
 - ~~**RBAC / User Role Management**~~ → ✅ Phase 1 done (Batch 17A); Phase 2 user management in Batch 17B
-- **Data Retention Policy Config** → System admin feature (Batch 18+)
-- **Vanilla JS Widget Bundle** → Separate build toolchain (Batch 18+)
+- ~~**Data Retention Policy Config**~~ → ✅ Model done (Phase 3A-11); Scheduler deferred
+- ~~**Vanilla JS Widget Bundle**~~ → ✅ Done (Batch 20)
 
 ### Domain Entities Fully Implemented ✅
 All consent domain entities from `internal/domain/consent/entities.go` are now implemented:

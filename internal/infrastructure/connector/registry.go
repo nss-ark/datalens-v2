@@ -41,6 +41,9 @@ func NewConnectorRegistry(cfg *config.Config, detector *detection.ComposableDete
 	r.Register(types.DataSourceMongoDB, func() discovery.Connector {
 		return NewMongoDBConnector()
 	})
+	r.Register(types.DataSourceSQLServer, func() discovery.Connector {
+		return NewSQLServerConnector()
+	})
 
 	// AWS Connectors
 	r.Register(types.DataSourceS3, func() discovery.Connector {

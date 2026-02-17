@@ -440,6 +440,12 @@ func (s *ConsentService) RecordConsent(ctx context.Context, req RecordConsentReq
 				"purpose_id": decision.PurposeID.String(),
 				"subject_id": s.resolveSubjectID(session.SubjectID).String(),
 			})
+		} else {
+			s.publishEvent(ctx, eventbus.EventConsentWithdrawn, tenantID, map[string]any{
+				"session_id": session.ID.String(),
+				"purpose_id": decision.PurposeID.String(),
+				"subject_id": s.resolveSubjectID(session.SubjectID).String(),
+			})
 		}
 	}
 

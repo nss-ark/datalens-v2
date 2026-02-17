@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { portalService } from '@/services/portalService';
 import { IdentityCard } from '@/components/IdentityCard';
 import { GuardianVerifyModal } from '@/components/GuardianVerifyModal';
-import { User, Mail, Phone, Calendar, ShieldAlert } from 'lucide-react';
+import { Mail, Phone, Calendar, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import { StatusBadge } from '@datalens/shared';
 
@@ -16,87 +16,136 @@ const PortalProfile = () => {
     const [isGuardianModalOpen, setGuardianModalOpen] = useState(false);
 
     if (isLoading) {
-        return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+        return (
+            <div className="space-y-8">
+                <div className="page-header">
+                    <div className="skeleton h-8 w-40 mb-2" />
+                    <div className="skeleton h-4 w-72" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div className="lg:col-span-4">
+                        <div className="portal-card p-8 space-y-6">
+                            <div className="flex flex-col items-center">
+                                <div className="skeleton h-24 w-24 rounded-full mb-4" />
+                                <div className="skeleton h-5 w-40 mb-2" />
+                                <div className="skeleton h-4 w-24" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="lg:col-span-8">
+                        <div className="portal-card p-8">
+                            <div className="skeleton h-48 w-full rounded-xl" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (!profile) return null;
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+        <div className="space-y-8 animate-fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="page-header !mb-0">
+                    <h1>My Profile</h1>
+                    <p>Manage your personal information and verification status.</p>
+                </div>
                 <StatusBadge label={profile.verification_status} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Personal Info */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <User className="w-5 h-5 text-gray-500" />
-                        Personal Information
-                    </h2>
-
-                    <div className="space-y-4">
-                        <div className="flex items-start gap-3">
-                            <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
-                            <div>
-                                <div className="text-sm text-gray-500">Email Address</div>
-                                <div className="font-medium text-gray-900">{profile.email}</div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left — Personal Info */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="portal-card p-8">
+                        <div className="flex flex-col items-center text-center mb-8">
+                            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-3xl mb-4 shadow-md">
+                                {profile.email?.[0].toUpperCase()}
                             </div>
+                            <h2 className="text-lg font-bold text-slate-900 truncate max-w-full">{profile.email}</h2>
+                            <p className="text-sm text-slate-400 mt-1">Data Principal</p>
                         </div>
 
-                        {profile.phone && (
-                            <div className="flex items-start gap-3">
-                                <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <div className="text-sm text-gray-500">Phone Number</div>
-                                    <div className="font-medium text-gray-900">{profile.phone}</div>
+                        <div className="space-y-5 pt-6 border-t border-slate-100">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                    <Mail className="w-4 h-4 text-slate-500" />
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Email</div>
+                                    <div className="text-sm font-medium text-slate-900 truncate" title={profile.email}>{profile.email}</div>
                                 </div>
                             </div>
-                        )}
 
-                        <div className="flex items-start gap-3">
-                            <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
-                            <div>
-                                <div className="text-sm text-gray-500">Member Since</div>
-                                <div className="font-medium text-gray-900">
-                                    {profile.created_at ? format(new Date(profile.created_at), 'MMMM d, yyyy') : '-'}
+                            {profile.phone && (
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                        <Phone className="w-4 h-4 text-slate-500" />
+                                    </div>
+                                    <div>
+                                        <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Phone</div>
+                                        <div className="text-sm font-medium text-slate-900">{profile.phone}</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-4">
+                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                    <Calendar className="w-4 h-4 text-slate-500" />
+                                </div>
+                                <div>
+                                    <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Joined</div>
+                                    <div className="text-sm font-medium text-slate-900">
+                                        {profile.created_at ? format(new Date(profile.created_at), 'MMM d, yyyy') : '-'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Identity Verification */}
-                <div className="space-y-6">
+                {/* Right — Identity & Verification */}
+                <div className="lg:col-span-8 space-y-6">
                     <IdentityCard />
 
-                    {/* Guardian Verification Status (Only for Minors) */}
+                    {/* Guardian Verification (Minors only) */}
                     {profile.is_minor && (
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <div className="portal-card p-8">
+                            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2.5">
                                 <ShieldAlert className="w-5 h-5 text-orange-500" />
                                 Guardian Verification
                             </h2>
 
                             {profile.guardian_verified ? (
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <p className="text-green-800 font-medium">Guardian Verified</p>
-                                    <p className="text-sm text-green-600 mt-1">
-                                        Your guardian ({profile.guardian_email}) has verified their identity.
-                                    </p>
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 flex gap-3">
+                                    <div className="bg-emerald-100 p-2 rounded-lg h-fit">
+                                        <ShieldAlert className="w-5 h-5 text-emerald-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-emerald-800 font-medium">Guardian Verified</p>
+                                        <p className="text-sm text-emerald-700 mt-1 leading-relaxed">
+                                            Your guardian <strong>{profile.guardian_email}</strong> has verified their identity. You can now access all features.
+                                        </p>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                                    <p className="text-orange-800 font-medium">Verification Required</p>
-                                    <p className="text-sm text-orange-600 mt-1 mb-3">
-                                        As a minor, you need guardian approval for certain actions.
-                                    </p>
+                                <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+                                    <div className="flex gap-3 mb-4">
+                                        <div className="bg-orange-100 p-2 rounded-lg h-fit">
+                                            <ShieldAlert className="w-5 h-5 text-orange-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-orange-900 font-medium">Verification Required</p>
+                                            <p className="text-sm text-orange-700 mt-1 leading-relaxed">
+                                                As a minor, you need guardian approval to submit sensitive requests.
+                                            </p>
+                                        </div>
+                                    </div>
                                     <button
                                         onClick={() => setGuardianModalOpen(true)}
-                                        className="text-sm bg-white border border-orange-200 text-orange-700 px-3 py-1.5 rounded-md hover:bg-orange-100 font-medium transition-colors"
+                                        className="text-sm bg-white border border-orange-200 text-orange-700 px-5 py-2.5 rounded-xl hover:bg-orange-50 font-medium transition-all duration-200 shadow-sm"
                                     >
-                                        Verify Guardian Now
+                                        Verify Guardian Details
                                     </button>
                                 </div>
                             )}
