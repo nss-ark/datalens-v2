@@ -43,21 +43,42 @@
 
 ---
 
-## Active Sprint: Phase 4 — Comprehensive Build Sprint (PLANNING)
+## Active Sprint: Phase 4 — Comprehensive Build Sprint (APPROVED ✅)
 
-**Status**: Orchestrator is performing a comprehensive gap analysis to plan Phase 4.
+**Status**: Plan approved. 7 batches, 30 tasks, ~12 working days. **Start with Batch 4A.**
+
+### Phase 4 Batch Order
+| Batch | Focus | Days |
+|-------|-------|------|
+| **4A** | Foundation (migrations, audit log, route cleanup) | 1 |
+| **4B** | UI Overhaul (Oat CSS eval, global styling pass) | 2 |
+| **4C** | Core Pages (Audit, Consent Records, Subjects, Retention) | 2 |
+| **4D** | RoPA (versioned) + Multi-Level Purpose Tagging | 2 |
+| **4E** | Department + Third-Party (dual-mode) + Nominations | 2 |
+| **4F** | OCR adapters (Sarvam+Tesseract) + Portal polish | 1 |
+| **4G** | Reports + Final QA | 2 |
+
+### User Decisions (Finalized)
+1. RoPA: Auto-generated + strict version control + audit
+2. Reports: Deferred to Batch 4G (final)
+3. Third-Party: Dual-mode (simple list + full DPA)
+4. Widget enhancements: Deferred entirely
+5. OCR: Sarvam API + Tesseract, extensible adapter
+6. Department: Ownership + responsibilities + email notifications
+7. Multi-level purpose tagging: column/table/database/server with inheritance
+8. UI Overhaul: Dedicated Batch 4B, evaluate Oat CSS
 
 ---
 
 ## Active Messages
 
 ### [2026-02-17] [FROM: Orchestrator] → [TO: ALL]
-**Subject**: Phase 3A/3B/3C Complete — Entering Phase 4 Planning
+**Subject**: Phase 4 Sprint Plan Approved — Ready for Execution
 **Type**: STATUS
 
-All Phase 3 tasks complete. E2E verification passed (6/6 sub-tests). Comprehensive gap analysis underway to determine final build plan for a complete, working application.
+Phase 4 plan finalized with all user decisions incorporated. 7 batches, 30 tasks. Agent prompts updated (backend, frontend, orchestrator) with Phase 4 patterns and context. Start with Batch 4A: Foundation Fixes.
 
-**Key Decisions Pending**:
+**Key Decisions Finalized**:
 - Phase 4 sprint structure and task decomposition
 - Priority ordering for remaining placeholder pages vs backend gaps
 
