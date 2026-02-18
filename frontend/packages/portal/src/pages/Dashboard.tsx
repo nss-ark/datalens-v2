@@ -360,7 +360,7 @@ const PortalDashboard = () => {
             <div style={s.heroCenter}>
                 <div style={s.heroBadge}>
                     <Sparkles size={14} />
-                    Privacy Dashboard 2.0
+                    Privacy Dashboard
                 </div>
                 <h1 style={s.heroTitle}>
                     Manage your data privacy<br />

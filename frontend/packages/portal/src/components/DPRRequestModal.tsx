@@ -59,80 +59,82 @@ export const DPRRequestModal: React.FC<DPRRequestModalProps> = ({ isOpen, onClos
             onClose={onClose}
             title="Submit Data Request"
         >
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Request Type</label>
-                    <select
-                        value={type}
-                        onChange={(e) => setType(e.target.value as CreateDPRInput['type'])}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                        <option value="ACCESS">Access My Data (Download)</option>
-                        <option value="CORRECTION">Correct My Data</option>
-                        <option value="ERASURE">Erase My Data (Right to be Forgotten)</option>
-                        <option value="NOMINATION">Nominate a Representative</option>
-                        <option value="GRIEVANCE">File a Grievance</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description / Details</label>
-                    <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={4}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Please provide details about your request..."
-                        required
-                    />
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="minor"
-                        checked={isMinor}
-                        onChange={(e) => setIsMinor(e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label htmlFor="minor" className="text-sm text-gray-700 select-none">
-                        I am submitting this for a minor (under 18)
-                    </label>
-                </div>
-
-                {isMinor && (
-                    <div className="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-100">
-                        <p className="text-sm text-blue-700">
-                            Guardian verification is required for minors. We will send a verification code to the guardian.
-                        </p>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Name</label>
-                            <input
-                                type="text"
-                                value={guardianName}
-                                onChange={(e) => setGuardianName(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                                required={isMinor}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Email</label>
-                            <input
-                                type="email"
-                                value={guardianEmail}
-                                onChange={(e) => setGuardianEmail(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                                required={isMinor}
-                            />
-                        </div>
+            <div style={{ padding: '28px' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '8px' }}>Request Type</label>
+                        <select
+                            value={type}
+                            onChange={(e) => setType(e.target.value as CreateDPRInput['type'])}
+                            style={{ width: '100%', padding: '8px 16px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px' }}
+                        >
+                            <option value="ACCESS">Access My Data (Download)</option>
+                            <option value="CORRECTION">Correct My Data</option>
+                            <option value="ERASURE">Erase My Data (Right to be Forgotten)</option>
+                            <option value="NOMINATION">Nominate a Representative</option>
+                            <option value="GRIEVANCE">File a Grievance</option>
+                        </select>
                     </div>
-                )}
 
-                <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
-                    <Button variant="primary" type="submit" isLoading={isPending}>Submit Request</Button>
-                </div>
-            </form>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '8px' }}>Description / Details</label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows={4}
+                            style={{ width: '100%', padding: '8px 16px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px', resize: 'none' }}
+                            placeholder="Please provide details about your request..."
+                            required
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                            type="checkbox"
+                            id="minor"
+                            checked={isMinor}
+                            onChange={(e) => setIsMinor(e.target.checked)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <label htmlFor="minor" style={{ fontSize: '14px', color: '#374151', userSelect: 'none' }}>
+                            I am submitting this for a minor (under 18)
+                        </label>
+                    </div>
+
+                    {isMinor && (
+                        <div className="bg-blue-50 border border-blue-100" style={{ padding: '16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <p style={{ fontSize: '14px', color: '#1d4ed8' }}>
+                                Guardian verification is required for minors. We will send a verification code to the guardian.
+                            </p>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}>Guardian Name</label>
+                                <input
+                                    type="text"
+                                    value={guardianName}
+                                    onChange={(e) => setGuardianName(e.target.value)}
+                                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', outline: 'none', fontSize: '14px' }}
+                                    required={isMinor}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}>Guardian Email</label>
+                                <input
+                                    type="email"
+                                    value={guardianEmail}
+                                    onChange={(e) => setGuardianEmail(e.target.value)}
+                                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', outline: 'none', fontSize: '14px' }}
+                                    required={isMinor}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px' }}>
+                        <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
+                        <Button variant="primary" type="submit" isLoading={isPending}>Submit Request</Button>
+                    </div>
+                </form>
+            </div>
         </Modal>
     );
 };

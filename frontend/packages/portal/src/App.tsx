@@ -32,6 +32,20 @@ function App() {
             <ToastContainer />
             <BrowserRouter>
                 <Routes>
+                    <Route path="/" element={
+                        <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                            <PortalLayout>
+                                <PortalDashboard />
+                            </PortalLayout>
+                        </ErrorBoundary>
+                    } />
+                    <Route path="/requests" element={
+                        <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
+                            <PortalLayout>
+                                <Requests />
+                            </PortalLayout>
+                        </ErrorBoundary>
+                    } />
                     {/* Portal Login */}
                     <Route path="/login" element={
                         <ErrorBoundary FallbackComponent={GlobalErrorFallback}>

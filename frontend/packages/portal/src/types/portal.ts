@@ -89,3 +89,25 @@ export interface BreachNotification extends TenantEntity {
     is_read: boolean;
     created_at: string;
 }
+
+/* ── Activity Feed ── */
+export type ActivityItemType = 'login' | 'request_update' | 'consent_update' | 'security_digest' | 'breach';
+export type ActivityCategory = 'ALL' | 'REQUESTS' | 'PRIVACY';
+
+export interface ActivityFeedItem {
+    id: string;
+    type: ActivityItemType;
+    title: string;
+    description: string;
+    timestamp: string;               // ISO date
+    category: ActivityCategory;
+    is_read: boolean;
+    /** Optional category label shown as a small tag */
+    category_label?: string;
+    /** Primary action, e.g. "Review Changes" */
+    primary_action?: { label: string; href?: string };
+    /** Secondary action pair, e.g. "This was me" / "Not me" */
+    secondary_actions?: { label: string; variant: 'default' | 'danger'; href?: string }[];
+    /** Reference to original breach notification, if type === 'breach' */
+    breach_ref?: BreachNotification;
+}

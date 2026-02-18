@@ -119,6 +119,9 @@ func (s *DataPrincipalService) SubmitDPR(ctx context.Context, principalID types.
 		GuardianVerified: profile.GuardianVerified,
 	}
 
+	// Calculate deadline (default 30 days for DSRs)
+	deadline := now.AddDate(0, 0, 30)
+
 	// 2. Create Internal Compliance DSR
 	// If profile has a SubjectID, use it. If not, we might need resolution logic.
 	// For now, if SubjectID is nil, we create DSR with empty SubjectID but with metadata to resolve it.
@@ -130,7 +133,7 @@ func (s *DataPrincipalService) SubmitDPR(ctx context.Context, principalID types.
 		RequestType: compliance.DSRRequestType(input.Type),
 		Status:      compliance.DSRStatusPending,
 		// Source:      compliance.DSRSourcePortal, // Source field missing in DSR struct, using Notes or context
-		// Deadline: not in DSR struct based on file view
+		SLADeadline: deadline,
 		// RequestDetails not in DSR struct
 		SubjectEmail: profile.Email,
 		Notes:        fmt.Sprintf("Portal Request ID: %s. Description: %s", dpr.ID, input.Description),
@@ -138,6 +141,7 @@ func (s *DataPrincipalService) SubmitDPR(ctx context.Context, principalID types.
 
 	// Link DSR to DPR
 	dpr.DSRID = &dsr.ID
+	dpr.Deadline = &deadline
 
 	// Transactional save (ideally) - executing sequentially for now
 	if err := s.dsrRepo.Create(ctx, dsr); err != nil {

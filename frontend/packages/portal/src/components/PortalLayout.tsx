@@ -179,6 +179,32 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
 
                         {/* User Menu (Desktop) */}
                         <div className="hidden md:flex" style={{ alignItems: 'center', gap: '16px' }}>
+                            <Link
+                                to="/notifications/breach"
+                                style={{
+                                    padding: '8px',
+                                    borderRadius: '50%',
+                                    color: '#6b7280',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'background-color 0.2s, color 0.2s',
+                                    position: 'relative'
+                                }}
+                                className="hover:bg-slate-100 hover:text-slate-900"
+                            >
+                                <Bell size={20} />
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '6px',
+                                    right: '6px',
+                                    width: '8px',
+                                    height: '8px',
+                                    backgroundColor: '#ef4444',
+                                    borderRadius: '50%',
+                                    border: '1.5px solid #fff'
+                                }} />
+                            </Link>
                             <div style={{ height: '24px', width: '1px', backgroundColor: '#e5e7eb', margin: '0 4px' }} />
                             <div style={{ position: 'relative' }} ref={profileRef}>
                                 <button

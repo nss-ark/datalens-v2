@@ -21,7 +21,7 @@ export const usePortalAuthStore = create<PortalAuthState>()(
         }),
         {
             name: 'datalens-portal-auth', // unique name
-            storage: createJSONStorage(() => sessionStorage), // Use sessionStorage for security
+            storage: createJSONStorage(() => localStorage), // Use localStorage for persistence
         }
     )
 );

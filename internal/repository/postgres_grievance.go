@@ -25,7 +25,7 @@ func NewPostgresGrievanceRepository(db *pgxpool.Pool) *PostgresGrievanceReposito
 func (r *PostgresGrievanceRepository) Create(ctx context.Context, g *compliance.Grievance) error {
 	query := `
 		INSERT INTO grievances (
-			id, tenant_id, data_subject_id, subject, description, category, status, priority,
+			id, tenant_id, subject_id, subject, description, category, status, priority,
 			assigned_to, resolution, submitted_at, due_date, resolved_at, escalated_to,
 			feedback_rating, feedback_comment, created_at, updated_at
 		) VALUES (
@@ -49,7 +49,7 @@ func (r *PostgresGrievanceRepository) Create(ctx context.Context, g *compliance.
 func (r *PostgresGrievanceRepository) GetByID(ctx context.Context, id types.ID) (*compliance.Grievance, error) {
 	query := `
 		SELECT
-			id, tenant_id, data_subject_id, subject, description, category, status, priority,
+			id, tenant_id, subject_id, subject, description, category, status, priority,
 			assigned_to, resolution, submitted_at, due_date, resolved_at, escalated_to,
 			feedback_rating, feedback_comment, created_at, updated_at
 		FROM grievances
@@ -109,7 +109,7 @@ func (r *PostgresGrievanceRepository) ListByTenant(ctx context.Context, tenantID
 	args = append(args, pagination.PageSize, offset)
 	query := fmt.Sprintf(`
 		SELECT
-			id, tenant_id, data_subject_id, subject, description, category, status, priority,
+			id, tenant_id, subject_id, subject, description, category, status, priority,
 			assigned_to, resolution, submitted_at, due_date, resolved_at, escalated_to,
 			feedback_rating, feedback_comment, created_at, updated_at
 		FROM grievances
@@ -149,11 +149,11 @@ func (r *PostgresGrievanceRepository) ListByTenant(ctx context.Context, tenantID
 func (r *PostgresGrievanceRepository) ListBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]compliance.Grievance, error) {
 	query := `
 		SELECT
-			id, tenant_id, data_subject_id, subject, description, category, status, priority,
+			id, tenant_id, subject_id, subject, description, category, status, priority,
 			assigned_to, resolution, submitted_at, due_date, resolved_at, escalated_to,
 			feedback_rating, feedback_comment, created_at, updated_at
 		FROM grievances
-		WHERE tenant_id = $1 AND data_subject_id = $2
+		WHERE tenant_id = $1 AND subject_id = $2
 		ORDER BY created_at DESC
 	`
 	rows, err := r.db.Query(ctx, query, tenantID, subjectID)

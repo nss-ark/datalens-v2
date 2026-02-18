@@ -8,7 +8,7 @@ export const StartupHero = () => {
             <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-medium mb-6 animate-fade-in-up">
                     <Sparkles className="w-3 h-3" />
-                    <span>Privacy Dashboard 2.0</span>
+                    <span>0</span>
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 mb-6 animate-fade-in-up [animation-delay:100ms]">

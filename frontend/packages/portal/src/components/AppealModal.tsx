@@ -46,37 +46,39 @@ export const AppealModal: React.FC<AppealModalProps> = ({ isOpen, onClose, dprId
             onClose={onClose}
             title="Appeal Request Decision"
         >
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm text-blue-800">
-                    You are exercising your right to appeal under DPDPA Section 18.
-                    Please provide detailed reasons why you believe the original decision should be reconsidered.
-                </div>
+            <div style={{ padding: '28px' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div className="bg-blue-50 border border-blue-100" style={{ padding: '20px', borderRadius: '8px', fontSize: '14px', color: '#1e40af', lineHeight: 1.6 }}>
+                        You are exercising your right to appeal under DPDPA Section 18.
+                        Please provide detailed reasons why you believe the original decision should be reconsidered.
+                    </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Appeal</label>
-                    <textarea
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        rows={6}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Explain why the decision was incorrect or provide additional context..."
-                        required
-                    />
-                    <p className="text-xs text-gray-500 mt-1 text-right">{reason.length} / 20 characters minimum</p>
-                </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>Reason for Appeal</label>
+                        <textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            rows={6}
+                            style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', resize: 'none', fontSize: '14px' }}
+                            placeholder="Explain why the decision was incorrect or provide additional context..."
+                            required
+                        />
+                        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', textAlign: 'right' }}>{reason.length} / 20 characters minimum</p>
+                    </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
-                    <Button
-                        variant="primary"
-                        type="submit"
-                        isLoading={isPending}
-                        disabled={reason.trim().length < 20}
-                    >
-                        Submit Appeal
-                    </Button>
-                </div>
-            </form>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '24px', borderTop: '1px solid #f3f4f6' }}>
+                        <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            isLoading={isPending}
+                            disabled={reason.trim().length < 20}
+                        >
+                            Submit Appeal
+                        </Button>
+                    </div>
+                </form>
+            </div>
         </Modal>
     );
 };
