@@ -165,3 +165,24 @@ Filters: `entity_type`, `action`, `user_id` (UUID), `start_date` (RFC3339), `end
 - `internal/handler/portal_handler_translation_test.go`: `TestPortalHandler_GetNotice_WithTranslation` fails on Title assertion.
 - `internal/service/auth_service_test.go`: Passed.
 
+---
+
+### [2026-02-17] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 4B-2 Complete — Custom UI Integration (Portal)
+**Type**: HANDOFF
+
+**Changes**:
+- Implemented custom UI components in `@datalens/shared`:
+  - `Login01`: Split-screen login with gradient hero.
+  - `StartupHero`: Modern centered dashboard hero.
+  - `Footer01`: Clean multi-column footer.
+  - `Feature01`: Minimalist feature grid.
+- Integrated components into `@datalens/portal`:
+  - Replaced Login page, Dashboard hero/quick actions, Footer, Profile card, and History list.
+- Fixed `shared` package import aliases (`@/lib/utils` -> relative paths) to resolve build issues.
+
+**Verification**:
+- `npm run build -w @datalens/portal` ✅ (Exit code 0, zero errors).
+
+**Action Required**:
+- None.

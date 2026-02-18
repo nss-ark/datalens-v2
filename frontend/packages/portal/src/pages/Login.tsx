@@ -3,31 +3,30 @@ import { usePortalAuthStore } from '@/stores/portalAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { portalService } from '@/services/portalService';
 import { toast } from '@datalens/shared';
-import { Loader2, Mail, ArrowRight, Smartphone, ShieldCheck, KeyRound } from 'lucide-react';
+import { Mail, Smartphone, ArrowRight, Loader2, ShieldCheck, KeyRound } from 'lucide-react';
 
 const PortalLogin = () => {
     const [step, setStep] = useState<'IDENTIFIER' | 'OTP'>('IDENTIFIER');
     const [identifier, setIdentifier] = useState('');
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const setAuth = usePortalAuthStore((s) => s.setAuth);
     const navigate = useNavigate();
-    const setAuth = usePortalAuthStore(state => state.setAuth);
 
     const isEmail = (input: string) => /\S+@\S+\.\S+/.test(input);
 
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!identifier.trim()) return;
-
         setIsLoading(true);
         try {
-            const payload = isEmail(identifier) ? { email: identifier } : { phone: identifier };
+            const payload = isEmail(identifier)
+                ? { email: identifier }
+                : { phone: identifier };
             await portalService.requestOTP(payload);
-            toast.success("Code Sent", `Verification code sent to ${identifier}`);
             setStep('OTP');
-        } catch (error) {
-            console.error('OTP Request failed:', error);
-            toast.error("Error", "Failed to send OTP. Please try again.");
+            toast.success('Verification code sent!');
+        } catch {
+            toast.error('Failed to send OTP. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -35,147 +34,298 @@ const PortalLogin = () => {
 
     const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!otp.trim()) return;
-
         setIsLoading(true);
         try {
-            const payload = {
-                code: otp,
-                ...(isEmail(identifier) ? { email: identifier } : { phone: identifier })
-            };
-            const response = await portalService.verifyOTP(payload);
-
-            setAuth(response.token.access_token, response.profile);
-            toast.success("Welcome", `Logged in as ${response.profile.email || response.profile.phone}`);
-            navigate('/dashboard');
-        } catch (error) {
-            console.error('Verification failed:', error);
-            toast.error("Invalid Code", "Please check the verification code and try again.");
+            const payload = isEmail(identifier)
+                ? { email: identifier, code: otp }
+                : { phone: identifier, code: otp };
+            const res = await portalService.verifyOTP(payload);
+            setAuth(res.token.access_token, res.profile);
+            toast.success('Login successful!');
+            navigate('/');
+        } catch {
+            toast.error('Invalid code. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
+    /* ── Styles using the portal's CSS design tokens ── */
+    const styles = {
+        wrapper: {
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column' as const,
+            gap: '40px',
+        },
+        heading: {
+            fontSize: '30px',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: 'var(--slate-900)',
+            lineHeight: 1.2,
+        },
+        subtitle: {
+            marginTop: '8px',
+            fontSize: '15px',
+            color: 'var(--slate-500)',
+            lineHeight: 1.6,
+        },
+        label: {
+            display: 'block',
+            fontSize: '13px',
+            fontWeight: 600,
+            color: 'var(--slate-700)',
+            marginBottom: '8px',
+        },
+        inputWrapper: {
+            position: 'relative' as const,
+        },
+        inputIcon: {
+            position: 'absolute' as const,
+            left: '14px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--slate-400)',
+            pointerEvents: 'none' as const,
+            display: 'flex',
+            alignItems: 'center',
+        },
+        input: {
+            display: 'block',
+            width: '100%',
+            paddingLeft: '44px',
+            paddingRight: '16px',
+            paddingTop: '14px',
+            paddingBottom: '14px',
+            fontSize: '15px',
+            color: 'var(--slate-900)',
+            backgroundColor: '#ffffff',
+            border: '1px solid var(--slate-300)',
+            borderRadius: '12px',
+            outline: 'none',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+            fontFamily: 'inherit',
+        },
+        otpInput: {
+            display: 'block',
+            width: '100%',
+            paddingLeft: '44px',
+            paddingRight: '16px',
+            paddingTop: '14px',
+            paddingBottom: '14px',
+            fontSize: '22px',
+            color: 'var(--slate-900)',
+            backgroundColor: '#ffffff',
+            border: '1px solid var(--slate-300)',
+            borderRadius: '12px',
+            outline: 'none',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+            fontFamily: "'Courier New', monospace",
+            letterSpacing: '0.3em',
+            textAlign: 'center' as const,
+        },
+        button: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '8px',
+            width: '100%',
+            padding: '14px 16px',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#ffffff',
+            backgroundColor: 'var(--slate-900)',
+            border: 'none',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s, transform 0.1s, opacity 0.2s',
+            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
+            fontFamily: 'inherit',
+        },
+        buttonDisabled: {
+            opacity: 0.5,
+            cursor: 'not-allowed',
+        },
+        backButton: {
+            display: 'block',
+            width: '100%',
+            padding: '8px',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'var(--slate-500)',
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            textAlign: 'center' as const,
+            fontFamily: 'inherit',
+            transition: 'color 0.2s',
+        },
+        terms: {
+            textAlign: 'center' as const,
+            fontSize: '12px',
+            color: 'var(--slate-400)',
+            lineHeight: 1.6,
+        },
+        termsLink: {
+            color: 'var(--slate-600)',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+        },
+        form: {
+            display: 'flex',
+            flexDirection: 'column' as const,
+            gap: '24px',
+        },
+    };
+
+    const isDisabled = step === 'IDENTIFIER'
+        ? isLoading || !identifier.trim()
+        : isLoading || otp.length < 6;
+
     return (
-        <div className="mt-8 space-y-6 animate-fade-in-up">
+        <div style={styles.wrapper}>
+            {/* ── Heading ── */}
+            <div>
+                <h2 style={styles.heading}>
+                    {step === 'IDENTIFIER' ? 'Welcome back' : 'Verify identity'}
+                </h2>
+                <p style={styles.subtitle}>
+                    {step === 'IDENTIFIER'
+                        ? 'Enter your email or phone to access your privacy portal.'
+                        : `Enter the 6-digit code sent to ${identifier}`
+                    }
+                </p>
+            </div>
+
+            {/* ── Forms ── */}
             {step === 'IDENTIFIER' ? (
-                <form onSubmit={handleSendOtp} className="space-y-5">
-                    <div className="space-y-1.5">
-                        <label htmlFor="identifier" className="form-label">
-                            Email address or Phone number
+                <form onSubmit={handleSendOtp} style={styles.form}>
+                    <div>
+                        <label htmlFor="identifier" style={styles.label}>
+                            Email or Phone
                         </label>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                                {isEmail(identifier) || !identifier ? <Mail className="h-5 w-5" /> : <Smartphone className="h-5 w-5" />}
+                        <div style={styles.inputWrapper}>
+                            <div style={styles.inputIcon}>
+                                {isEmail(identifier) || !identifier
+                                    ? <Mail size={18} />
+                                    : <Smartphone size={18} />
+                                }
                             </div>
                             <input
                                 id="identifier"
-                                name="identifier"
                                 type="text"
-                                autoComplete="username"
-                                required
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
                                 disabled={isLoading}
-                                className="form-input !pl-12 !py-3.5 text-base"
-                                placeholder="name@example.com"
+                                style={styles.input}
+                                placeholder="john.doe@example.com"
+                                required
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = 'var(--primary-500)';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.12)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = 'var(--slate-300)';
+                                    e.target.style.boxShadow = 'none';
+                                }}
                             />
                         </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={isLoading || !identifier.trim()}
-                        className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+                        disabled={isDisabled}
+                        style={{
+                            ...styles.button,
+                            ...(isDisabled ? styles.buttonDisabled : {}),
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!isDisabled) e.currentTarget.style.backgroundColor = 'var(--slate-800)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--slate-900)';
+                        }}
                     >
                         {isLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <Loader2 size={20} className="animate-spin" />
                         ) : (
-                            <>
-                                Continue <ArrowRight className="w-4 h-4" />
-                            </>
+                            <>Continue <ArrowRight size={16} /></>
                         )}
                     </button>
-
-                    <div className="pt-2">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-slate-200" />
-                            </div>
-                            <div className="relative flex justify-center text-xs">
-                                <span className="px-3 bg-white text-slate-400 font-medium">
-                                    Secure Login via OTP
-                                </span>
-                            </div>
-                        </div>
-                    </div>
                 </form>
             ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-5 animate-fade-in-up">
-                    {/* Sent-to indicator */}
-                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3">
-                        <div className="bg-blue-100 p-2 rounded-lg">
-                            {isEmail(identifier) ? <Mail className="h-4 w-4 text-blue-600" /> : <Smartphone className="h-4 w-4 text-blue-600" />}
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium text-blue-900">Code sent to</p>
-                            <p className="text-sm text-blue-700">{identifier}</p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label htmlFor="otp" className="form-label">
+                <form onSubmit={handleVerifyOtp} style={styles.form}>
+                    <div>
+                        <label htmlFor="otp" style={styles.label}>
                             Verification Code
                         </label>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                                <KeyRound className="h-5 w-5" />
+                        <div style={styles.inputWrapper}>
+                            <div style={styles.inputIcon}>
+                                <KeyRound size={18} />
                             </div>
                             <input
                                 id="otp"
-                                name="otp"
                                 type="text"
-                                inputMode="numeric"
-                                autoComplete="one-time-code"
-                                required
                                 value={otp}
-                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                onChange={(e) => setOtp(e.target.value)}
                                 disabled={isLoading}
-                                className="form-input !pl-12 !py-3.5 tracking-[0.35em] font-mono text-center text-lg"
-                                placeholder="• • • • • •"
+                                style={styles.otpInput}
+                                placeholder="000000"
                                 maxLength={6}
+                                required
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = 'var(--primary-500)';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.12)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = 'var(--slate-300)';
+                                    e.target.style.boxShadow = 'none';
+                                }}
                             />
                         </div>
-                        <p className="text-xs text-slate-400 mt-1.5">
-                            Enter the 6-digit code sent to your {isEmail(identifier) ? 'email' : 'phone'}
-                        </p>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={isLoading || otp.length < 6}
-                        className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+                        disabled={isDisabled}
+                        style={{
+                            ...styles.button,
+                            ...(isDisabled ? styles.buttonDisabled : {}),
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!isDisabled) e.currentTarget.style.backgroundColor = 'var(--slate-800)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--slate-900)';
+                        }}
                     >
                         {isLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <Loader2 size={20} className="animate-spin" />
                         ) : (
-                            <>
-                                <ShieldCheck className="w-4 h-4" />
-                                Verify & Login
-                            </>
+                            <>Verify & Login <ShieldCheck size={16} /></>
                         )}
                     </button>
 
                     <button
                         type="button"
                         onClick={() => { setStep('IDENTIFIER'); setOtp(''); }}
-                        className="w-full text-center text-sm text-slate-500 hover:text-blue-600 font-medium transition-colors py-1"
-                        disabled={isLoading}
+                        style={styles.backButton}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--slate-900)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--slate-500)'; }}
                     >
-                        ← Change {isEmail(identifier) ? 'email address' : 'phone number'}
+                        ← Change {isEmail(identifier) ? 'email' : 'phone'}
                     </button>
                 </form>
             )}
+
+            {/* ── Terms ── */}
+            <p style={styles.terms}>
+                By continuing, you agree to our{' '}
+                <a href="#" style={styles.termsLink}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="#" style={styles.termsLink}>Privacy Policy</a>.
+            </p>
         </div>
     );
 };

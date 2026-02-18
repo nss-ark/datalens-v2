@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { portalService } from '@/services/portalService';
 import { IdentityCard } from '@/components/IdentityCard';
 import { GuardianVerifyModal } from '@/components/GuardianVerifyModal';
-import { Mail, Phone, Calendar, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
-import { StatusBadge } from '@datalens/shared';
+import { StatusBadge, Card09 } from '@datalens/shared';
 
 const PortalProfile = () => {
     const { data: profile, isLoading, refetch } = useQuery({
@@ -57,51 +57,15 @@ const PortalProfile = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Left — Personal Info */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="portal-card p-8">
-                        <div className="flex flex-col items-center text-center mb-8">
-                            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-3xl mb-4 shadow-md">
-                                {profile.email?.[0].toUpperCase()}
-                            </div>
-                            <h2 className="text-lg font-bold text-slate-900 truncate max-w-full">{profile.email}</h2>
-                            <p className="text-sm text-slate-400 mt-1">Data Principal</p>
-                        </div>
-
-                        <div className="space-y-5 pt-6 border-t border-slate-100">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                    <Mail className="w-4 h-4 text-slate-500" />
-                                </div>
-                                <div className="flex-1 overflow-hidden">
-                                    <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Email</div>
-                                    <div className="text-sm font-medium text-slate-900 truncate" title={profile.email}>{profile.email}</div>
-                                </div>
-                            </div>
-
-                            {profile.phone && (
-                                <div className="flex items-center gap-4">
-                                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                        <Phone className="w-4 h-4 text-slate-500" />
-                                    </div>
-                                    <div>
-                                        <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Phone</div>
-                                        <div className="text-sm font-medium text-slate-900">{profile.phone}</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex items-center gap-4">
-                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                    <Calendar className="w-4 h-4 text-slate-500" />
-                                </div>
-                                <div>
-                                    <div className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Joined</div>
-                                    <div className="text-sm font-medium text-slate-900">
-                                        {profile.created_at ? format(new Date(profile.created_at), 'MMM d, yyyy') : '-'}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <Card09
+                        name={profile.email?.split('@')[0] || 'User'}
+                        role="Data Principal"
+                        stats={[
+                            { label: "Email", value: profile.email || '-' },
+                            { label: "Phone", value: profile.phone || '-' },
+                            { label: "Joined", value: profile.created_at ? format(new Date(profile.created_at), 'MMM d, yyyy') : '-' }
+                        ]}
+                    />
                 </div>
 
                 {/* Right — Identity & Verification */}

@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Database, ShieldCheck, AlertTriangle, Activity, ArrowRight, Plus } from 'lucide-react';
-import { Button } from '@datalens/shared';
-import { Card, CardContent, CardHeader, CardTitle } from '@datalens/shared';
-import { StatCard } from '../components/Dashboard/StatCard';
+import { Database, ShieldCheck, AlertTriangle, Activity, ArrowRight } from 'lucide-react';
+import { Button, Feature09, Headline01, Card08 } from '@datalens/shared';
+// Removed: Card, CardContent, CardHeader, CardTitle (replaced by Card08)
+// Removed: StatCard (replaced by Feature09)
 import { PIIChart } from '../components/Dashboard/PIIChart';
 import { DataTable } from '@datalens/shared';
 import { StatusBadge } from '@datalens/shared';
@@ -19,6 +19,38 @@ const Dashboard = () => {
         queryFn: dashboardService.getStats,
         refetchInterval: 30000, // Refresh every 30s
     });
+
+    // Transform stats for Bento Grid
+    const bentoItems = [
+        {
+            title: "Total Data Sources",
+            value: stats?.total_data_sources ?? 0,
+            icon: Database,
+            color: "primary" as const,
+            description: "Connected sources",
+        },
+        {
+            title: "Total Scans Run",
+            value: stats?.total_scans ?? 0,
+            icon: Activity,
+            color: "info" as const,
+            description: "Scans executed",
+        },
+        {
+            title: "PII Fields Found",
+            value: stats?.total_pii_fields ?? 0,
+            icon: ShieldCheck,
+            color: "danger" as const,
+            description: "Sensitive fields detected",
+        },
+        {
+            title: "Pending Reviews",
+            value: stats?.pending_reviews ?? 0,
+            icon: AlertTriangle,
+            color: "warning" as const,
+            description: "Items needing attention",
+        },
+    ];
 
     const recentScansColumns = [
         {
@@ -59,85 +91,44 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="space-y-6 p-6">
-            {/* Actions Header (Title removed to avoid redundancy) */}
-            <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => navigate('/discovery')}>
-                    Review PII
-                </Button>
-                <Button onClick={() => navigate('/datasources')}>
-                    <Plus size={16} className="mr-2" />
-                    Add Data Source
-                </Button>
+        <div className="space-y-8 p-6">
+            {/* Header Section */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <Headline01 title="Dashboard" subtitle="Overview of your data privacy posture" />
+                </div>
+                {/* Actions moved to global toolbar, keeping legacy buttons for now if needed, or removing as per plan to use ActionToolbar globally */}
             </div>
 
-            {/* Stat Cards - Improved Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title="Total Data Sources"
-                    value={stats?.total_data_sources ?? 0}
-                    icon={Database}
-                    color="primary"
-                    loading={isLoading}
-                />
-                <StatCard
-                    title="Total Scans Run"
-                    value={stats?.total_scans ?? 0}
-                    icon={Activity}
-                    color="info"
-                    loading={isLoading}
-                />
-                <StatCard
-                    title="PII Fields Found"
-                    value={stats?.total_pii_fields ?? 0}
-                    icon={ShieldCheck}
-                    color="danger"
-                    loading={isLoading}
-                />
-                <StatCard
-                    title="Pending Reviews"
-                    value={stats?.pending_reviews ?? 0}
-                    icon={AlertTriangle}
-                    color="warning"
-                    loading={isLoading}
-                />
-            </div>
+            {/* Bento Grid Stats */}
+            <Feature09 items={bentoItems} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Scans */}
-                <Card className="lg:col-span-2">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-lg font-semibold">Recent Scans</CardTitle>
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/datasources')}>
-                            View All <ArrowRight size={16} className="ml-2" />
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
-                        <ErrorBoundary FallbackComponent={SectionErrorFallback}>
-                            <DataTable
-                                columns={recentScansColumns}
-                                data={stats?.recent_scans ?? []}
-                                isLoading={isLoading}
-                                keyExtractor={(row) => row.id}
-                                emptyTitle="No recent scans"
-                                emptyDescription="Connect a data source and run a scan to see activity here."
-                                loadingRows={3}
-                            />
-                        </ErrorBoundary>
-                    </CardContent>
-                </Card>
+                <Card08 title="Recent Scans" className="lg:col-span-2" action={
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/datasources')}>
+                        View All <ArrowRight size={16} className="ml-2" />
+                    </Button>
+                }>
+                    <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+                        <DataTable
+                            columns={recentScansColumns}
+                            data={stats?.recent_scans ?? []}
+                            isLoading={isLoading}
+                            keyExtractor={(row) => row.id}
+                            emptyTitle="No recent scans"
+                            emptyDescription="Connect your first data source to begin scanning for PII. Results will appear here automatically."
+                            loadingRows={3}
+                        />
+                    </ErrorBoundary>
+                </Card08>
 
                 {/* PII Distribution */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg font-semibold">PII by Category</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ErrorBoundary FallbackComponent={SectionErrorFallback}>
-                            <PIIChart data={stats?.pii_by_category ?? {}} loading={isLoading} />
-                        </ErrorBoundary>
-                    </CardContent>
-                </Card>
+                <Card08 title="PII by Category">
+                    <ErrorBoundary FallbackComponent={SectionErrorFallback}>
+                        <PIIChart data={stats?.pii_by_category ?? {}} loading={isLoading} />
+                    </ErrorBoundary>
+                </Card08>
             </div>
         </div>
     );

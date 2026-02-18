@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { portalService } from '@/services/portalService';
 import { CheckCircle2, XCircle, Clock, AlertCircle, ScrollText } from 'lucide-react';
 import { format } from 'date-fns';
+import { MotionList01, MotionItem } from '@datalens/shared';
 
 const PortalHistory = () => {
     const { data: history, isLoading } = useQuery({
@@ -60,47 +61,49 @@ const PortalHistory = () => {
                     </p>
                 </div>
             ) : (
-                <div className="portal-card overflow-hidden divide-y divide-slate-100">
-                    {items.map((entry) => (
-                        <div key={entry.id} className="p-6 flex gap-4 hover:bg-slate-50/50 transition-colors">
-                            <div className="mt-0.5 flex-shrink-0">
-                                <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
-                                    {getIcon(entry.new_status)}
-                                </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                                    <div>
-                                        <h3 className="font-semibold text-slate-900 text-sm">
-                                            {entry.purpose_name}
-                                        </h3>
-                                        <p className="text-sm text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
-                                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${getStatusColor(entry.previous_status || 'NONE')}`}>
-                                                {entry.previous_status || 'NONE'}
-                                            </span>
-                                            <span className="text-slate-300">→</span>
-                                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${getStatusColor(entry.new_status)}`}>
-                                                {entry.new_status}
-                                            </span>
-                                        </p>
+                <MotionList01 className="portal-card overflow-hidden divide-y divide-slate-100">
+                    {items.map((entry, index) => (
+                        <MotionItem key={entry.id} index={index}>
+                            <div className="p-6 flex gap-4 hover:bg-slate-50/50 transition-colors">
+                                <div className="mt-0.5 flex-shrink-0">
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
+                                        {getIcon(entry.new_status)}
                                     </div>
-                                    <time className="text-xs text-slate-400 whitespace-nowrap">
-                                        {format(new Date(entry.created_at || ''), 'MMM d, yyyy HH:mm')}
-                                    </time>
                                 </div>
-                                <div className="mt-3 flex gap-3 text-xs text-slate-400">
-                                    <span>Source: {entry.source}</span>
-                                    <span className="text-slate-200">•</span>
-                                    <span>Notice v{entry.notice_version}</span>
-                                    <span className="text-slate-200">•</span>
-                                    <span className="font-mono" title={entry.signature}>
-                                        Sig: {entry.signature.substring(0, 16)}…
-                                    </span>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                                        <div>
+                                            <h3 className="font-semibold text-slate-900 text-sm">
+                                                {entry.purpose_name}
+                                            </h3>
+                                            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${getStatusColor(entry.previous_status || 'NONE')}`}>
+                                                    {entry.previous_status || 'NONE'}
+                                                </span>
+                                                <span className="text-slate-300">→</span>
+                                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${getStatusColor(entry.new_status)}`}>
+                                                    {entry.new_status}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <time className="text-xs text-slate-400 whitespace-nowrap">
+                                            {format(new Date(entry.created_at || ''), 'MMM d, yyyy HH:mm')}
+                                        </time>
+                                    </div>
+                                    <div className="mt-3 flex gap-3 text-xs text-slate-400">
+                                        <span>Source: {entry.source}</span>
+                                        <span className="text-slate-200">•</span>
+                                        <span>Notice v{entry.notice_version}</span>
+                                        <span className="text-slate-200">•</span>
+                                        <span className="font-mono" title={entry.signature}>
+                                            Sig: {entry.signature.substring(0, 16)}…
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </MotionItem>
                     ))}
-                </div>
+                </MotionList01>
             )}
         </div>
     );

@@ -35,10 +35,7 @@ function App() {
                     {/* Portal Login */}
                     <Route path="/login" element={
                         <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
-                            <AuthLayout
-                                title="Welcome back"
-                                subtitle="Enter your email or phone to access your privacy portal."
-                            >
+                            <AuthLayout>
                                 <PortalLogin />
                             </AuthLayout>
                         </ErrorBoundary>

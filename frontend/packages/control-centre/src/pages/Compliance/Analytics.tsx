@@ -37,12 +37,12 @@ const Analytics = () => {
 
     const period = getDates(dateRange);
 
-    const { data: conversionData, isLoading: isLoadingConversion } = useQuery({
+    const { data: conversionData, isLoading: isLoadingConversion, isError: isErrorConversion } = useQuery({
         queryKey: ['analytics-conversion', dateRange],
         queryFn: () => analyticsService.getConversionStats({ ...period, interval: 'day' }),
     });
 
-    const { data: purposeData, isLoading: isLoadingPurpose } = useQuery({
+    const { data: purposeData, isLoading: isLoadingPurpose, isError: isErrorPurpose } = useQuery({
         queryKey: ['analytics-purpose', dateRange],
         queryFn: () => analyticsService.getPurposeStats(period),
     });
@@ -72,6 +72,7 @@ const Analytics = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Conversion Trend Chart */}
+                {/* Conversion Trend Chart */}
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900">Opt-In Rate Trend</h3>
@@ -80,9 +81,11 @@ const Analytics = () => {
                     <div className="h-[300px] w-full">
                         {isLoadingConversion ? (
                             <div className="h-full flex items-center justify-center text-gray-400">Loading...</div>
+                        ) : isErrorConversion ? (
+                            <div className="h-full flex items-center justify-center text-red-500">Failed to load data</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={conversionData}>
+                                <LineChart data={conversionData || []}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                     <XAxis
                                         dataKey="date"
@@ -136,9 +139,11 @@ const Analytics = () => {
                     <div className="h-[300px] w-full">
                         {isLoadingPurpose ? (
                             <div className="h-full flex items-center justify-center text-gray-400">Loading...</div>
+                        ) : isErrorPurpose ? (
+                            <div className="h-full flex items-center justify-center text-red-500">Failed to load data</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={purposeData} layout="vertical">
+                                <BarChart data={purposeData || []} layout="vertical">
                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
                                     <XAxis type="number" hide />
                                     <YAxis

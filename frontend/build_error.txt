@@ -1,0 +1,35 @@
+﻿
+> @datalens/admin@0.0.0 build
+> tsc -p tsconfig.app.json && vite build
+
+src/pages/Dashboard.tsx(3,31): error TS2307: Cannot find module '@/components/kokonut/AnalyticsCard' or its corresponding type declarations.
+src/pages/Tenants/TenantForm.tsx(6,28): error TS6133: 'Globe' is declared but its value is never read.
+src/pages/Tenants/TenantForm.tsx(7,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+src/pages/Tenants/TenantForm.tsx(55,13): error TS2322: Type '{ children: Element; open: boolean; onClose: () => void; title: string; size: "xl"; className: string; }' is not assignable to type 'IntrinsicAttributes & ModalProps'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & ModalProps'.
+src/pages/Tenants/TenantList.tsx(9,28): error TS2307: Cannot find module '@/components/kokonut/MotionList' or its corresponding type declarations.
+../shared/src/components/kokonut/custom/Feature01.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+../shared/src/components/kokonut/custom/Feature01.tsx(2,10): error TS1484: 'LucideIcon' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+../shared/src/components/kokonut/custom/Feature01.tsx(3,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+../shared/src/components/kokonut/custom/Feature01.tsx(18,5): error TS6133: 'href' is declared but its value is never read.
+../shared/src/components/kokonut/custom/Footer01.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+../shared/src/components/kokonut/custom/Login01.tsx(3,1): error TS6133: 'cn' is declared but its value is never read.
+../shared/src/components/kokonut/custom/Login01.tsx(3,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+../shared/src/components/kokonut/custom/StartupHero.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+../shared/src/components/kokonut/custom/StartupHero.tsx(2,10): error TS6133: 'ArrowRight' is declared but its value is never read.
+node.exe : npm error Lifecycle script `build` failed with error:
+At C:\Program Files\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm error Lifec...led with error::String) [], Rem 
+   oteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm error code 2
+npm error path E:\Comply Ark\Technical\Data Lens Application\DataLensApplication\Datalens 
+v2.0\frontend\packages\admin
+npm error workspace @datalens/admin@0.0.0
+npm error location E:\Comply Ark\Technical\Data Lens Application\DataLensApplication\Datalens 
+v2.0\frontend\packages\admin
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsc -p tsconfig.app.json && vite build

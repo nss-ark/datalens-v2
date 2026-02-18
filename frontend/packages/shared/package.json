@@ -3,5 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "main": "./src/index.ts",
-  "types": "./src/index.ts"
+  "types": "./src/index.ts",
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.34.1",
+    "lucide-react": "^0.574.0",
+    "tailwind-merge": "^3.4.1"
+  }
 }

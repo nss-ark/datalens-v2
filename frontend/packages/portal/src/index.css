@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../shared/src/**/*.tsx";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
@@ -349,4 +350,45 @@ a {
 ::selection {
   background-color: rgb(59 130 246 / 0.15);
   color: var(--primary-900);
+}
+
+/* ——— Dashboard Responsive Grids ——— */
+@media (max-width: 1024px) {
+  .portal-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .portal-feature-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .portal-actions-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .portal-footer-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .portal-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .portal-feature-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .portal-feature-grid>*:first-child {
+    grid-column: span 1 !important;
+  }
+
+  .portal-actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .portal-footer-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

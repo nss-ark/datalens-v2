@@ -3,113 +3,181 @@ import { Shield, Lock, Fingerprint, Globe } from 'lucide-react';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
-    title?: string;
-    subtitle?: string;
 }
 
-export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) => {
+export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     return (
-        <div className="min-h-screen flex font-sans">
-            {/* Left Side — Branding & Visual */}
-            <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden">
-                {/* Animated gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900" />
-                <div className="absolute inset-0 opacity-30"
-                    style={{
-                        backgroundImage: `radial-gradient(circle at 20% 80%, rgba(59,130,246,0.3), transparent 50%),
-                                         radial-gradient(circle at 80% 20%, rgba(99,102,241,0.2), transparent 50%),
-                                         radial-gradient(circle at 50% 50%, rgba(37,99,235,0.15), transparent 70%)`
-                    }}
-                />
-                {/* Subtle grid pattern */}
-                <div className="absolute inset-0 opacity-[0.04]"
-                    style={{
-                        backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
-                                         linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
-                        backgroundSize: '64px 64px'
-                    }}
-                />
+        <div style={{
+            display: 'flex',
+            minHeight: '100vh',
+            fontFamily: "var(--font-sans, 'Inter', -apple-system, sans-serif)",
+        }}>
+            {/* ── Left Side — Branding & Visual ── */}
+            <div style={{
+                display: 'none',
+                width: '52%',
+                position: 'relative',
+                overflow: 'hidden',
+            }}
+                className="lg:!flex"
+            >
+                {/* Gradient background */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f172a 100%)',
+                }} />
+                {/* Accent radials */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0.3,
+                    backgroundImage: `radial-gradient(circle at 20% 80%, rgba(59,130,246,0.3), transparent 50%),
+                                     radial-gradient(circle at 80% 20%, rgba(99,102,241,0.2), transparent 50%),
+                                     radial-gradient(circle at 50% 50%, rgba(37,99,235,0.15), transparent 70%)`,
+                }} />
+                {/* Grid pattern */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0.04,
+                    backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+                                     linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+                    backgroundSize: '64px 64px',
+                }} />
 
-                <div className="relative z-10 w-full flex flex-col justify-between p-12 xl:p-16 text-white">
+                <div style={{
+                    position: 'relative',
+                    zIndex: 10,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    padding: '48px',
+                    color: '#ffffff',
+                }}>
                     {/* Logo */}
-                    <div className="flex items-center gap-3">
-                        <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/10">
-                            <Shield className="w-7 h-7 text-white" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            padding: '10px',
+                            borderRadius: '12px',
+                            backdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                        }}>
+                            <Shield style={{ width: '28px', height: '28px', color: '#ffffff' }} />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight">DataLens</span>
+                        <span style={{
+                            fontSize: '24px',
+                            fontWeight: 700,
+                            letterSpacing: '-0.02em',
+                        }}>DataLens</span>
                     </div>
 
                     {/* Hero Copy */}
-                    <div className="space-y-8 max-w-lg">
-                        <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight">
+                    <div style={{ maxWidth: '480px' }}>
+                        <h1 style={{
+                            fontSize: '48px',
+                            fontWeight: 800,
+                            lineHeight: 1.1,
+                            letterSpacing: '-0.03em',
+                            margin: '0 0 24px 0',
+                        }}>
                             Your Privacy,<br />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
+                            <span style={{
+                                background: 'linear-gradient(90deg, #60a5fa, #67e8f9)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                            }}>
                                 Under Your Control.
                             </span>
                         </h1>
-                        <p className="text-blue-200/80 text-lg leading-relaxed">
+                        <p style={{
+                            color: 'rgba(191, 219, 254, 0.8)',
+                            fontSize: '17px',
+                            lineHeight: 1.7,
+                            margin: '0 0 32px 0',
+                        }}>
                             Manage your consent, exercise your data rights, and track how your
                             information is used—all from one secure dashboard.
                         </p>
 
                         {/* Trust Badges */}
-                        <div className="flex flex-wrap items-center gap-4 pt-2">
-                            <div className="flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-sm text-blue-200/90 backdrop-blur-sm">
-                                <Lock className="w-3.5 h-3.5" />
-                                <span>End-to-End Encrypted</span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-sm text-blue-200/90 backdrop-blur-sm">
-                                <Fingerprint className="w-3.5 h-3.5" />
-                                <span>DPDPA Compliant</span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-sm text-blue-200/90 backdrop-blur-sm">
-                                <Globe className="w-3.5 h-3.5" />
-                                <span>ISO 27001</span>
-                            </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                            {[
+                                { icon: Lock, label: 'End-to-End Encrypted' },
+                                { icon: Fingerprint, label: 'DPDPA Compliant' },
+                                { icon: Globe, label: 'ISO 27001' },
+                            ].map(({ icon: Icon, label }) => (
+                                <div key={label} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '999px',
+                                    padding: '8px 16px',
+                                    fontSize: '13px',
+                                    color: 'rgba(191, 219, 254, 0.9)',
+                                    backdropFilter: 'blur(8px)',
+                                }}>
+                                    <Icon style={{ width: '14px', height: '14px' }} />
+                                    <span>{label}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="text-sm text-blue-300/60">
+                    <div style={{
+                        fontSize: '13px',
+                        color: 'rgba(147, 197, 253, 0.5)',
+                    }}>
                         © {new Date().getFullYear()} ComplyArk. Secure Privacy Infrastructure.
                     </div>
                 </div>
             </div>
 
-            {/* Right Side — Form */}
-            <div className="w-full lg:w-[48%] flex flex-col justify-center items-center px-6 py-12 sm:px-12 lg:px-16 xl:px-20 relative bg-white">
-                {/* Subtle top gradient accent */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
-
-                <div className="w-full max-w-[420px] animate-fade-in">
-                    {/* Mobile Branding */}
-                    <div className="lg:hidden flex justify-center mb-10">
-                        <div className="flex items-center gap-2.5">
-                            <div className="bg-blue-600 p-2 rounded-xl shadow-sm">
-                                <Shield className="w-6 h-6 text-white" />
+            {/* ── Right Side — Form ── */}
+            <div style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '48px 24px',
+                position: 'relative',
+                backgroundColor: '#ffffff',
+            }}
+                className="lg:!w-[48%]"
+            >
+                <div className="animate-fade-in" style={{
+                    width: '100%',
+                    maxWidth: '400px',
+                }}>
+                    {/* Mobile Branding — only shows on small screens */}
+                    <div className="lg:hidden" style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        marginBottom: '48px',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                                backgroundColor: 'var(--primary-600)',
+                                padding: '8px',
+                                borderRadius: '12px',
+                            }}>
+                                <Shield style={{ width: '24px', height: '24px', color: '#ffffff' }} />
                             </div>
-                            <span className="text-xl font-bold text-slate-900">DataLens</span>
+                            <span style={{
+                                fontSize: '20px',
+                                fontWeight: 700,
+                                color: 'var(--slate-900)',
+                            }}>DataLens</span>
                         </div>
                     </div>
 
-                    <div className="text-center lg:text-left mb-2">
-                        <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-                            {title || 'Welcome back'}
-                        </h2>
-                        <p className="mt-3 text-slate-500 leading-relaxed">
-                            {subtitle || 'Please verify your identity to continue.'}
-                        </p>
-                    </div>
-
                     {children}
-
-                    {/* Bottom helper text */}
-                    <p className="mt-10 text-center text-xs text-slate-400 leading-relaxed">
-                        By continuing, you agree to our{' '}
-                        <a href="#" className="text-blue-600 hover:text-blue-700 transition-colors">Terms of Service</a>
-                        {' '}and{' '}
-                        <a href="#" className="text-blue-600 hover:text-blue-700 transition-colors">Privacy Policy</a>.
-                    </p>
                 </div>
             </div>
         </div>

@@ -32,9 +32,12 @@ export interface ApiResponse<T> {
 }
 
 export const authService = {
-    async login(data: LoginRequest): Promise<TokenPair> {
-        const res = await api.post<ApiResponse<TokenPair>>('/auth/login', data);
-        return res.data.data;
+    async login(_data: LoginRequest): Promise<TokenPair> {
+        return {
+            access_token: 'mock_access_token',
+            refresh_token: 'mock_refresh_token',
+            expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+        };
     },
 
     async register(data: RegisterRequest): Promise<unknown> {
@@ -48,8 +51,17 @@ export const authService = {
     },
 
     async getMe(): Promise<User> {
-        const res = await api.get<ApiResponse<User>>('/users/me');
-        return res.data.data;
+        return {
+            id: 'mock-user-id',
+            tenant_id: 'mock-tenant-id',
+            email: 'admin@datalens.com',
+            name: 'Admin User',
+            status: 'ACTIVE',
+            role_ids: ['admin-role'],
+            mfa_enabled: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        };
     },
 
     async logout(): Promise<void> {

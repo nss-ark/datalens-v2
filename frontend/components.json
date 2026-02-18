@@ -20,6 +20,7 @@
     "hooks": "packages/shared/src/hooks"
   },
   "registries": {
-    "@kokonutui": "https://kokonutui.com/r/{name}.json"
+    "@kokonutui": "https://kokonutui.com/r/{name}.json",
+    "@kokonutui-pro": "https://kokonutui.pro/api/r/{name}.json"
   }
 }

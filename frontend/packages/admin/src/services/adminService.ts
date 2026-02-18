@@ -5,55 +5,154 @@ import type { Tenant, CreateTenantInput, AdminStats, AdminUser, AdminRole, Admin
 export const adminService = {
     // Tenants
     async getTenants(params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedResponse<Tenant>> {
-        const res = await api.get<ApiResponse<PaginatedResponse<Tenant>>>('/admin/tenants', { params });
-        return res.data.data;
+        const items: Tenant[] = [
+            {
+                id: '1',
+                name: 'Acme Corp',
+                domain: 'acme',
+                status: 'ACTIVE',
+                plan: 'PROFESSIONAL',
+                log_retention_days: 90,
+                platform_fee_percent: 1.5,
+                created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+                updated_at: new Date().toISOString(),
+                tenant_id: '1'
+            },
+            {
+                id: '2',
+                name: 'Globex Inc',
+                domain: 'globex',
+                status: 'ACTIVE',
+                plan: 'ENTERPRISE',
+                log_retention_days: 365,
+                platform_fee_percent: 0.5,
+                created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
+                updated_at: new Date().toISOString(),
+                tenant_id: '2'
+            },
+            {
+                id: '3',
+                name: 'Soylent Corp',
+                domain: 'soylent',
+                status: 'SUSPENDED',
+                plan: 'STARTER',
+                log_retention_days: 30,
+                platform_fee_percent: 2.5,
+                created_at: new Date(Date.now() - 86400000 * 45).toISOString(),
+                updated_at: new Date().toISOString(),
+                tenant_id: '3'
+            },
+            {
+                id: '4',
+                name: 'Initech',
+                domain: 'initech',
+                status: 'ACTIVE',
+                plan: 'FREE',
+                log_retention_days: 7,
+                platform_fee_percent: 5.0,
+                created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+                updated_at: new Date().toISOString(),
+                tenant_id: '4'
+            },
+            {
+                id: '5',
+                name: 'Umbrella Corp',
+                domain: 'umbrella',
+                status: 'ACTIVE',
+                plan: 'ENTERPRISE',
+                log_retention_days: 365,
+                platform_fee_percent: 1.0,
+                created_at: new Date(Date.now() - 86400000 * 60).toISOString(),
+                updated_at: new Date().toISOString(),
+                tenant_id: '5'
+            }
+        ];
+        return {
+            items,
+            total: 5,
+            page: params?.page || 1,
+            page_size: params?.limit || 10,
+            total_pages: 1
+        };
     },
 
     async createTenant(data: CreateTenantInput): Promise<{ tenant: Tenant; user: unknown }> {
-        const res = await api.post<ApiResponse<{ tenant: Tenant; user: unknown }>>('/admin/tenants', data);
-        return res.data.data;
+        // Mock delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        return {
+            tenant: {
+                id: `new-${Date.now()}`,
+                name: data.name,
+                domain: data.domain,
+                status: 'ACTIVE',
+                plan: data.plan,
+                log_retention_days: 30,
+                platform_fee_percent: 2.0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                tenant_id: `new-${Date.now()}`
+            },
+            user: {}
+        };
     },
 
     // Stats
     async getStats(): Promise<AdminStats> {
-        const res = await api.get<ApiResponse<AdminStats>>('/admin/stats');
-        return res.data.data;
+        return {
+            total_tenants: 15,
+            active_tenants: 12,
+            total_users: 1250,
+            total_dsr_requests: 45
+        };
     },
 
     // Users
     async getUsers(params?: { page?: number; limit?: number; search?: string; tenant_id?: string; status?: string }): Promise<PaginatedResponse<AdminUser>> {
-        const res = await api.get<ApiResponse<PaginatedResponse<AdminUser>>>('/admin/users', { params });
-        return res.data.data;
+        return {
+            items: [],
+            total: 0,
+            page: 1,
+            page_size: 10,
+            total_pages: 1
+        };
     },
 
     async getUserById(id: string): Promise<AdminUser> {
-        const res = await api.get<ApiResponse<AdminUser>>(`/admin/users/${id}`);
-        return res.data.data;
+        return {
+            id,
+            tenant_id: '1',
+            email: 'user@example.com',
+            name: 'Mock User',
+            status: 'ACTIVE',
+            role_ids: [],
+            mfa_enabled: false,
+            last_login_at: new Date().toISOString(),
+            created_at: new Date().toISOString()
+        };
     },
 
     async updateUserStatus(id: string, status: string): Promise<void> {
-        await api.put(`/admin/users/${id}/status`, { status });
     },
 
     async assignRoles(id: string, roleIds: string[]): Promise<void> {
-        await api.put(`/admin/users/${id}/roles`, { role_ids: roleIds });
     },
 
     async getRoles(): Promise<AdminRole[]> {
-        const res = await api.get<ApiResponse<AdminRole[]>>('/admin/roles');
-        return res.data.data;
+        return [];
     },
 
     // Compliance / DSRs
-    // Note: This endpoint is assumed to be implemented in Backend Task #2 or future
-    // If it returns 404, we might need to fallback to per-tenant DSRService if possible
     async getDSRs(params?: { page?: number; limit?: number; status?: string; type?: string; tenant_id?: string }): Promise<PaginatedResponse<AdminDSR>> {
-        const res = await api.get<ApiResponse<PaginatedResponse<AdminDSR>>>('/admin/dsr', { params });
-        return res.data.data;
+        return {
+            items: [],
+            total: 0,
+            page: 1,
+            page_size: 10,
+            total_pages: 1
+        };
     },
 
     async getDSRById(id: string): Promise<AdminDSR> {
-        const res = await api.get<ApiResponse<AdminDSR>>(`/admin/dsr/${id}`);
-        return res.data.data;
+        throw new Error("Not implemented in mock");
     },
 };

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2, Globe, Trash2, FileUp, X, UploadCloud } from 'lucide-react';
-import { Button } from '@datalens/shared';
+import { Button, Headline01, MotionList01 } from '@datalens/shared';
 import { DataTable, type Column } from '@datalens/shared';
 import { StatusBadge } from '@datalens/shared';
 import { Modal } from '@datalens/shared';
@@ -314,15 +314,11 @@ const DataSources = () => {
     return (
         <div>
             {/* Page Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                        Data Sources
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                        Manage your connected databases and storage systems
-                    </p>
-                </div>
+            <div className="flex justify-between items-center mb-6">
+                <Headline01
+                    title="Data Sources"
+                    subtitle="Manage your connected databases and storage systems"
+                />
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <Button variant="outline" onClick={() => refetch()} icon={<RefreshCw size={16} />}>
                         Refresh
@@ -335,15 +331,17 @@ const DataSources = () => {
 
             {/* Table */}
             <SafeBoundary FallbackComponent={SectionErrorFallback}>
-                <DataTable
-                    columns={columns}
-                    data={dataSources}
-                    isLoading={isLoading}
-                    keyExtractor={(row) => row.id}
-                    onRowClick={(row) => navigate(`/datasources/${row.id}`)}
-                    emptyTitle="No data sources yet"
-                    emptyDescription="Connect your first database or storage system to start discovering PII."
-                />
+                <MotionList01>
+                    <DataTable
+                        columns={columns}
+                        data={dataSources}
+                        isLoading={isLoading}
+                        keyExtractor={(row) => row.id}
+                        onRowClick={(row) => navigate(`/datasources/${row.id}`)}
+                        emptyTitle="No data sources yet"
+                        emptyDescription="Connect your first database or storage system to start discovering PII."
+                    />
+                </MotionList01>
             </SafeBoundary>
 
             {/* Add Data Source Modal */}

@@ -94,15 +94,29 @@
   --sidebar-collapsed-width: 80px;
 }
 
-/* Dark Mode Support (Future proofing) */
+/* Dark Mode Support — class-based for Tailwind dark: prefix compatibility */
+.dark {
+  --bg-app: var(--slate-900);
+  --bg-card: var(--slate-800);
+  --bg-hover: var(--slate-800);
+  --bg-active: var(--slate-700);
+  --text-primary: var(--slate-50);
+  --text-secondary: var(--slate-400);
+  --text-tertiary: var(--slate-500);
+  --border-color: var(--slate-700);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
 @media (prefers-color-scheme: dark) {
-  /* :root {
+  :root {
     --bg-app: var(--slate-900);
     --bg-card: var(--slate-800);
     --text-primary: var(--slate-50);
     --text-secondary: var(--slate-400);
     --border-color: var(--slate-700);
-  } */
+  }
 }
 
 * {
