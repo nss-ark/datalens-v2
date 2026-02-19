@@ -132,6 +132,10 @@ func mountAdminRoutes(
 	rateLimiter *mw.RateLimiter,
 	adminHandler *handler.AdminHandler,
 ) {
+	// Public Routes (Login)
+	r.Mount("/superadmin", adminHandler.PublicRoutes())
+
+	// Protected Routes (Platform Admin)
 	r.Route("/admin", func(r chi.Router) {
 		r.Use(mw.Auth(authSvc, apiKeySvc))
 		r.Use(mw.RequireRole(identity.RolePlatformAdmin))

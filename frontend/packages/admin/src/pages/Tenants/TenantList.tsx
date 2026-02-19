@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Building2, Globe, Clock, LayoutGrid, List } from 'lucide-react';
 import { adminService } from '@/services/adminService';
@@ -13,7 +14,7 @@ import type { Tenant } from '@/types/admin';
 
 type ViewMode = 'grid' | 'table';
 
-function TenantCard({ tenant }: { tenant: Tenant }) {
+function TenantCard({ tenant, onClick }: { tenant: Tenant; onClick: () => void }) {
     const planColors: Record<string, string> = {
         ENTERPRISE: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
         PROFESSIONAL: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300',
@@ -22,7 +23,7 @@ function TenantCard({ tenant }: { tenant: Tenant }) {
     };
 
     return (
-        <div className="group relative bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200">
+        <div onClick={onClick} className="group relative bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 cursor-pointer">
             {/* Status dot */}
             <div className={cn(
                 "absolute top-4 right-4 w-2.5 h-2.5 rounded-full",
@@ -63,6 +64,7 @@ function TenantCard({ tenant }: { tenant: Tenant }) {
 }
 
 export default function TenantList() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -162,9 +164,9 @@ export default function TenantList() {
                     ) : data?.items && data.items.length > 0 ? (
                         <MotionList
                             items={data.items}
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 space-y-0"
                             staggerDelay={0.06}
-                            renderItem={(tenant) => <TenantCard tenant={tenant} />}
+                            renderItem={(tenant) => <TenantCard tenant={tenant} onClick={() => navigate(`/tenants/${tenant.id}`)} />}
                         />
                     ) : (
                         <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -188,7 +190,7 @@ export default function TenantList() {
                         isLoading={isLoading}
                         keyExtractor={(row) => row.id}
                         emptyTitle="No tenants found"
-                        emptyDescription="Get started by onboarding a new tenant."
+                        onRowClick={(row) => navigate(`/tenants/${row.id}`)}
                     />
                 </div>
             )}

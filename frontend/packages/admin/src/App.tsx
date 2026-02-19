@@ -8,6 +8,9 @@ import { AdminRoute } from './components/AdminRoute';
 import Login from './pages/Login';
 import AdminDashboard from './pages/Dashboard';
 import TenantList from './pages/Tenants/TenantList';
+import TenantDetail from '@/pages/Tenants/TenantDetail';
+import RetentionPolicies from '@/pages/Retention/RetentionPolicies';
+import PlatformSettingsPage from '@/pages/Settings/PlatformSettings';
 import UserList from './pages/Users/UserList';
 import AdminDSRList from './pages/Compliance/DSRList';
 import AdminDSRDetail from './pages/Compliance/DSRDetail';
@@ -21,18 +24,7 @@ const queryClient = new QueryClient({
     },
 });
 
-function PlaceholderPage({ title }: { title: string }) {
-    return (
-        <div style={{ padding: '2rem' }}>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-                {title}
-            </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
-                This page is under construction.
-            </p>
-        </div>
-    );
-}
+
 
 function App() {
     return (
@@ -54,10 +46,12 @@ function App() {
                         <Route index element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<AdminDashboard />} />
                         <Route path="/tenants" element={<TenantList />} />
+                        <Route path="/tenants/:id" element={<TenantDetail />} />
                         <Route path="/users" element={<UserList />} />
                         <Route path="/compliance/dsr" element={<AdminDSRList />} />
                         <Route path="/compliance/dsr/:id" element={<AdminDSRDetail />} />
-                        <Route path="/settings" element={<PlaceholderPage title="Platform Settings" />} />
+                        <Route path="/retention-policies" element={<RetentionPolicies />} />
+                        <Route path="/settings" element={<PlatformSettingsPage />} />
                     </Route>
 
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />

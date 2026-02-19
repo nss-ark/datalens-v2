@@ -1,22 +1,52 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Gavel, AlertCircle } from 'lucide-react';
-import { Button } from '@datalens/shared';
-import { useLogin } from '@datalens/shared';
+import { Button, useAuthStore } from '@datalens/shared';
+import { adminService } from '@/services/adminService';
 
 const Login = () => {
-    const [domain, setDomain] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { mutate: loginMutate, isPending, error } = useLogin();
+    const [isPending, setIsPending] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const login = useAuthStore((state) => state.login);
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        loginMutate({ domain, email, password });
-    };
+        setIsPending(true);
+        setError(null);
 
-    const apiError = error as { response?: { data?: { message?: string } } } | null;
-    const errorMessage = apiError?.response?.data?.message || (error ? 'Login failed. Please check your credentials.' : null);
+        try {
+            // 1. Authenticate to get tokens
+            const { access_token, refresh_token } = await adminService.login(email, password);
+
+            // Set token in store immediately so subsequent requests have auth header
+            // We pass null user initially
+            login(null as any, access_token, 'system', refresh_token);
+
+            // 2. Fetch current user details
+            const adminUser = await adminService.getCurrentUser();
+            const user = {
+                ...adminUser,
+                last_login_at: adminUser.last_login_at ?? undefined
+            };
+
+            // 3. Update store with full user details
+            login(user, access_token, 'system', refresh_token);
+
+            // 4. Redirect to dashboard
+            navigate('/');
+        } catch (err: any) {
+            console.error('Login failed:', err);
+            const msg = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
+            setError(msg);
+            // Clear tokens if failed mid-way
+            useAuthStore.getState().logout();
+        } finally {
+            setIsPending(false);
+        }
+    };
 
     return (
         <div style={{
@@ -51,15 +81,15 @@ const Login = () => {
                         <Gavel size={28} />
                     </div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                        Welcome back
+                        SuperAdmin Portal
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                        Sign in to your DataLens account
+                        Sign in to manage the DataLens platform
                     </p>
                 </div>
 
                 {/* Error */}
-                {errorMessage && (
+                {error && (
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -73,33 +103,19 @@ const Login = () => {
                         border: '1px solid var(--danger-200)',
                     }}>
                         <AlertCircle size={16} />
-                        {errorMessage}
+                        {error}
                     </div>
                 )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
                     <div>
-                        <label style={labelStyle}>Organization Domain (Optional)</label>
-                        <input
-                            type="text"
-                            value={domain}
-                            onChange={(e) => setDomain(e.target.value)}
-                            placeholder="e.g. acme-corp"
-                            style={inputStyle}
-                        />
-                        <small style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px', display: 'block' }}>
-                            Leave blank to sign in with email only
-                        </small>
-                    </div>
-
-                    <div>
                         <label style={labelStyle}>Email address</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@company.com"
+                            placeholder="admin@datalens.ai"
                             required
                             style={inputStyle}
                         />
@@ -119,16 +135,9 @@ const Login = () => {
                     </div>
 
                     <Button type="submit" isLoading={isPending} style={{ width: '100%', marginTop: '0.5rem' }}>
-                        Sign in
+                        Sign in to Console
                     </Button>
                 </form>
-
-                <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    Don't have an account?{' '}
-                    <Link to="/register" style={{ color: 'var(--primary-600)', fontWeight: 500, textDecoration: 'none' }}>
-                        Register
-                    </Link>
-                </p>
             </div>
         </div>
     );

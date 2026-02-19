@@ -566,10 +566,34 @@ func main() {
 	// =========================================================================
 
 	if shouldInit("admin") {
-		adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, nil, service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default()), slog.Default())
-		adminHandler = handler.NewAdminHandler(adminSvc)
+		subscriptionRepo := repository.NewSubscriptionRepo(dbPool)
+		moduleAccessRepo := repository.NewModuleAccessRepo(dbPool)
+		retentionRepo := repository.NewRetentionRepo(dbPool)
+		settingsRepo := repository.NewPlatformSettingsRepo(dbPool)
+		adminSvc := service.NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, retentionRepo, subscriptionRepo, moduleAccessRepo, settingsRepo, service.NewTenantService(tenantRepo, userRepo, roleRepo, authSvc, slog.Default()), slog.Default())
+		adminHandler = handler.NewAdminHandler(adminSvc, authSvc)
 
 		log.Info("Admin services initialized")
+
+		// Start Subscription Expiry Worker (Daily)
+		go func() {
+			// Initial check on startup (after a short delay)
+			time.Sleep(1 * time.Minute)
+			log.Info("Running initial subscription expiry check")
+			if err := adminSvc.CheckSubscriptionExpiry(context.Background()); err != nil {
+				log.Error("Initial subscription expiry check failed", "error", err)
+			}
+
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				log.Info("Running daily subscription expiry check")
+				if err := adminSvc.CheckSubscriptionExpiry(context.Background()); err != nil {
+					log.Error("Subscription expiry check failed", "error", err)
+				}
+			}
+		}()
 	}
 
 	// =========================================================================

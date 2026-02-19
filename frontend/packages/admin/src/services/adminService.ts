@@ -1,158 +1,142 @@
-import { api } from '@datalens/shared';
-import type { ApiResponse, PaginatedResponse } from '@datalens/shared';
-import type { Tenant, CreateTenantInput, AdminStats, AdminUser, AdminRole, AdminDSR } from '@/types/admin';
+import { api, type PaginatedResponse, type ApiResponse, type LoginResponse, type ID } from '@datalens/shared';
+import type {
+    Tenant,
+    AdminUser,
+    AdminRole,
+    AdminDSR,
+    Subscription,
+    ModuleAccess,
+    ModuleAccessInput,
+    RetentionPolicy,
+    PlatformSettings,
+    CreateTenantInput,
+    AdminStats
+} from '@/types/admin';
 
 export const adminService = {
+    // Auth - Public Route
+    async login(email: string, password: string): Promise<LoginResponse> {
+        const res = await api.post<ApiResponse<LoginResponse>>('/superadmin/login', { email, password });
+        return res.data.data;
+    },
+
+    async getCurrentUser(): Promise<AdminUser> {
+        const res = await api.get<ApiResponse<AdminUser>>('/admin/me');
+        return res.data.data;
+    },
+
     // Tenants
     async getTenants(params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedResponse<Tenant>> {
-        const items: Tenant[] = [
-            {
-                id: '1',
-                name: 'Acme Corp',
-                domain: 'acme',
-                status: 'ACTIVE',
-                plan: 'PROFESSIONAL',
-                log_retention_days: 90,
-                platform_fee_percent: 1.5,
-                created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-                updated_at: new Date().toISOString(),
-                tenant_id: '1'
-            },
-            {
-                id: '2',
-                name: 'Globex Inc',
-                domain: 'globex',
-                status: 'ACTIVE',
-                plan: 'ENTERPRISE',
-                log_retention_days: 365,
-                platform_fee_percent: 0.5,
-                created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
-                updated_at: new Date().toISOString(),
-                tenant_id: '2'
-            },
-            {
-                id: '3',
-                name: 'Soylent Corp',
-                domain: 'soylent',
-                status: 'SUSPENDED',
-                plan: 'STARTER',
-                log_retention_days: 30,
-                platform_fee_percent: 2.5,
-                created_at: new Date(Date.now() - 86400000 * 45).toISOString(),
-                updated_at: new Date().toISOString(),
-                tenant_id: '3'
-            },
-            {
-                id: '4',
-                name: 'Initech',
-                domain: 'initech',
-                status: 'ACTIVE',
-                plan: 'FREE',
-                log_retention_days: 7,
-                platform_fee_percent: 5.0,
-                created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-                updated_at: new Date().toISOString(),
-                tenant_id: '4'
-            },
-            {
-                id: '5',
-                name: 'Umbrella Corp',
-                domain: 'umbrella',
-                status: 'ACTIVE',
-                plan: 'ENTERPRISE',
-                log_retention_days: 365,
-                platform_fee_percent: 1.0,
-                created_at: new Date(Date.now() - 86400000 * 60).toISOString(),
-                updated_at: new Date().toISOString(),
-                tenant_id: '5'
-            }
-        ];
-        return {
-            items,
-            total: 5,
-            page: params?.page || 1,
-            page_size: params?.limit || 10,
-            total_pages: 1
-        };
+        const res = await api.get<ApiResponse<PaginatedResponse<Tenant>>>('/admin/tenants', { params });
+        return res.data.data;
     },
 
     async createTenant(data: CreateTenantInput): Promise<{ tenant: Tenant; user: unknown }> {
-        // Mock delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        return {
-            tenant: {
-                id: `new-${Date.now()}`,
-                name: data.name,
-                domain: data.domain,
-                status: 'ACTIVE',
-                plan: data.plan,
-                log_retention_days: 30,
-                platform_fee_percent: 2.0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                tenant_id: `new-${Date.now()}`
-            },
-            user: {}
-        };
+        const res = await api.post<ApiResponse<{ tenant: Tenant; user: unknown }>>('/admin/tenants', data);
+        return res.data.data;
+    },
+
+    async getTenant(id: ID): Promise<Tenant> {
+        const res = await api.get<ApiResponse<Tenant>>(`/admin/tenants/${id}`);
+        return res.data.data;
+    },
+
+    async updateTenant(id: ID, data: Partial<Tenant>): Promise<Tenant> {
+        const res = await api.patch<ApiResponse<Tenant>>(`/admin/tenants/${id}`, data);
+        return res.data.data;
     },
 
     // Stats
     async getStats(): Promise<AdminStats> {
-        return {
-            total_tenants: 15,
-            active_tenants: 12,
-            total_users: 1250,
-            total_dsr_requests: 45
-        };
+        const res = await api.get<ApiResponse<AdminStats>>('/admin/stats');
+        return res.data.data;
     },
 
     // Users
     async getUsers(params?: { page?: number; limit?: number; search?: string; tenant_id?: string; status?: string }): Promise<PaginatedResponse<AdminUser>> {
-        return {
-            items: [],
-            total: 0,
-            page: 1,
-            page_size: 10,
-            total_pages: 1
-        };
+        const res = await api.get<ApiResponse<PaginatedResponse<AdminUser>>>('/admin/users', { params });
+        return res.data.data;
     },
 
     async getUserById(id: string): Promise<AdminUser> {
-        return {
-            id,
-            tenant_id: '1',
-            email: 'user@example.com',
-            name: 'Mock User',
-            status: 'ACTIVE',
-            role_ids: [],
-            mfa_enabled: false,
-            last_login_at: new Date().toISOString(),
-            created_at: new Date().toISOString()
-        };
+        const res = await api.get<ApiResponse<AdminUser>>(`/admin/users/${id}`);
+        return res.data.data;
     },
 
     async updateUserStatus(id: string, status: string): Promise<void> {
+        await api.patch<ApiResponse<void>>(`/admin/users/${id}/status`, { status });
     },
 
     async assignRoles(id: string, roleIds: string[]): Promise<void> {
+        await api.put<ApiResponse<void>>(`/admin/users/${id}/roles`, { role_ids: roleIds });
     },
 
     async getRoles(): Promise<AdminRole[]> {
-        return [];
+        const res = await api.get<ApiResponse<AdminRole[]>>('/admin/roles');
+        return res.data.data;
     },
 
     // Compliance / DSRs
     async getDSRs(params?: { page?: number; limit?: number; status?: string; type?: string; tenant_id?: string }): Promise<PaginatedResponse<AdminDSR>> {
-        return {
-            items: [],
-            total: 0,
-            page: 1,
-            page_size: 10,
-            total_pages: 1
-        };
+        const res = await api.get<ApiResponse<PaginatedResponse<AdminDSR>>>('/admin/dsr', { params });
+        return res.data.data;
     },
 
     async getDSRById(id: string): Promise<AdminDSR> {
-        throw new Error("Not implemented in mock");
+        const res = await api.get<ApiResponse<AdminDSR>>(`/admin/dsr/${id}`);
+        return res.data.data;
+    },
+
+    // Subscriptions
+    async getSubscription(tenantId: ID): Promise<Subscription> {
+        const res = await api.get<ApiResponse<Subscription>>(`/admin/tenants/${tenantId}/subscription`);
+        return res.data.data;
+    },
+
+    async updateSubscription(tenantId: ID, data: Partial<Subscription>): Promise<Subscription> {
+        const res = await api.put<ApiResponse<Subscription>>(`/admin/tenants/${tenantId}/subscription`, data);
+        return res.data.data;
+    },
+
+    // Module Access
+    getModuleAccess: async (tenantId: string) => {
+        const { data } = await api.get<ModuleAccess[]>(`/admin/tenants/${tenantId}/modules`);
+        return data;
+    },
+
+    updateModuleAccess: async (tenantId: string, modules: ModuleAccessInput[]) => {
+        const { data } = await api.put<ModuleAccess[]>(`/admin/tenants/${tenantId}/modules`, modules);
+        return data;
+    },
+
+    // Retention Policies
+    getRetentionPolicies: async (tenantId: string) => {
+        const { data } = await api.get<RetentionPolicy[]>(`/admin/retention-policies`, { params: { tenant_id: tenantId } });
+        return data;
+    },
+
+    createRetentionPolicy: async (policy: Partial<RetentionPolicy>) => {
+        const { data } = await api.post<RetentionPolicy>(`/admin/retention-policies`, policy);
+        return data;
+    },
+
+    updateRetentionPolicy: async (id: string, policy: Partial<RetentionPolicy>) => {
+        const { data } = await api.put<RetentionPolicy>(`/admin/retention-policies/${id}`, policy);
+        return data;
+    },
+
+    deleteRetentionPolicy: async (id: string) => {
+        await api.delete(`/admin/retention-policies/${id}`);
+    },
+
+    // Platform Settings
+    getPlatformSettings: async () => {
+        const { data } = await api.get<PlatformSettings>(`/admin/settings`);
+        return data;
+    },
+
+    updatePlatformSettings: async (settings: Partial<PlatformSettings>) => {
+        const { data } = await api.put<any>(`/admin/settings`, settings); // Backend accepts map[string]any
+        return data;
     },
 };

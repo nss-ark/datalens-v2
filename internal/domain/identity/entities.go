@@ -171,3 +171,113 @@ type RoleRepository interface {
 	GetByTenant(ctx context.Context, tenantID types.ID) ([]Role, error)
 	Update(ctx context.Context, r *Role) error
 }
+
+// =============================================================================
+// Subscription — Tracks a tenant's billing lifecycle
+// =============================================================================
+
+// Subscription represents a tenant's plan and billing information.
+type Subscription struct {
+	types.BaseEntity
+	TenantID     types.ID           `json:"tenant_id" db:"tenant_id"`
+	Plan         PlanType           `json:"plan" db:"plan"`
+	BillingStart *time.Time         `json:"billing_start,omitempty" db:"billing_start"`
+	BillingEnd   *time.Time         `json:"billing_end,omitempty" db:"billing_end"`
+	AutoRevoke   bool               `json:"auto_revoke" db:"auto_revoke"`
+	Status       SubscriptionStatus `json:"status" db:"status"`
+}
+
+// SubscriptionStatus tracks subscription lifecycle.
+type SubscriptionStatus string
+
+const (
+	SubscriptionActive    SubscriptionStatus = "ACTIVE"
+	SubscriptionExpired   SubscriptionStatus = "EXPIRED"
+	SubscriptionCancelled SubscriptionStatus = "CANCELLED"
+)
+
+// SubscriptionRepository defines persistence for subscriptions.
+type SubscriptionRepository interface {
+	Create(ctx context.Context, s *Subscription) error
+	GetByTenantID(ctx context.Context, tenantID types.ID) (*Subscription, error)
+	GetAllActive(ctx context.Context) ([]Subscription, error) // For background jobs
+	Update(ctx context.Context, s *Subscription) error
+}
+
+// =============================================================================
+// Module Access — Per-tenant feature toggles
+// =============================================================================
+
+// ModuleName identifies a platform module.
+type ModuleName string
+
+const (
+	ModulePIIDiscovery      ModuleName = "PII_DISCOVERY"
+	ModuleDSRManagement     ModuleName = "DSR_MANAGEMENT"
+	ModuleConsentManager    ModuleName = "CONSENT_MANAGER"
+	ModuleBreachTracker     ModuleName = "BREACH_TRACKER"
+	ModuleDataGovernance    ModuleName = "DATA_GOVERNANCE"
+	ModuleAIClassification  ModuleName = "AI_CLASSIFICATION"
+	ModuleAdvancedAnalytics ModuleName = "ADVANCED_ANALYTICS"
+	ModuleAuditTrail        ModuleName = "AUDIT_TRAIL"
+)
+
+// AllModules lists every known module.
+var AllModules = []ModuleName{
+	ModulePIIDiscovery,
+	ModuleDSRManagement,
+	ModuleConsentManager,
+	ModuleBreachTracker,
+	ModuleDataGovernance,
+	ModuleAIClassification,
+	ModuleAdvancedAnalytics,
+	ModuleAuditTrail,
+}
+
+// ModuleAccess records whether a module is enabled for a tenant.
+type ModuleAccess struct {
+	types.BaseEntity
+	TenantID   types.ID   `json:"tenant_id" db:"tenant_id"`
+	ModuleName ModuleName `json:"module_name" db:"module_name"`
+	Enabled    bool       `json:"enabled" db:"enabled"`
+}
+
+// PlanModuleDefaults maps each plan tier to the modules it includes by default.
+var PlanModuleDefaults = map[PlanType][]ModuleName{
+	PlanFree: {
+		ModulePIIDiscovery,
+		ModuleAuditTrail,
+	},
+	PlanStarter: {
+		ModulePIIDiscovery,
+		ModuleDSRManagement,
+		ModuleConsentManager,
+		ModuleAuditTrail,
+	},
+	PlanProfessional: {
+		ModulePIIDiscovery,
+		ModuleDSRManagement,
+		ModuleConsentManager,
+		ModuleBreachTracker,
+		ModuleDataGovernance,
+		ModuleAuditTrail,
+	},
+	PlanEnterprise: {
+		ModulePIIDiscovery,
+		ModuleDSRManagement,
+		ModuleConsentManager,
+		ModuleBreachTracker,
+		ModuleDataGovernance,
+		ModuleAIClassification,
+		ModuleAdvancedAnalytics,
+		ModuleAuditTrail,
+	},
+}
+
+// ModuleAccessRepository defines persistence for module access records.
+type ModuleAccessRepository interface {
+	// SetModules replaces all module_access rows for a tenant (upsert).
+	SetModules(ctx context.Context, tenantID types.ID, modules []ModuleAccess) error
+	// GetByTenantID returns all module_access rows for a tenant.
+	GetByTenantID(ctx context.Context, tenantID types.ID) ([]ModuleAccess, error)
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, Users, Activity, Server, Plus, ArrowRight, Shield, Clock } from 'lucide-react';
-import { AnalyticsCard, MotionList, Headline01, cn } from '@datalens/shared';
+import { AnalyticsCard, MotionList, cn } from '@datalens/shared';
 import { adminService } from '@/services/adminService';
 import type { AdminStats, Tenant } from '@/types/admin';
 

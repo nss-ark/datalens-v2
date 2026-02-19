@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -13,13 +14,17 @@ import (
 
 // AdminService handles platform administration tasks.
 type AdminService struct {
-	tenantRepo    identity.TenantRepository
-	userRepo      identity.UserRepository
-	roleRepo      identity.RoleRepository
-	dsrRepo       compliance.DSRRepository
-	retentionRepo compliance.RetentionPolicyRepository
-	tenantSvc     *TenantService
-	logger        *slog.Logger
+	tenantRepo       identity.TenantRepository
+	userRepo         identity.UserRepository
+	roleRepo         identity.RoleRepository
+	dsrRepo          compliance.DSRRepository
+	retentionRepo    compliance.RetentionPolicyRepository
+	subscriptionRepo identity.SubscriptionRepository
+	moduleAccessRepo identity.ModuleAccessRepository
+	settingsRepo     identity.PlatformSettingsRepository
+
+	tenantSvc *TenantService
+	logger    *slog.Logger
 }
 
 // NewAdminService creates a new AdminService.
@@ -29,17 +34,23 @@ func NewAdminService(
 	roleRepo identity.RoleRepository,
 	dsrRepo compliance.DSRRepository,
 	retentionRepo compliance.RetentionPolicyRepository,
+	subscriptionRepo identity.SubscriptionRepository,
+	moduleAccessRepo identity.ModuleAccessRepository,
+	settingsRepo identity.PlatformSettingsRepository,
 	tenantSvc *TenantService,
 	logger *slog.Logger,
 ) *AdminService {
 	return &AdminService{
-		tenantRepo:    tenantRepo,
-		userRepo:      userRepo,
-		roleRepo:      roleRepo,
-		dsrRepo:       dsrRepo,
-		retentionRepo: retentionRepo,
-		tenantSvc:     tenantSvc,
-		logger:        logger.With("service", "admin"),
+		tenantRepo:       tenantRepo,
+		userRepo:         userRepo,
+		roleRepo:         roleRepo,
+		dsrRepo:          dsrRepo,
+		retentionRepo:    retentionRepo,
+		subscriptionRepo: subscriptionRepo,
+		moduleAccessRepo: moduleAccessRepo,
+		settingsRepo:     settingsRepo,
+		tenantSvc:        tenantSvc,
+		logger:           logger.With("service", "admin"),
 	}
 }
 
@@ -53,6 +64,50 @@ func (s *AdminService) OnboardTenant(ctx context.Context, input OnboardInput) (*
 	// Re-use existing tenant onboarding logic which handles validation,
 	// tenant creation, user creation, and role assignment.
 	return s.tenantSvc.Onboard(ctx, input)
+}
+
+// GetTenant retrieves a single tenant by ID.
+func (s *AdminService) GetTenant(ctx context.Context, id types.ID) (*identity.Tenant, error) {
+	return s.tenantSvc.GetByID(ctx, id)
+}
+
+// UpdateTenant updates a tenant's details.
+func (s *AdminService) UpdateTenant(ctx context.Context, id types.ID, update identity.Tenant) (*identity.Tenant, error) {
+	// 1. Get existing
+	existing, err := s.tenantSvc.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Apply updates (only allow specific fields for now)
+	if update.Name != "" {
+		existing.Name = update.Name
+	}
+	if update.Industry != "" {
+		existing.Industry = update.Industry
+	}
+	if update.Country != "" {
+		existing.Country = update.Country
+	}
+	if update.Plan != "" {
+		existing.Plan = update.Plan
+	}
+	if update.Status != "" {
+		existing.Status = update.Status
+	}
+	// Settings updates
+	if update.Settings.RetentionDays > 0 {
+		existing.Settings.RetentionDays = update.Settings.RetentionDays
+	}
+	// EnableAI logic
+	existing.Settings.EnableAI = update.Settings.EnableAI
+
+	// 3. Save
+	if err := s.tenantSvc.Update(ctx, existing); err != nil {
+		return nil, fmt.Errorf("update tenant: %w", err)
+	}
+
+	return existing, nil
 }
 
 // GlobalStats returns aggregate platform statistics.
@@ -198,4 +253,231 @@ func (s *AdminService) UpdateRetentionPolicy(ctx context.Context, id types.ID, u
 	}
 
 	return policy, nil
+}
+
+// -------------------------------------------------------------------------
+// Subscription Management
+// -------------------------------------------------------------------------
+
+// GetSubscription retrieves the subscription for a tenant.
+// If none exists, a default FREE subscription is created.
+func (s *AdminService) GetSubscription(ctx context.Context, tenantID types.ID) (*identity.Subscription, error) {
+	sub, err := s.subscriptionRepo.GetByTenantID(ctx, tenantID)
+	if err != nil {
+		// If not found, create a default subscription
+		if types.IsNotFoundError(err) {
+			sub = &identity.Subscription{
+				TenantID:   tenantID,
+				Plan:       identity.PlanFree,
+				AutoRevoke: true,
+				Status:     identity.SubscriptionActive,
+			}
+			if createErr := s.subscriptionRepo.Create(ctx, sub); createErr != nil {
+				return nil, fmt.Errorf("create default subscription: %w", createErr)
+			}
+			// Also seed default modules for FREE plan
+			if seedErr := s.ApplyPlanDefaults(ctx, tenantID, identity.PlanFree); seedErr != nil {
+				s.logger.WarnContext(ctx, "failed to seed default modules", "error", seedErr)
+			}
+			return sub, nil
+		}
+		return nil, fmt.Errorf("get subscription: %w", err)
+	}
+	return sub, nil
+}
+
+// UpdateSubscription updates a tenant's subscription.
+func (s *AdminService) UpdateSubscription(ctx context.Context, tenantID types.ID, update identity.Subscription) (*identity.Subscription, error) {
+	existing, err := s.GetSubscription(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	oldPlan := existing.Plan
+
+	if update.Plan != "" {
+		existing.Plan = update.Plan
+	}
+	if update.BillingStart != nil {
+		existing.BillingStart = update.BillingStart
+	}
+	if update.BillingEnd != nil {
+		existing.BillingEnd = update.BillingEnd
+	}
+	existing.AutoRevoke = update.AutoRevoke
+	if update.Status != "" {
+		existing.Status = update.Status
+	}
+
+	if err := s.subscriptionRepo.Update(ctx, existing); err != nil {
+		return nil, fmt.Errorf("update subscription: %w", err)
+	}
+
+	// If plan changed, also update the tenant.plan column and seed modules
+	if oldPlan != existing.Plan {
+		tenant, err := s.tenantSvc.GetByID(ctx, tenantID)
+		if err == nil {
+			tenant.Plan = existing.Plan
+			_ = s.tenantSvc.Update(ctx, tenant)
+		}
+		if seedErr := s.ApplyPlanDefaults(ctx, tenantID, existing.Plan); seedErr != nil {
+			s.logger.WarnContext(ctx, "failed to apply plan defaults", "error", seedErr)
+		}
+	}
+
+	return existing, nil
+}
+
+// -------------------------------------------------------------------------
+// Module Access
+// -------------------------------------------------------------------------
+
+// GetModuleAccess retrieves module access for a tenant.
+// If none exist, seeds from PlanModuleDefaults based on current plan.
+func (s *AdminService) GetModuleAccess(ctx context.Context, tenantID types.ID) ([]identity.ModuleAccess, error) {
+	modules, err := s.moduleAccessRepo.GetByTenantID(ctx, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("get module access: %w", err)
+	}
+
+	// If empty, seed from defaults
+	if len(modules) == 0 {
+		tenant, tErr := s.tenantSvc.GetByID(ctx, tenantID)
+		if tErr != nil {
+			return nil, fmt.Errorf("get tenant for module defaults: %w", tErr)
+		}
+		if seedErr := s.ApplyPlanDefaults(ctx, tenantID, tenant.Plan); seedErr != nil {
+			return nil, fmt.Errorf("seed module defaults: %w", seedErr)
+		}
+		return s.moduleAccessRepo.GetByTenantID(ctx, tenantID)
+	}
+
+	return modules, nil
+}
+
+// ModuleAccessInput is the request body for updating module access.
+type ModuleAccessInput struct {
+	ModuleName identity.ModuleName `json:"module_name"`
+	Enabled    bool                `json:"enabled"`
+}
+
+// SetModuleAccess replaces all module access for a tenant.
+func (s *AdminService) SetModuleAccess(ctx context.Context, tenantID types.ID, inputs []ModuleAccessInput) ([]identity.ModuleAccess, error) {
+	modules := make([]identity.ModuleAccess, len(inputs))
+	for i, in := range inputs {
+		modules[i] = identity.ModuleAccess{
+			TenantID:   tenantID,
+			ModuleName: in.ModuleName,
+			Enabled:    in.Enabled,
+		}
+	}
+
+	if err := s.moduleAccessRepo.SetModules(ctx, tenantID, modules); err != nil {
+		return nil, fmt.Errorf("set module access: %w", err)
+	}
+
+	return s.moduleAccessRepo.GetByTenantID(ctx, tenantID)
+}
+
+// ApplyPlanDefaults seeds module_access rows from PlanModuleDefaults.
+func (s *AdminService) ApplyPlanDefaults(ctx context.Context, tenantID types.ID, plan identity.PlanType) error {
+	enabled := identity.PlanModuleDefaults[plan]
+	enabledSet := make(map[identity.ModuleName]bool, len(enabled))
+	for _, m := range enabled {
+		enabledSet[m] = true
+	}
+
+	// Build full module list — all modules present, enabled flag set per plan
+	var modules []identity.ModuleAccess
+	for _, m := range identity.AllModules {
+		modules = append(modules, identity.ModuleAccess{
+			TenantID:   tenantID,
+			ModuleName: m,
+			Enabled:    enabledSet[m],
+		})
+	}
+
+	return s.moduleAccessRepo.SetModules(ctx, tenantID, modules)
+}
+
+// GetPlatformSettings retrieves all platform configuration.
+func (s *AdminService) GetPlatformSettings(ctx context.Context) (map[string]any, error) {
+	settings, err := s.settingsRepo.GetAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get settings: %w", err)
+	}
+
+	result := make(map[string]any)
+	for _, setting := range settings {
+		var val any
+		if err := json.Unmarshal(setting.Value, &val); err != nil {
+			s.logger.WarnContext(ctx, "failed to unmarshal setting value", "key", setting.Key, "error", err)
+			continue
+		}
+		result[setting.Key] = val
+	}
+	return result, nil
+}
+
+// UpdatePlatformSetting updates a single platform setting key.
+func (s *AdminService) UpdatePlatformSetting(ctx context.Context, key string, value any) error {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("marshal setting value: %w", err)
+	}
+
+	setting := &identity.PlatformSetting{
+		Key:   key,
+		Value: raw,
+	}
+	return s.settingsRepo.Set(ctx, setting)
+}
+
+// CheckSubscriptionExpiry checks for expired subscriptions and suspends tenants.
+func (s *AdminService) CheckSubscriptionExpiry(ctx context.Context) error {
+	subs, err := s.subscriptionRepo.GetAllActive(ctx)
+	if err != nil {
+		return fmt.Errorf("get active subscriptions: %w", err)
+	}
+
+	now := time.Now().UTC()
+	for i := range subs {
+		sub := &subs[i]
+
+		// Skip if no billing end date
+		if sub.BillingEnd == nil {
+			continue
+		}
+
+		// Check if expired
+		if sub.BillingEnd.Before(now) {
+			s.logger.InfoContext(ctx, "subscription expired", "tenant_id", sub.TenantID, "billing_end", sub.BillingEnd)
+
+			// 1. Mark subscription as expired
+			sub.Status = identity.SubscriptionExpired
+			if err := s.subscriptionRepo.Update(ctx, sub); err != nil {
+				s.logger.ErrorContext(ctx, "failed to update subscription status", "error", err, "tenant_id", sub.TenantID)
+				continue
+			}
+
+			// 2. If auto-revoke is enabled, suspend the tenant
+			if sub.AutoRevoke {
+				s.logger.InfoContext(ctx, "auto-revoking tenant due to expiry", "tenant_id", sub.TenantID)
+
+				// Suspend the tenant
+				_, err := s.UpdateTenant(ctx, sub.TenantID, identity.Tenant{Status: identity.TenantSuspended})
+				if err != nil {
+					s.logger.ErrorContext(ctx, "failed to suspend tenant", "error", err, "tenant_id", sub.TenantID)
+				}
+			}
+		} else {
+			// Check for warning (e.g. 7 days left)
+			daysLeft := sub.BillingEnd.Sub(now).Hours() / 24
+			if daysLeft <= 7 && daysLeft > 0 {
+				s.logger.InfoContext(ctx, "subscription expiring soon", "tenant_id", sub.TenantID, "days_left", daysLeft)
+				// TODO: Send email notification
+			}
+		}
+	}
+	return nil
 }
