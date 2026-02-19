@@ -12,7 +12,6 @@ export const NominationModal: React.FC<NominationModalProps> = ({ isOpen, onClos
     const [nomineeName, setNomineeName] = useState('');
     const [relationship, setRelationship] = useState('');
     const [contact, setContact] = useState('');
-    const [isDragging, setIsDragging] = useState(false);
     const [file, setFile] = useState<File | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -30,28 +29,13 @@ export const NominationModal: React.FC<NominationModalProps> = ({ isOpen, onClos
         onClose();
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = () => {
-        setIsDragging(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setFile(e.dataTransfer.files[0]);
-        }
-    };
-
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
         }
     };
+
+
 
     return (
         <Modal
@@ -148,9 +132,6 @@ export const NominationModal: React.FC<NominationModalProps> = ({ isOpen, onClos
                         <div
                             style={{ display: 'flex', justifyContent: 'center', borderRadius: '12px', border: '2px dashed #cbd5e1', padding: '32px', cursor: 'pointer', backgroundColor: 'white', transition: 'all 0.2s' }}
                             onClick={() => document.getElementById('nominee-file-upload')?.click()}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
                         >
                             <input
                                 id="nominee-file-upload"

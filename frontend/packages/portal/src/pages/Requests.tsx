@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { portalService } from '@/services/portalService';
-import { ShieldAlert, FileText, Plus, ExternalLink, X, ChevronRight } from 'lucide-react';
+import { ShieldAlert, FileText, Plus, ExternalLink, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { StatusBadge, Button, toast, Modal } from '@datalens/shared';
 import { useNavigate } from 'react-router-dom';

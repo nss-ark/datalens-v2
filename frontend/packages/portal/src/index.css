@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @source "../../shared/src/**/*.tsx";
+@source "./**/*.{ts,tsx}";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
@@ -89,31 +90,31 @@
 }
 
 /* ——— Reset & Base ——— */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: var(--font-sans);
-  background-color: var(--bg-app);
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
 @layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
   button {
     cursor: pointer;
     border: none;
@@ -390,5 +391,65 @@ a {
 
   .portal-footer-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* ——— Notification Feed Layout ——— */
+.notification-feed-grid {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.notification-sidebar {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Shield pulse animation */
+@keyframes shieldPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px rgba(255, 255, 255, 0);
+  }
+}
+
+.shield-pulse {
+  animation: shieldPulse 2.5s ease-in-out infinite;
+}
+
+/* Responsive: stack on tablet and below */
+@media (max-width: 1024px) {
+  .notification-feed-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .notification-sidebar>* {
+    flex: 1 1 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .notification-sidebar {
+    flex-direction: column;
+  }
+
+  .notification-sidebar>* {
+    flex: 1 1 100%;
   }
 }

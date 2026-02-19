@@ -1,165 +1,226 @@
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { portalService } from '@/services/portalService';
-import { ShieldAlert, AlertTriangle, AlertOctagon, Info, ChevronDown, ChevronUp } from 'lucide-react';
-import { format } from 'date-fns';
-import { useState } from 'react';
-import { clsx } from 'clsx';
-import type { BreachNotification } from '@/types/portal';
+import { ChevronDown } from 'lucide-react';
+import type { ActivityFeedItem, ActivityCategory, BreachNotification } from '@/types/portal';
+import { ActivityFeedCard } from '@/components/notifications/ActivityFeedCard';
+import { SecurityShield } from '@/components/notifications/SecurityShield';
+import { BreachAssistance } from '@/components/notifications/BreachAssistance';
 
-const SeverityBadge = ({ severity }: { severity: string }) => {
-    const styles: Record<string, string> = {
-        LOW: 'bg-blue-50 text-blue-700 ring-blue-200',
-        MEDIUM: 'bg-yellow-50 text-yellow-700 ring-yellow-200',
-        HIGH: 'bg-orange-50 text-orange-700 ring-orange-200',
-        CRITICAL: 'bg-red-50 text-red-700 ring-red-200',
+/* ────────────────────────────────────────────
+ * Mock activity items (supplement real breach data)
+ * ──────────────────────────────────────────── */
+const now = Date.now();
+const mins = (m: number) => new Date(now - m * 60_000).toISOString();
+const hrs = (h: number) => new Date(now - h * 3_600_000).toISOString();
+const days = (d: number) => new Date(now - d * 86_400_000).toISOString();
+
+const MOCK_ITEMS: ActivityFeedItem[] = [
+    {
+        id: 'mock-login-1',
+        type: 'login',
+        title: 'New login detected',
+        description: 'A new login was successful from Chrome on a MacOS device located in San Francisco, CA.',
+        timestamp: mins(2),
+        category: 'ALL',
+        is_read: false,
+        secondary_actions: [
+            { label: 'This was me', variant: 'default' },
+            { label: 'Not me – Secure account', variant: 'danger' },
+        ],
+    },
+    {
+        id: 'mock-dsr-update-1',
+        type: 'request_update',
+        title: 'Request #DS-2940 Status Update',
+        description: 'Your data access request has been completed. You can now download your archive.',
+        timestamp: hrs(3),
+        category: 'REQUESTS',
+        is_read: false,
+        category_label: 'DATA PRIVACY',
+    },
+    {
+        id: 'mock-consent-1',
+        type: 'consent_update',
+        title: 'Updated Privacy Consent',
+        description: 'We\'ve updated our data processing terms for marketing services. Please review and provide consent.',
+        timestamp: days(1),
+        category: 'PRIVACY',
+        is_read: true,
+        primary_action: { label: 'Review Changes' },
+    },
+    {
+        id: 'mock-digest-1',
+        type: 'security_digest',
+        title: 'Monthly Security Digest Available',
+        description: 'Your summary of account security activities for the month of January is ready for viewing.',
+        timestamp: days(2),
+        category: 'ALL',
+        is_read: true,
+    },
+];
+
+/* ── Map real breach notifications into ActivityFeedItems ── */
+function breachToFeedItem(b: BreachNotification): ActivityFeedItem {
+    return {
+        id: `breach-${b.id}`,
+        type: 'breach',
+        title: b.title,
+        description: b.description,
+        timestamp: b.created_at,
+        category: 'PRIVACY',
+        is_read: b.is_read,
+        category_label: b.severity,
+        breach_ref: b,
     };
+}
 
-    const icons: Record<string, typeof Info> = {
-        LOW: Info,
-        MEDIUM: AlertTriangle,
-        HIGH: AlertOctagon,
-        CRITICAL: ShieldAlert,
-    };
+/* ── Filter tabs ── */
+const TABS: { label: string; value: ActivityCategory }[] = [
+    { label: 'ALL', value: 'ALL' },
+    { label: 'REQUESTS', value: 'REQUESTS' },
+    { label: 'PRIVACY', value: 'PRIVACY' },
+];
 
-    const Icon = icons[severity] || Info;
-    const style = styles[severity] || styles.LOW;
-
-    return (
-        <span className={clsx('flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1', style)}>
-            <Icon size={13} />
-            {severity}
-        </span>
-    );
-};
-
-const NotificationCard = ({ notification }: { notification: BreachNotification }) => {
-    const [expanded, setExpanded] = useState(false);
-
-    return (
-        <div className="portal-card overflow-hidden transition-all">
-            <div className="p-6 cursor-pointer hover:bg-slate-50/50 transition-colors" onClick={() => setExpanded(!expanded)}>
-                <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2.5">
-                            <SeverityBadge severity={notification.severity} />
-                            <span className="text-xs text-slate-400">
-                                {format(new Date(notification.created_at), 'MMM d, yyyy')}
-                            </span>
-                        </div>
-                        <h3 className="text-base font-semibold text-slate-900 mb-1">{notification.title}</h3>
-                        <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">{notification.description}</p>
-                    </div>
-                    <button
-                        className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 flex-shrink-0"
-                        aria-label={expanded ? "Collapse" : "Expand"}
-                    >
-                        {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    </button>
-                </div>
-            </div>
-
-            {expanded && (
-                <div className="px-6 pb-6 bg-slate-50/50 border-t border-slate-100 pt-5 animate-fade-in">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 className="text-xs font-semibold text-slate-900 mb-3 uppercase tracking-wider">Incident Details</h4>
-                            <div className="space-y-4 text-sm">
-                                <div>
-                                    <span className="text-slate-400 block text-xs uppercase tracking-wider font-semibold mb-1">Occurred At</span>
-                                    <span className="text-slate-900 font-medium">
-                                        {format(new Date(notification.occurred_at), 'MMM d, yyyy HH:mm')}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="text-slate-400 block text-xs uppercase tracking-wider font-semibold mb-1">Description</span>
-                                    <p className="text-slate-600 leading-relaxed">{notification.description}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-5">
-                            <div>
-                                <h4 className="text-xs font-semibold text-slate-900 mb-3 uppercase tracking-wider">Affected Data</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {notification.affected_data?.map((item, i) => (
-                                        <span key={i} className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
-                                            {item}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="text-xs font-semibold text-slate-900 mb-3 uppercase tracking-wider">What We Are Doing</h4>
-                                <p className="text-sm text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200">
-                                    {notification.what_we_are_doing}
-                                </p>
-                            </div>
-
-                            {notification.contact_email && (
-                                <div>
-                                    <h4 className="text-xs font-semibold text-slate-900 mb-2 uppercase tracking-wider">Contact</h4>
-                                    <a href={`mailto:${notification.contact_email}`} className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                                        {notification.contact_email}
-                                    </a>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
+/* ════════════════════════════════════════════
+ * Page Component
+ * ════════════════════════════════════════════ */
 const BreachNotifications = () => {
-    const { data: notifications, isLoading } = useQuery({
+    const [activeTab, setActiveTab] = useState<ActivityCategory>('ALL');
+
+    // Fetch real breach notifications
+    const { data: breachData, isLoading } = useQuery({
         queryKey: ['breach-notifications'],
         queryFn: () => portalService.getBreachNotifications(),
     });
 
-    const items = notifications?.items || [];
+    // Merge breach data + mock items into a single feed, sorted by timestamp desc
+    const feedItems = useMemo(() => {
+        const breachItems = (breachData?.items || []).map(breachToFeedItem);
+        const all = [...MOCK_ITEMS, ...breachItems].sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        );
+        return all;
+    }, [breachData]);
+
+    // Apply tab filter
+    const filteredItems = useMemo(() => {
+        if (activeTab === 'ALL') return feedItems;
+        return feedItems.filter((item) => item.category === activeTab);
+    }, [feedItems, activeTab]);
 
     return (
         <div className="animate-fade-in">
-            <div className="page-header">
-                <h1>Data Breach Notifications</h1>
-                <p>
-                    Important alerts regarding processed data breaches that may impact you.
-                    Under DPDP Rules R7(4), we are legally required to notify you of any personal data breaches.
-                </p>
-            </div>
-
-            {isLoading ? (
-                <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="portal-card p-6">
-                            <div className="flex gap-3 mb-3">
-                                <div className="skeleton h-6 w-20 rounded-full" />
-                                <div className="skeleton h-4 w-24" />
-                            </div>
-                            <div className="skeleton h-5 w-72 mb-2" />
-                            <div className="skeleton h-4 w-full" />
+            {/* ── 2-column grid ── */}
+            <div className="notification-feed-grid">
+                {/* ════ LEFT COLUMN — Activity Feed ════ */}
+                <div>
+                    {/* Header + tabs */}
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            flexWrap: 'wrap',
+                            gap: '16px',
+                            marginBottom: '28px',
+                        }}
+                    >
+                        <div>
+                            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+                                Activity Feed
+                            </h1>
+                            <p style={{ fontSize: '14.5px', color: '#6B7280', margin: 0 }}>
+                                Stay updated with your latest security and system events.
+                            </p>
                         </div>
-                    ))}
-                </div>
-            ) : items.length === 0 ? (
-                <div className="portal-card p-12 text-center">
-                    <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-5 ring-4 ring-emerald-50">
-                        <ShieldAlert size={28} />
+
+                        {/* Tabs */}
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                            {TABS.map((tab) => (
+                                <button
+                                    key={tab.value}
+                                    onClick={() => setActiveTab(tab.value)}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                        fontWeight: 600,
+                                        letterSpacing: '0.02em',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        border: activeTab === tab.value ? 'none' : '1px solid #E5E7EB',
+                                        backgroundColor: activeTab === tab.value ? '#2563EB' : '#ffffff',
+                                        color: activeTab === tab.value ? '#ffffff' : '#374151',
+                                    }}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">No Breach Notifications</h3>
-                    <p className="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
-                        Good news! There are no data breaches reported for your account. We will notify you immediately if any incidents occur.
-                    </p>
+
+                    {/* Feed items */}
+                    {isLoading ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="portal-card" style={{ padding: '20px 24px' }}>
+                                    <div style={{ display: 'flex', gap: '16px' }}>
+                                        <div className="skeleton" style={{ width: 44, height: 44, borderRadius: '12px', flexShrink: 0 }} />
+                                        <div style={{ flex: 1 }}>
+                                            <div className="skeleton" style={{ height: 16, width: '60%', marginBottom: 8, borderRadius: 6 }} />
+                                            <div className="skeleton" style={{ height: 14, width: '90%', borderRadius: 6 }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : filteredItems.length === 0 ? (
+                        <div className="portal-card" style={{ padding: '48px 24px', textAlign: 'center' }}>
+                            <p style={{ fontSize: '14px', color: '#9CA3AF', margin: 0 }}>
+                                No activity for the selected filter.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {filteredItems.map((item) => (
+                                <ActivityFeedCard key={item.id} item={item} />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Load older activity */}
+                    {filteredItems.length > 0 && (
+                        <button
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                width: '100%',
+                                marginTop: '20px',
+                                padding: '12px',
+                                fontSize: '13px',
+                                fontWeight: 500,
+                                color: '#9CA3AF',
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'color 0.2s',
+                            }}
+                        >
+                            Load older activity
+                            <ChevronDown size={14} />
+                        </button>
+                    )}
                 </div>
-            ) : (
-                <div className="space-y-4 stagger-children">
-                    {items.map((notification) => (
-                        <NotificationCard key={notification.id} notification={notification} />
-                    ))}
+
+                {/* ════ RIGHT COLUMN — Shield + Assistance ════ */}
+                <div className="notification-sidebar">
+                    <SecurityShield />
+                    <BreachAssistance />
                 </div>
-            )}
+            </div>
         </div>
     );
 };
