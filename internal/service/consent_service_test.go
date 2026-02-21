@@ -447,6 +447,18 @@ func (r *mockConsentSessionRepo) GetExpiringSessions(_ context.Context, withinDa
 	return nil, nil
 }
 
+func (r *mockConsentSessionRepo) ListByTenant(_ context.Context, tenantID types.ID, filters consent.ConsentSessionFilters, pagination types.Pagination) (*types.PaginatedResult[consent.ConsentSession], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []consent.ConsentSession
+	for _, s := range r.sessions {
+		if s.TenantID == tenantID {
+			items = append(items, s)
+		}
+	}
+	return &types.PaginatedResult[consent.ConsentSession]{Items: items, Total: len(items), Page: pagination.Page, PageSize: pagination.PageSize}, nil
+}
+
 // Mock ConsentHistoryRepository
 type mockConsentHistoryRepo struct {
 	mu      sync.Mutex

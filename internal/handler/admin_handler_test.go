@@ -92,8 +92,8 @@ func setupAdminHandler(t *testing.T) (*handler.AdminHandler, *MockDSRRepo) {
 	// TenantService is tricky, it's a struct pointer. We might need a real one or mock if we touch it.
 	// But for DSR methods we don't touch tenantSvc.
 
-	adminSvc := service.NewAdminService(nil, nil, nil, dsrRepo, nil, nil, logger)
-	h := handler.NewAdminHandler(adminSvc)
+	adminSvc := service.NewAdminService(nil, nil, nil, dsrRepo, nil, nil, nil, nil, nil, logger)
+	h := handler.NewAdminHandler(adminSvc, nil)
 	return h, dsrRepo
 }
 

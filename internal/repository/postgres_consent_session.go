@@ -224,5 +224,88 @@ func (r *ConsentSessionRepo) GetExpiringSessions(ctx context.Context, withinDays
 	return sessions, rows.Err()
 }
 
+// ListByTenant retrieves paginated consent sessions for a tenant with optional filters.
+func (r *ConsentSessionRepo) ListByTenant(ctx context.Context, tenantID types.ID, filters consent.ConsentSessionFilters, pagination types.Pagination) (*types.PaginatedResult[consent.ConsentSession], error) {
+	if pagination.Page < 1 {
+		pagination.Page = 1
+	}
+	if pagination.PageSize < 1 {
+		pagination.PageSize = 20
+	}
+	offset := (pagination.Page - 1) * pagination.PageSize
+
+	// Build dynamic WHERE clause
+	whereClause := "WHERE tenant_id = $1"
+	args := []any{tenantID}
+	argIdx := 2
+
+	if filters.SubjectID != nil {
+		whereClause += fmt.Sprintf(" AND subject_id = $%d", argIdx)
+		args = append(args, *filters.SubjectID)
+		argIdx++
+	}
+
+	if filters.PurposeID != nil {
+		whereClause += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM jsonb_array_elements(decisions) AS d WHERE (d->>'purpose_id') = $%d)", argIdx)
+		args = append(args, filters.PurposeID.String())
+		argIdx++
+	}
+
+	if filters.Status == "GRANTED" {
+		whereClause += " AND EXISTS (SELECT 1 FROM jsonb_array_elements(decisions) AS d WHERE (d->>'granted')::boolean = true)"
+	} else if filters.Status == "WITHDRAWN" {
+		whereClause += " AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(decisions) AS d WHERE (d->>'granted')::boolean = true)"
+	}
+
+	// Count
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM consent_sessions %s", whereClause)
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, fmt.Errorf("count consent sessions: %w", err)
+	}
+
+	// Select
+	selectQuery := fmt.Sprintf(`
+		SELECT id, tenant_id, widget_id, subject_id, decisions,
+		       ip_address, user_agent, page_url, widget_version,
+		       notice_version, signature, created_at
+		FROM consent_sessions %s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, argIdx, argIdx+1)
+	args = append(args, pagination.PageSize, offset)
+
+	rows, err := r.pool.Query(ctx, selectQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list consent sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var items []consent.ConsentSession
+	for rows.Next() {
+		var s consent.ConsentSession
+		var decisionsJSON []byte
+		if err := rows.Scan(
+			&s.ID, &s.TenantID, &s.WidgetID, &s.SubjectID, &decisionsJSON,
+			&s.IPAddress, &s.UserAgent, &s.PageURL, &s.WidgetVersion,
+			&s.NoticeVersion, &s.Signature, &s.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan consent session: %w", err)
+		}
+		if err := json.Unmarshal(decisionsJSON, &s.Decisions); err != nil {
+			return nil, fmt.Errorf("unmarshal consent decisions: %w", err)
+		}
+		items = append(items, s)
+	}
+
+	return &types.PaginatedResult[consent.ConsentSession]{
+		Items:      items,
+		Total:      total,
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
+		TotalPages: (total + pagination.PageSize - 1) / pagination.PageSize,
+	}, nil
+}
+
 // Compile-time interface check.
 var _ consent.ConsentSessionRepository = (*ConsentSessionRepo)(nil)

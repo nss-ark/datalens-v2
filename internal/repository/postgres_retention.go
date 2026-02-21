@@ -120,11 +120,74 @@ func (r *RetentionRepo) Delete(ctx context.Context, id types.ID) error {
 	return nil
 }
 
-// Log methods implementation stub (minimal for now)
+// CreateLog persists a new retention action log entry.
 func (r *RetentionRepo) CreateLog(ctx context.Context, log *compliance.RetentionLog) error {
-	return nil // TODO: implement when logs are needed
+	log.ID = types.NewID()
+	if log.Timestamp.IsZero() {
+		log.Timestamp = time.Now()
+	}
+
+	query := `
+		INSERT INTO retention_logs (id, tenant_id, policy_id, action, target, details, timestamp)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+	_, err := r.pool.Exec(ctx, query,
+		log.ID, log.TenantID, log.PolicyID, log.Action, log.Target, log.Details, log.Timestamp,
+	)
+	if err != nil {
+		return fmt.Errorf("create retention log: %w", err)
+	}
+	return nil
 }
 
+// GetLogs retrieves paginated retention log entries, optionally filtered by policy ID.
 func (r *RetentionRepo) GetLogs(ctx context.Context, tenantID types.ID, policyID *types.ID, pagination types.Pagination) (*types.PaginatedResult[compliance.RetentionLog], error) {
-	return &types.PaginatedResult[compliance.RetentionLog]{Items: []compliance.RetentionLog{}}, nil // TODO: implement
+	whereClause := "WHERE tenant_id = $1"
+	args := []any{tenantID}
+	argIdx := 2
+
+	if policyID != nil {
+		whereClause += fmt.Sprintf(" AND policy_id = $%d", argIdx)
+		args = append(args, *policyID)
+		argIdx++
+	}
+
+	// Count
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM retention_logs %s", whereClause)
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, fmt.Errorf("count retention logs: %w", err)
+	}
+
+	// Select
+	selectQuery := fmt.Sprintf(`
+		SELECT id, tenant_id, policy_id, action, target, details, timestamp
+		FROM retention_logs %s
+		ORDER BY timestamp DESC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, argIdx, argIdx+1)
+	args = append(args, pagination.Limit(), pagination.Offset())
+
+	rows, err := r.pool.Query(ctx, selectQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query retention logs: %w", err)
+	}
+	defer rows.Close()
+
+	var items []compliance.RetentionLog
+	for rows.Next() {
+		var l compliance.RetentionLog
+		if err := rows.Scan(&l.ID, &l.TenantID, &l.PolicyID, &l.Action, &l.Target, &l.Details, &l.Timestamp); err != nil {
+			return nil, fmt.Errorf("scan retention log: %w", err)
+		}
+		items = append(items, l)
+	}
+
+	return &types.PaginatedResult[compliance.RetentionLog]{
+		Items:      items,
+		Total:      total,
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
+		TotalPages: (total + pagination.PageSize - 1) / pagination.PageSize,
+	}, nil
 }

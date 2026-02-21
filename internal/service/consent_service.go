@@ -608,6 +608,16 @@ func (s *ConsentService) GetSessionsBySubject(ctx context.Context, subjectID typ
 	return s.sessionRepo.GetBySubject(ctx, tenantID, subjectID)
 }
 
+// ListSessionsByTenant retrieves paginated consent sessions for the current tenant with optional filters.
+func (s *ConsentService) ListSessionsByTenant(ctx context.Context, filters consent.ConsentSessionFilters, pagination types.Pagination) (*types.PaginatedResult[consent.ConsentSession], error) {
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, types.NewForbiddenError("tenant context required")
+	}
+
+	return s.sessionRepo.ListByTenant(ctx, tenantID, filters, pagination)
+}
+
 // GetHistory retrieves paginated consent history for a subject.
 func (s *ConsentService) GetHistory(ctx context.Context, subjectID types.ID, pagination types.Pagination) (*types.PaginatedResult[consent.ConsentHistoryEntry], error) {
 	tenantID, ok := types.TenantIDFromContext(ctx)

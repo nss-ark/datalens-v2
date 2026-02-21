@@ -104,7 +104,7 @@ func TestBatch19_AdminDSR_Service(t *testing.T) {
 
 	// Needed for AdminService
 	tenantSvc := NewTenantService(tenantRepo, userRepo, roleRepo, nil, logger)
-	adminSvc := NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, retentionRepo, tenantSvc, logger)
+	adminSvc := NewAdminService(tenantRepo, userRepo, roleRepo, dsrRepo, retentionRepo, nil, nil, nil, tenantSvc, logger)
 
 	// Create DSRs in Different Tenants
 	tenantA := types.NewID()

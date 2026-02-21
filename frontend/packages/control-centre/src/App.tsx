@@ -31,8 +31,12 @@ import NotificationHistory from './pages/Compliance/NotificationHistory';
 import GrievanceList from './pages/Compliance/GrievanceList';
 import GrievanceDetail from './pages/Compliance/GrievanceDetail';
 import NoticeManager from './pages/Consent/NoticeManager';
+import ConsentRecords from './pages/Consent/ConsentRecords';
+import DataSubjects from './pages/DataSubjects';
+import AuditLogs from './pages/AuditLogs';
 import PIIInventory from './pages/PIIInventory';
 import Settings from './pages/Settings';
+import RetentionPolicies from './pages/RetentionPolicies';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -94,8 +98,8 @@ function App() {
 
                         <Route path="/pii/inventory" element={<PIIInventory />} />
                         <Route path="/governance/lineage" element={<DataLineage />} />
-                        <Route path="/subjects" element={<PlaceholderPage title="Data Subjects" />} />
-                        <Route path="/consent" element={<PlaceholderPage title="Consent Records" />} />
+                        <Route path="/subjects" element={<DataSubjects />} />
+                        <Route path="/consent" element={<ConsentRecords />} />
                         <Route path="/nominations" element={<PlaceholderPage title="Nominations" />} />
 
                         {/* Governance Routes */}
@@ -114,10 +118,10 @@ function App() {
                         {/* Placeholder routes */}
                         <Route path="/department" element={<PlaceholderPage title="Department" />} />
                         <Route path="/third-parties" element={<PlaceholderPage title="Third Parties" />} />
-                        <Route path="/retention" element={<PlaceholderPage title="Retention Policies" />} />
+                        <Route path="/retention" element={<RetentionPolicies />} />
                         <Route path="/ropa" element={<PlaceholderPage title="RoPA" />} />
                         <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
-                        <Route path="/audit-logs" element={<PlaceholderPage title="Audit Logs" />} />
+                        <Route path="/audit-logs" element={<AuditLogs />} />
                         <Route path="/users" element={<PlaceholderPage title="User Management" />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<PlaceholderPage title="404 — Page Not Found" />} />

@@ -236,6 +236,8 @@ func main() {
 	var dpoSvc *service.DPOService
 	var dpoHandler *handler.DPOHandler
 	var auditHandler *handler.AuditHandler
+	var dataSubjectHandler *handler.DataSubjectHandler
+	var retentionHandler *handler.RetentionHandler
 	var noticeSvc *service.NoticeService
 	var translationSvc *service.TranslationService
 	var breachSvc *service.BreachService
@@ -481,7 +483,8 @@ func main() {
 		}()
 
 		// Scan Scheduler
-		schedulerSvc := service.NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, consentExpirySvc, slog.Default())
+		retentionRepo := repository.NewRetentionRepo(dbPool)
+		schedulerSvc := service.NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, consentExpirySvc, retentionRepo, slog.Default())
 		if err := schedulerSvc.Start(context.Background()); err != nil {
 			log.Error("Failed to start scan scheduler", "error", err)
 		}
@@ -557,6 +560,14 @@ func main() {
 
 		// Audit Handler (for CC audit-logs endpoint)
 		auditHandler = handler.NewAuditHandler(auditSvc)
+
+		// Data Subject Handler (subjects listing/search)
+		dataSubjectHandler = handler.NewDataSubjectHandler(profileRepo)
+
+		// Retention Service + Handler (retention policy CRUD)
+		ccRetentionRepo := repository.NewRetentionRepo(dbPool)
+		retentionSvc := service.NewRetentionService(ccRetentionRepo, slog.Default())
+		retentionHandler = handler.NewRetentionHandler(retentionSvc)
 
 		log.Info("CC services and handlers initialized")
 	}
@@ -737,6 +748,7 @@ func main() {
 				m365Handler, googleHandler, identityHandler,
 				grievanceHandler, notificationHandler, dpoHandler,
 				auditHandler,
+				dataSubjectHandler, retentionHandler,
 			)
 		}
 

@@ -54,6 +54,8 @@ func mountCCRoutes(
 	notificationHandler *handler.NotificationHandler,
 	dpoHandler *handler.DPOHandler,
 	auditHandler *handler.AuditHandler,
+	dataSubjectHandler *handler.DataSubjectHandler,
+	retentionHandler *handler.RetentionHandler,
 ) {
 	// Protected routes (auth + tenant isolation + rate limiting)
 	r.Group(func(r chi.Router) {
@@ -120,6 +122,12 @@ func mountCCRoutes(
 
 		// Compliance (DPO, etc.)
 		r.Mount("/compliance/dpo", dpoHandler.Routes())
+
+		// Data Subjects
+		r.Mount("/subjects", dataSubjectHandler.Routes())
+
+		// Retention Policies
+		r.Mount("/retention", retentionHandler.Routes())
 	})
 }
 

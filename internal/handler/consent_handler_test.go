@@ -243,6 +243,10 @@ func (m *mockConsentSessionRepo) GetExpiringSessions(ctx context.Context, within
 	return nil, nil
 }
 
+func (m *mockConsentSessionRepo) ListByTenant(_ context.Context, tenantID types.ID, filters consent.ConsentSessionFilters, pagination types.Pagination) (*types.PaginatedResult[consent.ConsentSession], error) {
+	return &types.PaginatedResult[consent.ConsentSession]{Items: []consent.ConsentSession{}, Total: 0}, nil
+}
+
 type mockConsentHistoryRepo struct{}
 
 func (m *mockConsentHistoryRepo) Create(ctx context.Context, h *consent.ConsentHistoryEntry) error {

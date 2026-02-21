@@ -1229,6 +1229,18 @@ func (r *mockSessionRepo) GetPurposeStats(_ context.Context, tenantID types.ID, 
 	return nil, nil // Mock
 }
 
+func (r *mockSessionRepo) ListByTenant(_ context.Context, tenantID types.ID, filters consent.ConsentSessionFilters, pagination types.Pagination) (*types.PaginatedResult[consent.ConsentSession], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []consent.ConsentSession
+	for _, s := range r.sessions {
+		if s.TenantID == tenantID {
+			result = append(result, *s)
+		}
+	}
+	return &types.PaginatedResult[consent.ConsentSession]{Items: result, Total: len(result)}, nil
+}
+
 func (r *mockSessionRepo) GetExpiringSessions(_ context.Context, withinDays int) ([]consent.ConsentSession, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -1496,6 +1508,18 @@ func (r *mockProfileRepo) Update(ctx context.Context, p *consent.DataPrincipalPr
 }
 
 func (r *mockProfileRepo) ListByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[consent.DataPrincipalProfile], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var items []consent.DataPrincipalProfile
+	for _, p := range r.profiles {
+		if p.TenantID == tenantID {
+			items = append(items, *p)
+		}
+	}
+	return &types.PaginatedResult[consent.DataPrincipalProfile]{Items: items, Total: len(items)}, nil
+}
+
+func (r *mockProfileRepo) SearchByTenant(_ context.Context, tenantID types.ID, query string, pagination types.Pagination) (*types.PaginatedResult[consent.DataPrincipalProfile], error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var items []consent.DataPrincipalProfile

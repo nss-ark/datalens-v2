@@ -7,6 +7,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/complyark/datalens/internal/domain/compliance"
 	"github.com/complyark/datalens/internal/domain/discovery"
 	"github.com/complyark/datalens/internal/domain/identity"
 	"github.com/complyark/datalens/pkg/types"
@@ -14,16 +15,18 @@ import (
 
 // SchedulerService manages automated scan scheduling based on cron expressions.
 type SchedulerService struct {
-	dsRepo         discovery.DataSourceRepository
-	tenantRepo     identity.TenantRepository
-	policySvc      *PolicyService
-	scanService    ScanOrchestrator
-	expirySvc      *ConsentExpiryService
-	logger         *slog.Logger
-	parser         cron.Parser
-	ticker         *time.Ticker
-	stopChan       chan struct{}
-	lastPolicyEval time.Time
+	dsRepo             discovery.DataSourceRepository
+	tenantRepo         identity.TenantRepository
+	policySvc          *PolicyService
+	scanService        ScanOrchestrator
+	expirySvc          *ConsentExpiryService
+	retentionRepo      compliance.RetentionPolicyRepository
+	logger             *slog.Logger
+	parser             cron.Parser
+	ticker             *time.Ticker
+	stopChan           chan struct{}
+	lastPolicyEval     time.Time
+	lastRetentionCheck time.Time
 }
 
 // NewSchedulerService creates a new SchedulerService.
@@ -33,18 +36,20 @@ func NewSchedulerService(
 	policySvc *PolicyService,
 	scanService ScanOrchestrator,
 	expirySvc *ConsentExpiryService,
+	retentionRepo compliance.RetentionPolicyRepository,
 	logger *slog.Logger,
 ) *SchedulerService {
 	return &SchedulerService{
-		dsRepo:      dsRepo,
-		tenantRepo:  tenantRepo,
-		policySvc:   policySvc,
-		scanService: scanService,
-		expirySvc:   expirySvc,
-		logger:      logger.With("service", "scheduler"),
-		parser:      cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow),
-		ticker:      time.NewTicker(60 * time.Second),
-		stopChan:    make(chan struct{}),
+		dsRepo:        dsRepo,
+		tenantRepo:    tenantRepo,
+		policySvc:     policySvc,
+		scanService:   scanService,
+		expirySvc:     expirySvc,
+		retentionRepo: retentionRepo,
+		logger:        logger.With("service", "scheduler"),
+		parser:        cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow),
+		ticker:        time.NewTicker(60 * time.Second),
+		stopChan:      make(chan struct{}),
 	}
 }
 
@@ -59,6 +64,7 @@ func (s *SchedulerService) Start(ctx context.Context) error {
 				s.checkSchedules(ctx)
 				s.schedulePolicyEvaluations(ctx)
 				s.checkConsentExpiries(ctx)
+				s.checkRetentionPolicies(ctx)
 			case <-s.stopChan:
 				s.logger.Info("Stopping scan scheduler")
 				return

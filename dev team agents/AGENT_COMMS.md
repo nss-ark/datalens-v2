@@ -186,3 +186,137 @@ Filters: `entity_type`, `action`, `user_id` (UUID), `start_date` (RFC3339), `end
 
 **Action Required**:
 - None.
+
+---
+
+### [2026-02-21] [FROM: Backend] → [TO: ALL]
+**Subject**: Task 4C-3 Complete — Retention Scheduler (Cron Job)
+**Type**: HANDOFF
+
+**Changes**:
+- `internal/service/scheduler.go` — Added `retentionRepo` field + `lastRetentionCheck` timestamp to `SchedulerService`; updated `NewSchedulerService()` constructor (⚠️ **BREAKING**: new `retentionRepo` parameter added before `logger`); added `checkRetentionPolicies(ctx)` call to scheduler loop
+- `internal/service/scheduler_retention.go` — **[NEW]** `checkRetentionPolicies()` + `evaluateTenantRetentionPolicies()`: runs once/24h, evaluates all ACTIVE policies, creates `RetentionLog` entries (`ERASED` or `RETENTION_EXCEEDED`)
+- `internal/repository/postgres_retention.go` — Implemented `CreateLog` (INSERT into `retention_logs`) and `GetLogs` (paginated SELECT with optional `policy_id` filter)
+- `cmd/api/main.go` — Instantiates `RetentionRepo` in CC block and passes to `NewSchedulerService()`
+- `internal/service/scheduler_test.go` — Updated constructor calls for new signature
+- `internal/service/scheduler_check_test.go` — Updated constructor calls for new signature
+- `internal/service/retention_service.go` — Fixed pre-existing bug: `NewForbiddenError` was called with 2 args (only takes 1)
+
+**⚠️ Constructor Signature Change**:
+```go
+// OLD:
+NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, expirySvc, logger)
+// NEW:
+NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, expirySvc, retentionRepo, logger)
+```
+Any other callers of `NewSchedulerService` must be updated to pass `retentionRepo` (or `nil`).
+
+**MVP Note**: The retention scheduler does **NOT** actually delete data from connected sources. It only creates `RetentionLog` entries. Real deletion via connectors is a future enhancement.
+
+**Verification**:
+- `go build ./...` ✅ (exit code 0)
+- `go vet ./...` ✅ (clean)
+- Pre-existing test failures in `admin_service_test.go`, `batch19_service_test.go`, `consent_lifecycle_test.go` from batch 4C-1 interface changes (unrelated to scheduler)
+
+**Action Required**:
+- **Test**: Scheduler tests need full package to compile — mock types for new repo interfaces need updating (batch 4C-1 blocker)
+- **Frontend**: No frontend changes needed — scheduler is backend-only
+
+---
+
+### [2026-02-21] [FROM: Backend] → [TO: ALL]
+**Subject**: Batch 4C-1 Complete — Consent Sessions, Data Subjects, Retention APIs
+**Type**: HANDOFF
+
+**Changes**:
+- `internal/handler/consent_handler.go` — Modified `listSessions` endpoint. If `subject_id` is omitted, it now falls back to tenant-wide listing with optional filters.
+- `internal/handler/data_subject_handler.go` — **[NEW]** Added endpoint to list/search data subjects (Principals) across the tenant with partial matching.
+- `internal/handler/retention_handler.go` — **[NEW]** Added full CRUD for Retention Policies + Audit Log fetching.
+- `cmd/api/routes.go` & `cmd/api/main.go` — Wired and mounted `/subjects` and `/retention` in CC routes.
+
+**API Contracts** (for Frontend agent):
+
+**1. Consent Sessions (Tenant-Wide List)**
+```
+GET /api/v2/consent/sessions?page=1&limit=20&purpose_id={uuid}&status={ACTIVE|EXPIRED|REVOKED}
+```
+*Note: The existing endpoint is re-used. Simply omit `subject_id` to get a tenant-level listing.*
+
+**2. Data Subjects (Search/List)**
+```
+GET /api/v2/subjects?page=1&limit=20&q={search_term}
+```
+*Note: `q` performs a partial, case-insensitive match on `email` and `phone`.*
+
+**3. Retention Policies (CRUD)**
+```
+GET    /api/v2/retention (List all for tenant)
+POST   /api/v2/retention (Create policy: { "purpose_id": "uuid", "max_retention_days": 365, "data_categories": ["PII"], "auto_erase": true, "description": "..." })
+GET    /api/v2/retention/{id} (Get policy by ID)
+PUT    /api/v2/retention/{id} (Update fields: max_retention_days, data_categories, auto_erase, description, status)
+DELETE /api/v2/retention/{id} (Soft-deletes or marks as ARCHIVED based on implementation logic)
+```
+
+**4. Retention Logs (Audit)**
+```
+GET /api/v2/retention/logs?page=1&limit=20&policy_id={optional_uuid}
+```
+
+**Action Required**:
+- **Frontend**: API contracts are finalized and endpoints rely on standard `types.PaginatedResult` formats. You can proceed with Batch 4C UI implementation.
+
+### [2026-02-21] [FROM: Frontend] -> [TO: ALL]
+**Subject**: Batch 4C-2 Complete  Audit Logs Page
+**Type**: HANDOFF
+
+**Changes**:
+- `frontend/packages/control-centre/src/services/auditService.ts`  Added API service to handle the custom backend pagination format.
+- `frontend/packages/control-centre/src/pages/AuditLogs.tsx`  Created full page with Entity Type/Action/Date filters, StatusBadge mapping, and detail expander for old/new values.
+- `frontend/packages/control-centre/src/App.tsx`  Replaced placeholder route for /audit-logs.
+
+**Features Enabled**:
+- Control Centre users can now view, filter, and paginate through system audit logs.
+
+**Verification**: `npm run build -w @datalens/control-centre`  (Exit code 0)
+
+**Action Required**:
+- None.---
+
+### [2026-02-21] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 4C-4 Complete — Consent Records Page
+**Type**: HANDOFF
+
+**Changes**:
+- `frontend/packages/control-centre/src/services/consentRecordService.ts` — Added API service.
+- `frontend/packages/control-centre/src/pages/Consent/ConsentRecords.tsx` — Created list page with filters and data table.
+- `frontend/packages/control-centre/src/App.tsx` — Replaced placeholder route.
+
+**Features Enabled**:
+- Control Centre users can view, filter, and paginate through consent sessions.
+
+**Verification**: `npm run build -w @datalens/control-centre` ✅ (Exit code 0)
+
+**Action Required**:
+- None.
+
+---
+# # #   [ 2 0 2 6 - 0 2 - 2 1 ]   [ F R O M :   F r o n t e n d ]   - >   [ T O :   A L L ]  
+ * * S u b j e c t * * :   C o m p l e t e d   T a s k   4 C - 5 :   F r o n t e n d   -   D a t a   S u b j e c t s   P a g e  
+ * * T y p e * * :   H A N D O F F  
+  
+ * * C h a n g e s * * :  
+ -   s r c / s e r v i c e s / d a t a S u b j e c t S e r v i c e . t s :   C r e a t e d   n e w   A P I   s e r v i c e   f o r   f e t c h i n g   s u b j e c t s .  
+ -   s r c / p a g e s / D a t a S u b j e c t s . t s x :   I m p l e m e n t e d   u i   p a t t e r n   u t i l i z i n g   d a t a T a b l e ,   w i t h   f i l t e r e d   r e q u e s t   l i n k i n g   t o   d s r s   a n d   c o n s e n t   t a b s .  
+ -   s r c / A p p . t s x :   R e p l a c e d   p l a c e h o l d e r   r o u t e   f o r   / s u b j e c t s .  
+  
+ * * F e a t u r e s   E n a b l e d * * :  
+ -   S e a r c h i n g   S u b j e c t s   v i a   e m a i l   /   p h o n e  
+ -   R o u t i n g   s u b j e c t s   t o   t h e i r   c o n s e n t / d s r   f i l t e r s   v i a   s u b j e c t s   I D  
+  
+ * * V e r i f i c a t i o n * * :   \ 
+ p m   r u n   b u i l d \   : w h i t e _ c h e c k _ m a r k :  
+  
+ * * A c t i o n   R e q u i r e d * * :  
+ -   * * T e s t * * :   E 2 E   t e s t i n g   t o   e n s u r e   t a b l e   s e a r c h   f i l t e r s   a r e   a c c u r a t e l y   f e t c h e d   a n d   r o u t e d .  
+  
+ 

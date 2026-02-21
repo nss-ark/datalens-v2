@@ -172,3 +172,61 @@ func (r *PostgresDataPrincipalProfileRepository) ListByTenant(ctx context.Contex
 		TotalPages: (total + pagination.PageSize - 1) / pagination.PageSize,
 	}, nil
 }
+
+// SearchByTenant retrieves a paginated list of DataPrincipalProfiles matching a search query.
+// Searches on email and phone columns using ILIKE.
+func (r *PostgresDataPrincipalProfileRepository) SearchByTenant(ctx context.Context, tenantID types.ID, query string, pagination types.Pagination) (*types.PaginatedResult[consent.DataPrincipalProfile], error) {
+	if pagination.Page < 1 {
+		pagination.Page = 1
+	}
+	if pagination.PageSize < 1 {
+		pagination.PageSize = 20
+	}
+	offset := (pagination.Page - 1) * pagination.PageSize
+	searchPattern := "%" + query + "%"
+
+	// Count
+	var total int
+	countQuery := `SELECT COUNT(*) FROM data_principal_profiles WHERE tenant_id = $1 AND (email ILIKE $2 OR COALESCE(phone, '') ILIKE $2)`
+	if err := r.db.QueryRow(ctx, countQuery, tenantID, searchPattern).Scan(&total); err != nil {
+		return nil, fmt.Errorf("count search profiles: %w", err)
+	}
+
+	// List
+	selectQuery := `
+		SELECT
+			id, tenant_id, email, phone, verification_status, verified_at,
+			verification_method, subject_id, last_access_at, preferred_lang,
+			created_at, updated_at
+		FROM data_principal_profiles
+		WHERE tenant_id = $1 AND (email ILIKE $2 OR COALESCE(phone, '') ILIKE $2)
+		ORDER BY created_at DESC
+		LIMIT $3 OFFSET $4
+	`
+	rows, err := r.db.Query(ctx, selectQuery, tenantID, searchPattern, pagination.PageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("search profiles: %w", err)
+	}
+	defer rows.Close()
+
+	var items []consent.DataPrincipalProfile
+	for rows.Next() {
+		var p consent.DataPrincipalProfile
+		if err := rows.Scan(
+			&p.ID, &p.TenantID, &p.Email, &p.Phone, &p.VerificationStatus, &p.VerifiedAt,
+			&p.VerificationMethod, &p.SubjectID, &p.LastAccessAt, &p.PreferredLang,
+			&p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan search profile: %w", err)
+		}
+		items = append(items, p)
+	}
+
+	return &types.PaginatedResult[consent.DataPrincipalProfile]{
+		Items:      items,
+		Total:      total,
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
+		TotalPages: (total + pagination.PageSize - 1) / pagination.PageSize,
+	}, nil
+}

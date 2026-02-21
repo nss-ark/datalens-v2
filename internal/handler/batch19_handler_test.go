@@ -84,10 +84,13 @@ func TestBatch19_AdminHandler_ListDSRs(t *testing.T) {
 		dsrRepo,
 		nil,
 		nil,
+		nil, // Added nil
+		nil, // Added nil
+		nil, // Added nil
 		slog.Default(),
 	)
 
-	h := handler.NewAdminHandler(adminSvc)
+	h := handler.NewAdminHandler(adminSvc, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/dsr?page=1&limit=10", nil)
 	rr := httptest.NewRecorder()

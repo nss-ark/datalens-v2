@@ -289,11 +289,19 @@ type ConsentWidgetRepository interface {
 	Delete(ctx context.Context, id types.ID) error
 }
 
+// ConsentSessionFilters holds optional filters for listing consent sessions.
+type ConsentSessionFilters struct {
+	PurposeID *types.ID `json:"purpose_id,omitempty"`
+	Status    string    `json:"status,omitempty"` // GRANTED, WITHDRAWN, EXPIRED
+	SubjectID *types.ID `json:"subject_id,omitempty"`
+}
+
 // ConsentSessionRepository defines persistence for consent sessions.
 type ConsentSessionRepository interface {
 	Create(ctx context.Context, s *ConsentSession) error
 	GetByID(ctx context.Context, id types.ID) (*ConsentSession, error)
 	GetBySubject(ctx context.Context, tenantID, subjectID types.ID) ([]ConsentSession, error)
+	ListByTenant(ctx context.Context, tenantID types.ID, filters ConsentSessionFilters, pagination types.Pagination) (*types.PaginatedResult[ConsentSession], error)
 	GetConversionStats(ctx context.Context, tenantID types.ID, from, to time.Time, interval string) ([]ConversionStat, error)
 	GetPurposeStats(ctx context.Context, tenantID types.ID, from, to time.Time) ([]PurposeStat, error)
 	GetExpiringSessions(ctx context.Context, withinDays int) ([]ConsentSession, error)
@@ -322,6 +330,7 @@ type DataPrincipalProfileRepository interface {
 	GetByEmail(ctx context.Context, tenantID types.ID, email string) (*DataPrincipalProfile, error)
 	Update(ctx context.Context, p *DataPrincipalProfile) error
 	ListByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination) (*types.PaginatedResult[DataPrincipalProfile], error)
+	SearchByTenant(ctx context.Context, tenantID types.ID, query string, pagination types.Pagination) (*types.PaginatedResult[DataPrincipalProfile], error)
 }
 
 // ConsentHistoryRepository defines persistence for the consent timeline.

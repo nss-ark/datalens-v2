@@ -187,25 +187,47 @@ func (h *ConsentHandler) setWidgetStatus(w http.ResponseWriter, r *http.Request,
 }
 
 func (h *ConsentHandler) listSessions(w http.ResponseWriter, r *http.Request) {
-	// Simplified: listing sessions for a subject (query param)
 	subjectIDStr := r.URL.Query().Get("subject_id")
-	if subjectIDStr == "" {
-		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "subject_id query param required")
-		return
-	}
-	subjectID, err := types.ParseID(subjectIDStr)
-	if err != nil {
-		httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid subject id")
+
+	// If subject_id is provided, use the existing subject-based listing
+	if subjectIDStr != "" {
+		subjectID, err := types.ParseID(subjectIDStr)
+		if err != nil {
+			httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid subject id")
+			return
+		}
+
+		sessions, err := h.service.GetSessionsBySubject(r.Context(), subjectID)
+		if err != nil {
+			httputil.ErrorFromDomain(w, err)
+			return
+		}
+
+		httputil.JSON(w, http.StatusOK, sessions)
 		return
 	}
 
-	sessions, err := h.service.GetSessionsBySubject(r.Context(), subjectID)
+	// Tenant-wide listing with optional filters and pagination
+	pagination := httputil.ParsePagination(r)
+
+	var filters consent.ConsentSessionFilters
+	if purposeStr := r.URL.Query().Get("purpose_id"); purposeStr != "" {
+		purposeID, err := types.ParseID(purposeStr)
+		if err != nil {
+			httputil.ErrorResponse(w, http.StatusBadRequest, "INVALID_ID", "invalid purpose_id")
+			return
+		}
+		filters.PurposeID = &purposeID
+	}
+	filters.Status = r.URL.Query().Get("status")
+
+	result, err := h.service.ListSessionsByTenant(r.Context(), filters, pagination)
 	if err != nil {
 		httputil.ErrorFromDomain(w, err)
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, sessions)
+	httputil.JSONWithPagination(w, result.Items, pagination.Page, pagination.PageSize, result.Total)
 }
 
 func (h *ConsentHandler) getHistory(w http.ResponseWriter, r *http.Request) {
