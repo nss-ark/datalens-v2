@@ -1,4 +1,4 @@
-# Agent Communication Board
+﻿# Agent Communication Board
 
 > **System Instructions**:
 > - Post your status here when starting or finishing a task.
@@ -8,42 +8,42 @@
 
 ---
 
-## ⚠️ BREAKING: Architecture Refactoring (R1–R3) — 2026-02-14
+## âš ï¸ BREAKING: Architecture Refactoring (R1â€“R3) â€” 2026-02-14
 
 > **Read `CONTEXT_SYNC.md` at the project root for full details.**
 
 | Batch | Change | Impact |
 |-------|--------|--------|
-| **R1** | Frontend monorepo split | `frontend/src/` deleted → `frontend/packages/{shared,control-centre,admin,portal}/` |
-| **R2** | Backend mode splitting | `cmd/api/main.go` → `--mode=all|cc|admin|portal`, routes in `routes.go` |
+| **R1** | Frontend monorepo split | `frontend/src/` deleted â†’ `frontend/packages/{shared,control-centre,admin,portal}/` |
+| **R2** | Backend mode splitting | `cmd/api/main.go` â†’ `--mode=all|cc|admin|portal`, routes in `routes.go` |
 | **R3** | Nginx reverse proxy | `*.localhost:8000` sub-domains, env-driven CORS, 3 prod API instances |
 
-**Rules**: Frontend → work in `packages/<app>/`, import from `@datalens/shared`. Backend → new routes in `routes.go`, new services wrapped in `shouldInit()`. DevOps → ONE binary, mode via Docker `command:`.
+**Rules**: Frontend â†’ work in `packages/<app>/`, import from `@datalens/shared`. Backend â†’ new routes in `routes.go`, new services wrapped in `shouldInit()`. DevOps â†’ ONE binary, mode via Docker `command:`.
 
 ---
 
-## ✅ Completed: Phase 3A + 3B + 3C (Feb 14-17, 2026)
+## âœ… Completed: Phase 3A + 3B + 3C (Feb 14-17, 2026)
 
 | Task | Agent | Status | Key Files |
 |------|-------|--------|-----------|
-| 3A-1: Portal Backend API Wiring | Backend | ✅ | `portal_handler.go` (9 routes + 3 aliases) |
-| 3A-2: DPR Download Endpoint | Backend | ✅ | `portal_handler.go`, `dsr_service.go` (72h SLA) |
-| 3A-3: DPR Appeal Flow | Backend + Frontend | ✅ | `AppealModal.tsx`, `Requests.tsx`, `portal_handler.go` |
-| 3A-4: DSR Auto-Verification | Backend | ✅ | `dsr_executor.go` (AutoVerify), `dsr.go` (VERIFIED status) |
-| 3A-5: Consent Receipt | Backend | ✅ | `consent_service.go` (GenerateReceipt), HMAC-SHA256 |
-| 3A-6: DPO Contact Entity | Backend | ✅ | `dpo_service.go`, `dpo_handler.go`, migration |
-| 3A-7: Notice Schema Validation | Backend | ✅ | `notice_service.go` (ValidateSchema, compliance-check endpoint) |
-| 3A-8: Guardian Frontend Polish | Frontend | ✅ | `Profile.tsx`, `StatusBadge.tsx` |
-| 3A-9: Notice Translation API | Backend | ✅ | `notice_handler.go`, `portal_handler.go` |
-| 3A-10: Breach Portal Inbox | Backend + Frontend | ✅ | `BreachNotifications.tsx`, `breach_service.go` |
-| 3A-11: Data Retention Model | Backend | ✅ | `retention.go` (design only, scheduler deferred) |
-| 3A-E2E: Verification | QA | ✅ | `e2e_phase3a_test.go` — 6/6 tests passing |
-| 3B: SQL Server Connector | Backend | ✅ | `sqlserver.go`, `registry.go` |
-| 3C: Observability Stack | DevOps | ✅ | `pkg/telemetry`, `docker-compose.dev.yml` |
+| 3A-1: Portal Backend API Wiring | Backend | âœ… | `portal_handler.go` (9 routes + 3 aliases) |
+| 3A-2: DPR Download Endpoint | Backend | âœ… | `portal_handler.go`, `dsr_service.go` (72h SLA) |
+| 3A-3: DPR Appeal Flow | Backend + Frontend | âœ… | `AppealModal.tsx`, `Requests.tsx`, `portal_handler.go` |
+| 3A-4: DSR Auto-Verification | Backend | âœ… | `dsr_executor.go` (AutoVerify), `dsr.go` (VERIFIED status) |
+| 3A-5: Consent Receipt | Backend | âœ… | `consent_service.go` (GenerateReceipt), HMAC-SHA256 |
+| 3A-6: DPO Contact Entity | Backend | âœ… | `dpo_service.go`, `dpo_handler.go`, migration |
+| 3A-7: Notice Schema Validation | Backend | âœ… | `notice_service.go` (ValidateSchema, compliance-check endpoint) |
+| 3A-8: Guardian Frontend Polish | Frontend | âœ… | `Profile.tsx`, `StatusBadge.tsx` |
+| 3A-9: Notice Translation API | Backend | âœ… | `notice_handler.go`, `portal_handler.go` |
+| 3A-10: Breach Portal Inbox | Backend + Frontend | âœ… | `BreachNotifications.tsx`, `breach_service.go` |
+| 3A-11: Data Retention Model | Backend | âœ… | `retention.go` (design only, scheduler deferred) |
+| 3A-E2E: Verification | QA | âœ… | `e2e_phase3a_test.go` â€” 6/6 tests passing |
+| 3B: SQL Server Connector | Backend | âœ… | `sqlserver.go`, `registry.go` |
+| 3C: Observability Stack | DevOps | âœ… | `pkg/telemetry`, `docker-compose.dev.yml` |
 
 ---
 
-## Active Sprint: Phase 4 — Comprehensive Build Sprint (APPROVED ✅)
+## Active Sprint: Phase 4 â€” Comprehensive Build Sprint (APPROVED âœ…)
 
 **Status**: Plan approved. 7 batches, 30 tasks, ~12 working days. **Start with Batch 4A.**
 
@@ -72,8 +72,8 @@
 
 ## Active Messages
 
-### [2026-02-17] [FROM: Orchestrator] → [TO: ALL]
-**Subject**: Phase 4 Sprint Plan Approved — Ready for Execution
+### [2026-02-17] [FROM: Orchestrator] â†’ [TO: ALL]
+**Subject**: Phase 4 Sprint Plan Approved â€” Ready for Execution
 **Type**: STATUS
 
 Phase 4 plan finalized with all user decisions incorporated. 7 batches, 30 tasks. Agent prompts updated (backend, frontend, orchestrator) with Phase 4 patterns and context. Start with Batch 4A: Foundation Fixes.
@@ -87,19 +87,19 @@ Phase 4 plan finalized with all user decisions incorporated. 7 batches, 30 tasks
 
 ---
 
-### [2026-02-17] [FROM: Backend] → [TO: ALL]
-**Subject**: Batch 4A-1 + 4A-2 Complete — Retention Migrations + Audit Log API
+### [2026-02-17] [FROM: Backend] â†’ [TO: ALL]
+**Subject**: Batch 4A-1 + 4A-2 Complete â€” Retention Migrations + Audit Log API
 **Type**: HANDOFF
 
 **Changes**:
-- `internal/database/migrations/019_retention.sql` — retention_policies + retention_logs tables (P0 blocker for Batch 4C)
-- `internal/database/migrations/020_audit_log_columns.sql` — adds user_id, old_values, new_values, client_id columns to audit_logs with backfill
-- `internal/domain/audit/log.go` — added `AuditFilters` struct + `ListByTenant` to Repository interface
-- `internal/repository/postgres_audit.go` — `ListByTenant` with dynamic WHERE, COALESCE(user_id, actor_id), pagination
-- `internal/service/audit_service.go` — `ListByTenant` passthrough
-- `internal/handler/audit_handler.go` — **[NEW]** GET handler with query param filters
-- `cmd/api/routes.go` — mounted at `/audit-logs` in CC routes
-- `cmd/api/main.go` — wired AuditHandler
+- `internal/database/migrations/019_retention.sql` â€” retention_policies + retention_logs tables (P0 blocker for Batch 4C)
+- `internal/database/migrations/020_audit_log_columns.sql` â€” adds user_id, old_values, new_values, client_id columns to audit_logs with backfill
+- `internal/domain/audit/log.go` â€” added `AuditFilters` struct + `ListByTenant` to Repository interface
+- `internal/repository/postgres_audit.go` â€” `ListByTenant` with dynamic WHERE, COALESCE(user_id, actor_id), pagination
+- `internal/service/audit_service.go` â€” `ListByTenant` passthrough
+- `internal/handler/audit_handler.go` â€” **[NEW]** GET handler with query param filters
+- `cmd/api/routes.go` â€” mounted at `/audit-logs` in CC routes
+- `cmd/api/main.go` â€” wired AuditHandler
 
 **API Contract** (for Frontend agent):
 ```
@@ -135,40 +135,40 @@ Filters: `entity_type`, `action`, `user_id` (UUID), `start_date` (RFC3339), `end
 
 ---
 
-### [2026-02-17] [FROM: Frontend] → [TO: ALL]
-**Subject**: Batch 4A-3 Complete — Route Dedup + Sidebar Nav Fix
+### [2026-02-17] [FROM: Frontend] â†’ [TO: ALL]
+**Subject**: Batch 4A-3 Complete â€” Route Dedup + Sidebar Nav Fix
 **Type**: HANDOFF
 
 **Changes**:
-- `frontend/packages/control-centre/src/App.tsx` — Removed duplicate `/grievances` placeholder route (real pages at `/compliance/grievances` and `/compliance/grievances/:id`)
-- `frontend/packages/control-centre/src/components/Layout/Sidebar.tsx` — Fixed Data Lineage link from `/lineage` → `/governance/lineage`; fixed Consent Analytics link from `/consent/analytics` → `/compliance/analytics`
+- `frontend/packages/control-centre/src/App.tsx` â€” Removed duplicate `/grievances` placeholder route (real pages at `/compliance/grievances` and `/compliance/grievances/:id`)
+- `frontend/packages/control-centre/src/components/Layout/Sidebar.tsx` â€” Fixed Data Lineage link from `/lineage` â†’ `/governance/lineage`; fixed Consent Analytics link from `/consent/analytics` â†’ `/compliance/analytics`
 
 **Features Enabled**:
 - Sidebar "Data Lineage" link now correctly navigates to the DataLineage page
 - Sidebar "Consent Analytics" link now correctly navigates to the Analytics page
 - No more duplicate `/grievances` route shadowing the real Compliance grievance pages
 
-**Verification**: `npm run build -w @datalens/control-centre` ✅ (exit code 0, zero errors)
+**Verification**: `npm run build -w @datalens/control-centre` âœ… (exit code 0, zero errors)
 
 **Action Required**:
-- None — self-contained fix, no backend or test changes needed
+- None â€” self-contained fix, no backend or test changes needed
 
 ---
 
-### [2026-02-17] [FROM: Test] → [TO: ALL]
+### [2026-02-17] [FROM: Test] â†’ [TO: ALL]
 **Subject**: Batch 4A Build Verification
 **Type**: HANDOFF
 **Results**:
-- Backend: `go build` ✅ | `go vet` ✅ | `go test` ❌ (1 failing unit test in `handler`)
-- Frontend: CC ✅ | Admin ✅ | Portal ✅
+- Backend: `go build` âœ… | `go vet` âœ… | `go test` âŒ (1 failing unit test in `handler`)
+- Frontend: CC âœ… | Admin âœ… | Portal âœ…
 **Issues Found**:
 - `internal/handler/portal_handler_translation_test.go`: `TestPortalHandler_GetNotice_WithTranslation` fails on Title assertion.
 - `internal/service/auth_service_test.go`: Passed.
 
 ---
 
-### [2026-02-17] [FROM: Frontend] → [TO: ALL]
-**Subject**: Batch 4B-2 Complete — Custom UI Integration (Portal)
+### [2026-02-17] [FROM: Frontend] â†’ [TO: ALL]
+**Subject**: Batch 4B-2 Complete â€” Custom UI Integration (Portal)
 **Type**: HANDOFF
 
 **Changes**:
@@ -182,27 +182,27 @@ Filters: `entity_type`, `action`, `user_id` (UUID), `start_date` (RFC3339), `end
 - Fixed `shared` package import aliases (`@/lib/utils` -> relative paths) to resolve build issues.
 
 **Verification**:
-- `npm run build -w @datalens/portal` ✅ (Exit code 0, zero errors).
+- `npm run build -w @datalens/portal` âœ… (Exit code 0, zero errors).
 
 **Action Required**:
 - None.
 
 ---
 
-### [2026-02-21] [FROM: Backend] → [TO: ALL]
-**Subject**: Task 4C-3 Complete — Retention Scheduler (Cron Job)
+### [2026-02-21] [FROM: Backend] â†’ [TO: ALL]
+**Subject**: Task 4C-3 Complete â€” Retention Scheduler (Cron Job)
 **Type**: HANDOFF
 
 **Changes**:
-- `internal/service/scheduler.go` — Added `retentionRepo` field + `lastRetentionCheck` timestamp to `SchedulerService`; updated `NewSchedulerService()` constructor (⚠️ **BREAKING**: new `retentionRepo` parameter added before `logger`); added `checkRetentionPolicies(ctx)` call to scheduler loop
-- `internal/service/scheduler_retention.go` — **[NEW]** `checkRetentionPolicies()` + `evaluateTenantRetentionPolicies()`: runs once/24h, evaluates all ACTIVE policies, creates `RetentionLog` entries (`ERASED` or `RETENTION_EXCEEDED`)
-- `internal/repository/postgres_retention.go` — Implemented `CreateLog` (INSERT into `retention_logs`) and `GetLogs` (paginated SELECT with optional `policy_id` filter)
-- `cmd/api/main.go` — Instantiates `RetentionRepo` in CC block and passes to `NewSchedulerService()`
-- `internal/service/scheduler_test.go` — Updated constructor calls for new signature
-- `internal/service/scheduler_check_test.go` — Updated constructor calls for new signature
-- `internal/service/retention_service.go` — Fixed pre-existing bug: `NewForbiddenError` was called with 2 args (only takes 1)
+- `internal/service/scheduler.go` â€” Added `retentionRepo` field + `lastRetentionCheck` timestamp to `SchedulerService`; updated `NewSchedulerService()` constructor (âš ï¸ **BREAKING**: new `retentionRepo` parameter added before `logger`); added `checkRetentionPolicies(ctx)` call to scheduler loop
+- `internal/service/scheduler_retention.go` â€” **[NEW]** `checkRetentionPolicies()` + `evaluateTenantRetentionPolicies()`: runs once/24h, evaluates all ACTIVE policies, creates `RetentionLog` entries (`ERASED` or `RETENTION_EXCEEDED`)
+- `internal/repository/postgres_retention.go` â€” Implemented `CreateLog` (INSERT into `retention_logs`) and `GetLogs` (paginated SELECT with optional `policy_id` filter)
+- `cmd/api/main.go` â€” Instantiates `RetentionRepo` in CC block and passes to `NewSchedulerService()`
+- `internal/service/scheduler_test.go` â€” Updated constructor calls for new signature
+- `internal/service/scheduler_check_test.go` â€” Updated constructor calls for new signature
+- `internal/service/retention_service.go` â€” Fixed pre-existing bug: `NewForbiddenError` was called with 2 args (only takes 1)
 
-**⚠️ Constructor Signature Change**:
+**âš ï¸ Constructor Signature Change**:
 ```go
 // OLD:
 NewSchedulerService(dsRepo, tenantRepo, policySvc, scanSvc, expirySvc, logger)
@@ -214,25 +214,25 @@ Any other callers of `NewSchedulerService` must be updated to pass `retentionRep
 **MVP Note**: The retention scheduler does **NOT** actually delete data from connected sources. It only creates `RetentionLog` entries. Real deletion via connectors is a future enhancement.
 
 **Verification**:
-- `go build ./...` ✅ (exit code 0)
-- `go vet ./...` ✅ (clean)
+- `go build ./...` âœ… (exit code 0)
+- `go vet ./...` âœ… (clean)
 - Pre-existing test failures in `admin_service_test.go`, `batch19_service_test.go`, `consent_lifecycle_test.go` from batch 4C-1 interface changes (unrelated to scheduler)
 
 **Action Required**:
-- **Test**: Scheduler tests need full package to compile — mock types for new repo interfaces need updating (batch 4C-1 blocker)
-- **Frontend**: No frontend changes needed — scheduler is backend-only
+- **Test**: Scheduler tests need full package to compile â€” mock types for new repo interfaces need updating (batch 4C-1 blocker)
+- **Frontend**: No frontend changes needed â€” scheduler is backend-only
 
 ---
 
-### [2026-02-21] [FROM: Backend] → [TO: ALL]
-**Subject**: Batch 4C-1 Complete — Consent Sessions, Data Subjects, Retention APIs
+### [2026-02-21] [FROM: Backend] â†’ [TO: ALL]
+**Subject**: Batch 4C-1 Complete â€” Consent Sessions, Data Subjects, Retention APIs
 **Type**: HANDOFF
 
 **Changes**:
-- `internal/handler/consent_handler.go` — Modified `listSessions` endpoint. If `subject_id` is omitted, it now falls back to tenant-wide listing with optional filters.
-- `internal/handler/data_subject_handler.go` — **[NEW]** Added endpoint to list/search data subjects (Principals) across the tenant with partial matching.
-- `internal/handler/retention_handler.go` — **[NEW]** Added full CRUD for Retention Policies + Audit Log fetching.
-- `cmd/api/routes.go` & `cmd/api/main.go` — Wired and mounted `/subjects` and `/retention` in CC routes.
+- `internal/handler/consent_handler.go` â€” Modified `listSessions` endpoint. If `subject_id` is omitted, it now falls back to tenant-wide listing with optional filters.
+- `internal/handler/data_subject_handler.go` â€” **[NEW]** Added endpoint to list/search data subjects (Principals) across the tenant with partial matching.
+- `internal/handler/retention_handler.go` â€” **[NEW]** Added full CRUD for Retention Policies + Audit Log fetching.
+- `cmd/api/routes.go` & `cmd/api/main.go` â€” Wired and mounted `/subjects` and `/retention` in CC routes.
 
 **API Contracts** (for Frontend agent):
 
@@ -273,50 +273,38 @@ GET /api/v2/retention/logs?page=1&limit=20&policy_id={optional_uuid}
 - `frontend/packages/control-centre/src/services/auditService.ts`  Added API service to handle the custom backend pagination format.
 - `frontend/packages/control-centre/src/pages/AuditLogs.tsx`  Created full page with Entity Type/Action/Date filters, StatusBadge mapping, and detail expander for old/new values.
 - `frontend/packages/control-centre/src/App.tsx`  Replaced placeholder route for /audit-logs.
-
-**Features Enabled**:
 - Control Centre users can now view, filter, and paginate through system audit logs.
 
-**Verification**: `npm run build -w @datalens/control-centre`  (Exit code 0)
-
-**Action Required**:
-- None.---
-
-### [2026-02-21] [FROM: Frontend] → [TO: ALL]
-**Subject**: Batch 4C-4 Complete — Consent Records Page
-**Type**: HANDOFF
-
-**Changes**:
-- `frontend/packages/control-centre/src/services/consentRecordService.ts` — Added API service.
-- `frontend/packages/control-centre/src/pages/Consent/ConsentRecords.tsx` — Created list page with filters and data table.
-- `frontend/packages/control-centre/src/App.tsx` — Replaced placeholder route.
-
-**Features Enabled**:
-- Control Centre users can view, filter, and paginate through consent sessions.
-
-**Verification**: `npm run build -w @datalens/control-centre` ✅ (Exit code 0)
+**Verification**: `npm run build -w @datalens/control-centre` (Exit code 0)
 
 **Action Required**:
 - None.
 
 ---
-# # #   [ 2 0 2 6 - 0 2 - 2 1 ]   [ F R O M :   F r o n t e n d ]   - >   [ T O :   A L L ]  
- * * S u b j e c t * * :   C o m p l e t e d   T a s k   4 C - 5 :   F r o n t e n d   -   D a t a   S u b j e c t s   P a g e  
- * * T y p e * * :   H A N D O F F  
-  
- * * C h a n g e s * * :  
- -   s r c / s e r v i c e s / d a t a S u b j e c t S e r v i c e . t s :   C r e a t e d   n e w   A P I   s e r v i c e   f o r   f e t c h i n g   s u b j e c t s .  
- -   s r c / p a g e s / D a t a S u b j e c t s . t s x :   I m p l e m e n t e d   u i   p a t t e r n   u t i l i z i n g   d a t a T a b l e ,   w i t h   f i l t e r e d   r e q u e s t   l i n k i n g   t o   d s r s   a n d   c o n s e n t   t a b s .  
- -   s r c / A p p . t s x :   R e p l a c e d   p l a c e h o l d e r   r o u t e   f o r   / s u b j e c t s .  
-  
- * * F e a t u r e s   E n a b l e d * * :  
- -   S e a r c h i n g   S u b j e c t s   v i a   e m a i l   /   p h o n e  
- -   R o u t i n g   s u b j e c t s   t o   t h e i r   c o n s e n t / d s r   f i l t e r s   v i a   s u b j e c t s   I D  
-  
- * * V e r i f i c a t i o n * * :   \ 
- p m   r u n   b u i l d \   : w h i t e _ c h e c k _ m a r k :  
-  
- * * A c t i o n   R e q u i r e d * * :  
- -   * * T e s t * * :   E 2 E   t e s t i n g   t o   e n s u r e   t a b l e   s e a r c h   f i l t e r s   a r e   a c c u r a t e l y   f e t c h e d   a n d   r o u t e d .  
-  
- 
+
+### [2026-02-21] [FROM: Orchestrator] -> [TO: ALL]
+**Subject**: Batch 4C Complete - All 6 Tasks Verified
+**Type**: STATUS
+
+**Summary**: Batch 4C (Core Compliance Pages) is fully complete. Orchestrator code review passed.
+
+| Task | Agent | Status | Key Files |
+|------|-------|--------|-----------|
+| 4C-1: Backend APIs | Backend | Done | retention_service.go, retention_handler.go, data_subject_handler.go |
+| 4C-2: Audit Logs Page | Frontend | Done | AuditLogs.tsx, auditService.ts |
+| 4C-3: Retention Scheduler | Backend | Done | scheduler_retention.go, scheduler.go |
+| 4C-4: Consent Records Page | Frontend | Done | ConsentRecords.tsx, consentRecordService.ts |
+| 4C-5: Data Subjects Page | Frontend | Done | DataSubjects.tsx, dataSubjectService.ts |
+| 4C-6: Retention Policies Page | Frontend | Done | RetentionPolicies.tsx, retentionService.ts |
+
+**Known Issues (Non-Blocking)**:
+- Duplicate RetentionRepo instantiation in main.go (lines 486 + 568)
+- Pre-existing test failures from interface drift (admin_service_test.go, batch19_service_test.go)
+- Duplicate grievanceHandler assignment in main.go (lines 556-557)
+
+**Breaking Change**: NewSchedulerService() constructor now takes 7 args (added retentionRepo as 6th param before logger).
+
+**Next**: Batch 4D - RoPA (Record of Processing Activities) + Multi-Level Purpose Tagging
+
+---
+

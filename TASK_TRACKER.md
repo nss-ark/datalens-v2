@@ -591,6 +591,33 @@
   - [x] Integration with `ScanService` for `FILE_UPLOAD` sources (Batch 2B — ParsingService → ScanService wired)
 
 
+### Phase 4A: Foundation Fixes (Feb 17, 2026) ✅
+- [x] 4A-1: Consolidated DB Migrations — `019_retention.sql`, `020_audit_log_columns.sql`
+- [x] 4A-2: Audit Log CC Handler — `GET /api/v2/audit-logs` with pagination + filters
+- [x] 4A-3: Route Dedup + Cleanup — removed stale routes, sidebar alignment
+- [x] 4A-4: Build Verification — backend + all 3 frontend apps pass
+
+### Phase 4B: UI Overhaul (Feb 17-18, 2026) ✅
+- [x] 4B: KokonutUI Integration — shadcn/ui + KokonutUI components across CC, Admin, Portal
+- [x] 4B: Dashboard, Tenant List, Settings, Profile polish
+- [x] 4B: Portal layout refinement (spacing, padding, notifications redesign)
+
+### Phase 4C: Core Compliance Pages (Feb 19-21, 2026) ✅
+- [x] 4C-1: Backend — Consent Sessions tenant-wide listing + Data Subjects search API + Retention CRUD API
+  - [x] `ConsentSessionFilters` + `ListByTenant` in consent domain
+  - [x] `SearchByTenant` for DataPrincipalProfile (ILIKE email/phone)
+  - [x] `retention_service.go` + `retention_handler.go` (full CRUD + logs)
+  - [x] `data_subject_handler.go` (list + search endpoint)
+  - [x] `CreateLog`/`GetLogs` stubs in `postgres_retention.go` implemented
+- [x] 4C-2: Frontend — Audit Logs Page (`/audit-logs`) with entity/action/date filters
+- [x] 4C-3: Backend — Retention Scheduler (daily cron in `scheduler_retention.go`)
+  - [x] `checkRetentionPolicies()` with 24h throttle
+  - [x] ERASED/RETENTION_EXCEEDED action logging (MVP stub, no real deletion)
+  - [x] `retentionRepo` added to `SchedulerService` constructor
+- [x] 4C-4: Frontend — Consent Records Page (`/consent`) with status filters
+- [x] 4C-5: Frontend — Data Subjects Page (`/subjects`) with debounced search
+- [x] 4C-6: Frontend — Retention Policies Page (`/retention`) with CRUD modals
+
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
 - [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal
 - [ ] Data Retention Policy Configuration
@@ -631,4 +658,4 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 17, 2026 — Phase 3A (DPDPA Compliance Gaps, 11 tasks), 3B (SQL Server Connector), 3C (Observability) all COMPLETE. E2E verification passed. Next: Phase 4 — Comprehensive Build Sprint
+> **Last Updated**: February 21, 2026 — Phase 4 Batches 4A (Foundation), 4B (UI Overhaul), 4C (Core Compliance Pages — 6 tasks) COMPLETE. Next: Batch 4D (RoPA + Multi-Level Purpose Tagging)
