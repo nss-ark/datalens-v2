@@ -1,4 +1,5 @@
 import { api } from '@datalens/shared';
+import type { ApiResponse } from '@datalens/shared';
 import type {
     PIIClassification,
     SubmitFeedbackInput,
@@ -17,7 +18,7 @@ export interface ClassificationFilters {
 }
 
 export interface PaginatedClassifications {
-    data: PIIClassification[];
+    items: PIIClassification[];
     total: number;
     page: number;
     page_size: number;
@@ -28,8 +29,7 @@ export const discoveryService = {
     /**
      * List PII classifications for the current tenant.
      * Endpoint: GET /api/v2/discovery/classifications
-     * NOTE: This endpoint is REQUESTED but may not yet exist in the backend.
-     * Fallback: GET /api/v2/discovery/feedback (returns feedback records instead)
+     * Backend wraps response in { success, data: PaginatedResult }
      */
     async listClassifications(filters?: ClassificationFilters): Promise<PaginatedClassifications> {
         const params = new URLSearchParams();
@@ -39,18 +39,18 @@ export const discoveryService = {
         if (filters?.page) params.set('page', String(filters.page));
         if (filters?.page_size) params.set('page_size', String(filters.page_size));
 
-        const res = await api.get<PaginatedClassifications>(
+        const res = await api.get<ApiResponse<PaginatedClassifications>>(
             `/discovery/classifications?${params.toString()}`
         );
-        return res.data;
+        return res.data.data as PaginatedClassifications;
     },
 
     /** Get classifications for a specific data source */
     async getByDataSource(dataSourceId: ID): Promise<PIIClassification[]> {
-        const res = await api.get<PIIClassification[]>(
+        const res = await api.get<ApiResponse<PIIClassification[]>>(
             `/discovery/data-sources/${dataSourceId}/classifications`
         );
-        return res.data;
+        return res.data.data as PIIClassification[];
     },
 
     /** Submit feedback (verify, correct, reject) */

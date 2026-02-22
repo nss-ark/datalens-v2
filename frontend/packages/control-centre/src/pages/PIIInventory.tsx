@@ -19,7 +19,7 @@ const PIIInventory = () => {
         queryFn: () => discoveryService.listClassifications({ page, page_size: PAGE_SIZE }),
     });
 
-    const classifications = result?.data ?? [];
+    const classifications = result?.items ?? [];
     const total = result?.total ?? 0;
 
     // Confidence Badge Helper
