@@ -286,7 +286,12 @@ The project followed an evolving methodology:
 | 4F-1 | OCR Adapter Pattern: `OCRAdapter` interface, Tesseract + Sarvam Vision adapters |
 | 4F-2 | Portal polish: card CSS, NominationModal DPDPA S14 explainer, CC spacing |
 
-### Batch 4G: Reports + Final QA — *Next / Last Batch*
+### Batch 4G: Reports + Nominations Filter (Feb 22) ✅
+| Task | Description |
+|------|-------------|
+| 4G-1 | Compliance Reporting Service: 4 DPDPA pillars, CSV/JSON export for 7 entities |
+| 4G-2 | DSR Nominations type filter: `GetByTenant` + 5 test mock updates |
+| 4G-3 | Frontend: Reports page (SVG gauge, pillar cards), Nominations page |
 
 ---
 
@@ -294,15 +299,18 @@ The project followed an evolving methodology:
 
 | Metric | Value |
 |--------|-------|
-| Total Git Commits | 53 |
+| Total Git Commits | 53+ |
 | Calendar Days | 12 (Feb 10–22) |
 | Numbered Batches | 1–20B (27 batches) |
 | Architecture Refactors | R1–R4 |
 | Miscellaneous Fix Batches | 1A, 1B, 1C, 2A, 2B |
 | DPDPA Gap Batches | 3A (11 sub-tasks), 3B, 3C |
 | SA Sprint Tasks | SA-1 to SA-4 |
-| Phase 4 Batches | 4A, 4B, 4C, 4D, 4E, 4F, 4G (pending) |
+| Phase 4 Batches | 4A, 4B, 4C, 4D, 4E, 4F, 4G ✅ |
 | Portal Vibe-Coding Sessions | 3 commits |
 | Database Migrations | 001–024 |
 | Frontend Apps | 3 (Control Centre, Admin, Portal) + Widget SDK |
 | Backend Endpoints | ~80+ REST APIs |
+| Backend Services | 85 |
+| Backend Handlers | 36 |
+

@@ -99,7 +99,7 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 
 ---
 
-## Current Project State (as of February 14, 2026)
+## Current Project State (as of February 22, 2026 — Phase 4 Complete)
 
 ### Completed ✅ — DO NOT Re-Assign
 
@@ -212,10 +212,19 @@ Every task spec you produce MUST follow this structure. Be exhaustive — sub-ag
 4.  ~~**Consent Notifications**~~: ✅ Resolved in Batch 16
 5.  ~~**Translation Pipeline**~~: ✅ Resolved in Batch 16
 6.  ~~**Breach UI Not Integrated**~~: ✅ Resolved in Batch 19
-7.  **Retention Scheduler**: Model exists, cron job implementation → **Batch 4C**
-8.  **OCR**: Decision made → **Sarvam API + Tesseract**, extensible adapter pattern → **Batch 4F**
-9.  **Identity Link (stub)**: `POST /identity/link` → real implementation in **Batch 4F**
-10. **Placeholder Pages**: ~10 CC routes → implementations across **Batches 4C-4G**
+7.  **Retention Scheduler**: ✅ Resolved in Batch 4C — daily cron with 24h throttle
+8.  **OCR**: ✅ Resolved in Batch 4F — Tesseract + Sarvam adapter pattern
+9.  ~~**Identity Link (stub)**~~: `POST /identity/link` → implementation pending Phase 5
+10. ~~**Placeholder Pages**~~: ✅ Resolved in Phases 4C-4G — all pages implemented except /agents, /users (Coming Soon)
+
+#### Phase 4 Completed ✅ (Feb 17-22, 2026)
+- **4A**: Foundation Fixes (migrations, audit handler, route cleanup)
+- **4B**: UI Overhaul (KokonutUI + shadcn/ui across CC/Admin/Portal)
+- **4C**: Core Compliance Pages (Audit, Consent, Subjects, Retention + scheduler)
+- **4D**: RoPA + Multi-Level Purpose Tagging (version control, 5-level scope)
+- **4E**: Department + Third-Party + DPA Tracking
+- **4F**: OCR Adapter Pattern (Tesseract + Sarvam Vision)
+- **4G**: Compliance Reporting (4 DPDPA pillars, CSV/JSON export) + Nominations Filter
 
 ### Deferred Items (Not Planned Yet) 📋
 - ~~**RBAC / User Role Management**~~ → ✅ Phase 1 done (Batch 17A); Phase 2 user management in Batch 17B
@@ -236,12 +245,20 @@ All consent domain entities from `internal/domain/consent/entities.go` are now i
 
 ## Next Roadmap Batches
 
-### Batch 20A: UI/UX Review Sprint ← NEXT
-| Task | Agent | Priority | Notes |
-|------|-------|----------|---------|
-| Screen-by-screen review (5 sessions) | UX Review + Human | P0 | Cover all 3 portals (36+ screens) |
-| Fix sprint from review findings | Frontend + Backend | P0 | Prioritized by severity |
-| Re-review verification | UX Review | P1 | Verify fixes meet standards |
+### Phase 5: QA, Integration & Feature Completion ← CURRENT
+
+> See `dev team agents/phase5_sprint_plan.md` for full details.
+
+| Batch | Focus | Priority | Agents |
+|-------|-------|----------|--------|
+| **5A** | E2E Flow Testing (SA → CC → Portal) + Critical Fixes | P0 | Frontend + Backend |
+| **5B** | UI/UX Consistency — loading/error/empty states, responsive | P0 | Frontend + UX Review |
+| **5C** | Feature Completion — Settings, User Mgmt, Widget Playground | P1 | Backend + Frontend |
+| **5D** | OCR Hardening — Tesseract primary + Sarvam fallback | P1 | AI/ML + Backend |
+| **5E** | Infrastructure — Migration cleanup, Docker/K8s, Seed data | P2 | DevOps + Backend |
+
+**Priority Order**: QA (C) → Features (B) → Production (A)
+**Batch 5A must complete first** — all other batches depend on working flows.
 
 
 ---
