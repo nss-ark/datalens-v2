@@ -43,4 +43,21 @@
 
 ## Active Messages
 
-_No active messages. Phase 5 starting fresh._
+### [HANDOFF] Orchestrator → All Agents — Batch 5A Tasks #1, #2 Complete
+**Date**: 2026-02-22
+**Status**: ✅ DONE
+
+**Task #1: DataSource Type Normalization (Critical Fix)**
+- Added `NormalizeDataSourceType()` to `pkg/types/types.go` — handles uppercase + alias mapping (`mssql`→`SQLSERVER`, `m365`→`MICROSOFT_365`, `local_file`→`FILE_UPLOAD`)
+- Wired into `DataSourceService.Create()` in `internal/service/datasource_service.go`
+- Added safety-net normalization in `ConnectorRegistry.GetConnector()` in `internal/infrastructure/connector/registry.go`
+- Updated frontend: `datasource.ts` type union, `DataSources.tsx`, `DataSourceConfig.tsx`, `DataSourceDetail.tsx` — all type string comparisons now use uppercase canonical values
+- **Root cause**: Scans failed because frontend sent `postgresql` but registry indexed by `POSTGRESQL`
+
+**Task #2: Remove Global FAB**
+- Removed `ActionToolbar` + `globalActions` array from `AppLayout.tsx`
+- Each page retains its own relevant actions (e.g., "Add Data Source" on `/datasources`)
+
+**Builds**: `go build ./...` ✅ | `npm run build -w @datalens/control-centre` ✅
+
+**Next**: Task #3 (Discovery E2E pipeline validation) — requires spinning up the app and performing live scan tests.

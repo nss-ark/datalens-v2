@@ -9,7 +9,7 @@ import (
 
 // DiscoveryOrchestrator defines the interface for discovery operations.
 type DiscoveryOrchestrator interface {
-	ScanDataSource(ctx context.Context, dataSourceID types.ID) error
+	ScanDataSource(ctx context.Context, dataSourceID types.ID) (*discovery.ScanStats, error)
 	TestConnection(ctx context.Context, dataSourceID types.ID) error
 	GetClassifications(ctx context.Context, tenantID types.ID, filter discovery.ClassificationFilter) (*types.PaginatedResult[discovery.PIIClassification], error)
 }

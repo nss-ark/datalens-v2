@@ -14,22 +14,19 @@ import { dataSourceService } from '../services/datasource';
 import type { DataSource, DataSourceType } from '../types/datasource';
 
 const DS_TYPE_OPTIONS: { value: DataSourceType; label: string }[] = [
-    { value: 'postgresql', label: 'PostgreSQL' },
-    { value: 'mysql', label: 'MySQL' },
-    { value: 'mssql', label: 'SQL Server' },
-    { value: 'mongodb', label: 'MongoDB' },
-    { value: 'oracle', label: 'Oracle' },
-    { value: 'sqlite', label: 'SQLite' },
-    { value: 's3', label: 'Amazon S3' },
-    { value: 'gcs', label: 'Google Cloud Storage' },
-    { value: 'azure_blob', label: 'Azure Blob' },
-    { value: 'm365', label: 'Microsoft 365' },
-    { value: 'google_workspace', label: 'Google Workspace' },
-    { value: 'local_file', label: 'File Upload' },
+    { value: 'POSTGRESQL', label: 'PostgreSQL' },
+    { value: 'MYSQL', label: 'MySQL' },
+    { value: 'SQLSERVER', label: 'SQL Server' },
+    { value: 'MONGODB', label: 'MongoDB' },
+    { value: 'S3', label: 'Amazon S3' },
+    { value: 'AZURE_BLOB', label: 'Azure Blob' },
+    { value: 'MICROSOFT_365', label: 'Microsoft 365' },
+    { value: 'GOOGLE_WORKSPACE', label: 'Google Workspace' },
+    { value: 'FILE_UPLOAD', label: 'File Upload' },
 ];
 
 const INITIAL_FORM = {
-    name: '', type: 'postgresql' as DataSourceType, description: '',
+    name: '', type: 'POSTGRESQL' as DataSourceType, description: '',
     host: '', port: 5432, database: '', username: '', password: '', credentials: '',
 };
 
@@ -95,7 +92,7 @@ const DataSources = () => {
         e.preventDefault();
 
         // Handle File Upload
-        if (form.type === 'local_file') {
+        if (form.type === 'FILE_UPLOAD') {
             if (!uploadFile) {
                 toast.error('No file selected', 'Please select a file to upload.');
                 return;
@@ -121,10 +118,10 @@ const DataSources = () => {
 
         // Handle OAuth Flows
         // Exception: Google Service Account (if credentials provided)
-        const isGoogleServiceAccount = form.type === 'google_workspace' && form.credentials && form.credentials.length > 2;
+        const isGoogleServiceAccount = form.type === 'GOOGLE_WORKSPACE' && form.credentials && form.credentials.length > 2;
 
-        if ((form.type === 'm365' || form.type === 'google_workspace') && !isGoogleServiceAccount) {
-            const url = form.type === 'm365'
+        if ((form.type === 'MICROSOFT_365' || form.type === 'GOOGLE_WORKSPACE') && !isGoogleServiceAccount) {
+            const url = form.type === 'MICROSOFT_365'
                 ? dataSourceService.getM365AuthUrl()
                 : dataSourceService.getGoogleAuthUrl();
 
@@ -159,7 +156,7 @@ const DataSources = () => {
 
         // Construct credentials string based on type
         let finalCredentials = form.credentials;
-        if (['postgresql', 'mysql', 'mongodb', 'mssql', 'oracle', 'sqlite', 'azure_sql', 'rds'].includes(form.type)) {
+        if (['POSTGRESQL', 'MYSQL', 'MONGODB', 'SQLSERVER', 'AZURE_SQL', 'RDS'].includes(form.type)) {
             finalCredentials = `${form.username}:${form.password}`;
         }
 
@@ -356,6 +353,40 @@ const DataSources = () => {
                     </>
                 }
             >
+                {import.meta.env.DEV && (
+                    <div className="mb-5 bg-blue-50/50 border border-blue-100 rounded-lg p-3 text-sm">
+                        <div className="font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            Dev Environment Connectors
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="bg-white p-2 rounded shadow-sm border border-blue-50">
+                                <span className="font-semibold text-gray-700 block mb-1">PostgreSQL</span>
+                                <span className="text-gray-500">Host:</span> localhost<br />
+                                <span className="text-gray-500">Port:</span> 5434<br />
+                                <span className="text-gray-500">DB:</span> customers_db<br />
+                                <span className="text-gray-500">User:</span> postgres<br />
+                                <span className="text-gray-500">Pass:</span> postgres
+                            </div>
+                            <div className="bg-white p-2 rounded shadow-sm border border-blue-50">
+                                <span className="font-semibold text-gray-700 block mb-1">MySQL</span>
+                                <span className="text-gray-500">Host:</span> localhost<br />
+                                <span className="text-gray-500">Port:</span> 3307<br />
+                                <span className="text-gray-500">DB:</span> inventory_db<br />
+                                <span className="text-gray-500">User:</span> root<br />
+                                <span className="text-gray-500">Pass:</span> root
+                            </div>
+                            <div className="bg-white p-2 rounded shadow-sm border border-blue-50">
+                                <span className="font-semibold text-gray-700 block mb-1">MongoDB</span>
+                                <span className="text-gray-500">Host:</span> localhost<br />
+                                <span className="text-gray-500">Port:</span> 27018<br />
+                                <span className="text-gray-500">DB:</span> admin<br />
+                                <span className="text-gray-500">User:</span> admin<br />
+                                <span className="text-gray-500">Pass:</span> password
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <form id="addDsForm" onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
                         <label style={labelStyle}>Data Source Type</label>
@@ -366,9 +397,9 @@ const DataSources = () => {
                         </select>
                     </div>
 
-                    {(form.type === 'm365' || form.type === 'google_workspace') ? (
+                    {(form.type === 'MICROSOFT_365' || form.type === 'GOOGLE_WORKSPACE') ? (
                         <div className="space-y-4">
-                            {form.type === 'm365' && (
+                            {form.type === 'MICROSOFT_365' && (
                                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm text-blue-800">
                                     <h4 className="font-semibold mb-1">Configuration Required</h4>
                                     <p className="mb-2">Ensure your Azure AD Application is configured with this Redirect URI:</p>
@@ -379,7 +410,7 @@ const DataSources = () => {
                                 </div>
                             )}
 
-                            {form.type === 'google_workspace' && (
+                            {form.type === 'GOOGLE_WORKSPACE' && (
                                 <div className="flex gap-4 p-1 bg-gray-100 rounded-lg select-none mb-4">
                                     <button
                                         type="button"
@@ -398,7 +429,7 @@ const DataSources = () => {
                                 </div>
                             )}
 
-                            {(form.type === 'google_workspace' && form.credentials) ? (
+                            {(form.type === 'GOOGLE_WORKSPACE' && form.credentials) ? (
                                 <div>
                                     <label style={labelStyle}>Service Account Key (JSON)</label>
                                     <textarea
@@ -420,7 +451,7 @@ const DataSources = () => {
                                         </div>
                                         <h3 className="text-gray-900 font-medium">Connect via OAuth</h3>
                                         <p className="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
-                                            You will be redirected to {form.type === 'm365' ? 'Microsoft' : 'Google'} to authenticate and grant access.
+                                            You will be redirected to {form.type === 'MICROSOFT_365' ? 'Microsoft' : 'Google'} to authenticate and grant access.
                                         </p>
                                     </div>
                                     <Button
@@ -428,7 +459,7 @@ const DataSources = () => {
                                         isLoading={isOAuthPending}
                                         className="w-full justify-center"
                                     >
-                                        {isOAuthPending ? 'Connecting...' : `Connect ${form.type === 'm365' ? 'Microsoft 365' : 'Google Workspace'}`}
+                                        {isOAuthPending ? 'Connecting...' : `Connect ${form.type === 'MICROSOFT_365' ? 'Microsoft 365' : 'Google Workspace'}`}
                                     </Button>
                                 </div>
                             )}
@@ -461,7 +492,7 @@ const DataSources = () => {
                                 <textarea value={form.description} onChange={updateField('description')} style={{ ...inputStyle, height: '60px', padding: '0.5rem 0.875rem', resize: 'vertical' }} placeholder="Brief description..." />
                             </div>
 
-                            {['postgresql', 'mysql', 'mongodb', 'mssql', 'oracle', 'sqlite', 'azure_sql', 'rds'].includes(form.type) ? (
+                            {['POSTGRESQL', 'MYSQL', 'MONGODB', 'SQLSERVER', 'AZURE_SQL', 'RDS'].includes(form.type) ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div>
                                         <label style={labelStyle}>Username</label>
@@ -481,7 +512,7 @@ const DataSources = () => {
                         </>
                     )}
 
-                    {form.type === 'local_file' && (
+                    {form.type === 'FILE_UPLOAD' && (
                         <div>
                             <label style={labelStyle}>Upload File</label>
                             <div

@@ -1,6 +1,6 @@
 import type { ID, BaseEntity } from '@datalens/shared';
 
-export type DataSourceType = 'postgresql' | 'mysql' | 'mongodb' | 'mssql' | 'oracle' | 'sqlite' | 's3' | 'gcs' | 'azure_blob' | 'google_workspace' | 'onedrive' | 'sharepoint' | 'outlook' | 'm365' | 'local_file';
+export type DataSourceType = 'POSTGRESQL' | 'MYSQL' | 'MONGODB' | 'SQLSERVER' | 'SNOWFLAKE' | 'S3' | 'RDS' | 'DYNAMODB' | 'AZURE_BLOB' | 'AZURE_SQL' | 'GOOGLE_DRIVE' | 'GOOGLE_WORKSPACE' | 'ONEDRIVE' | 'SALESFORCE' | 'MICROSOFT_365' | 'OUTLOOK' | 'IMAP' | 'FILE_SYSTEM' | 'API' | 'FILE_UPLOAD';
 
 export type ConnectionStatus = 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'TESTING';
 

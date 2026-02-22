@@ -6,6 +6,7 @@
 package types
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -213,6 +214,31 @@ const (
 	DataSourceAPI             DataSourceType = "API"
 	DataSourceFileUpload      DataSourceType = "FILE_UPLOAD"
 )
+
+// dataSourceAliases maps frontend shorthand/legacy names to canonical types.
+var dataSourceAliases = map[string]DataSourceType{
+	"MSSQL":      DataSourceSQLServer,
+	"M365":       DataSourceMicrosoft365,
+	"LOCAL_FILE": DataSourceFileUpload,
+	"GCS":        DataSourceGoogleDrive,    // Google Cloud Storage maps to Drive connector
+	"ORACLE":     DataSourceType("ORACLE"), // Passthrough — no connector yet
+	"SQLITE":     DataSourceType("SQLITE"), // Passthrough — no connector yet
+}
+
+// NormalizeDataSourceType converts a raw type string (possibly lowercase or
+// using a frontend alias) into the canonical DataSourceType constant.
+//
+//	"postgresql"  → "POSTGRESQL"
+//	"mssql"       → "SQLSERVER"
+//	"m365"        → "MICROSOFT_365"
+//	"local_file"  → "FILE_UPLOAD"
+func NormalizeDataSourceType(raw string) DataSourceType {
+	upper := strings.ToUpper(strings.TrimSpace(raw))
+	if mapped, ok := dataSourceAliases[upper]; ok {
+		return mapped
+	}
+	return DataSourceType(upper)
+}
 
 // =============================================================================
 // Value Objects

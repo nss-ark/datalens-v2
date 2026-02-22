@@ -87,7 +87,7 @@ const DataSourceConfig = () => {
     }
 
     // Google Workspace Handler
-    if (dataSource.type === 'google_workspace') {
+    if (dataSource.type === 'GOOGLE_WORKSPACE') {
         return (
             <div className="p-6 max-w-5xl mx-auto">
                 <div className="mb-6">
@@ -108,7 +108,7 @@ const DataSourceConfig = () => {
     }
 
     // M365 Handler
-    if (['onedrive', 'sharepoint', 'outlook', 'm365'].includes(dataSource.type)) {
+    if (['ONEDRIVE', 'OUTLOOK', 'MICROSOFT_365'].includes(dataSource.type)) {
         return (
             <div className="p-6 max-w-5xl mx-auto">
                 {/* Header */}

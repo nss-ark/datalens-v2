@@ -58,7 +58,7 @@ func (s *DataSourceService) Create(ctx context.Context, in CreateDataSourceInput
 
 	ds := &discovery.DataSource{
 		Name:        in.Name,
-		Type:        in.Type,
+		Type:        types.NormalizeDataSourceType(string(in.Type)),
 		Description: in.Description,
 		Host:        in.Host,
 		Port:        in.Port,

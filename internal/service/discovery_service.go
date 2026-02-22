@@ -57,13 +57,13 @@ func NewDiscoveryService(
 
 // ScanDataSource initiates a full scan of a data source.
 // It detects schema changes and scans for PII.
-func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID types.ID) error {
+func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID types.ID) (*discovery.ScanStats, error) {
 	start := time.Now()
 
 	// 1. Fetch Data Source
 	ds, err := s.dsRepo.GetByID(ctx, dataSourceID)
 	if err != nil {
-		return fmt.Errorf("fetch data source: %w", err)
+		return nil, fmt.Errorf("fetch data source: %w", err)
 	}
 
 	s.logger.InfoContext(ctx, "starting scan", "data_source_id", ds.ID, "name", ds.Name)
@@ -71,13 +71,13 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 	// 2. Resolve Connector via Registry
 	conn, err := s.registry.GetConnector(ds.Type)
 	if err != nil {
-		return fmt.Errorf("resolve connector: %w", err)
+		return nil, fmt.Errorf("resolve connector: %w", err)
 	}
 
 	// 3. Connect
 	if err := conn.Connect(ctx, ds); err != nil {
 		s.logError(ctx, ds.ID, "connection failed", err)
-		return fmt.Errorf("connect: %w", err)
+		return nil, fmt.Errorf("connect: %w", err)
 	}
 	defer conn.Close()
 
@@ -118,27 +118,27 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 	inventory, entities, err := conn.DiscoverSchema(ctx, discoveryInput)
 	if err != nil {
 		s.logError(ctx, ds.ID, "schema discovery failed", err)
-		return fmt.Errorf("discover schema: %w", err)
+		return nil, fmt.Errorf("discover schema: %w", err)
 	}
 
 	// 5. Sync Inventory
 	// Check if inventory exists
 	existingInv, err := s.inventoryRepo.GetByDataSource(ctx, ds.ID)
 	if err != nil && !types.IsNotFoundError(err) {
-		return err
+		return nil, err
 	}
 
 	if existingInv == nil {
 		inventory.DataSourceID = ds.ID
 		inventory.LastScannedAt = time.Now()
 		if err := s.inventoryRepo.Create(ctx, inventory); err != nil {
-			return fmt.Errorf("create inventory: %w", err)
+			return nil, fmt.Errorf("create inventory: %w", err)
 		}
 	} else {
 		existingInv.TotalEntities = inventory.TotalEntities
 		existingInv.LastScannedAt = time.Now()
 		if err := s.inventoryRepo.Update(ctx, existingInv); err != nil {
-			return fmt.Errorf("update inventory: %w", err)
+			return nil, fmt.Errorf("update inventory: %w", err)
 		}
 		inventory = existingInv
 	}
@@ -244,7 +244,7 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 		})
 
 		if err != nil {
-			return fmt.Errorf("scan failed: %w", err)
+			return nil, fmt.Errorf("scan failed: %w", err)
 		}
 
 		// Update inventory stats
@@ -253,7 +253,12 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 
 		duration := time.Since(start)
 		s.logger.InfoContext(ctx, "scan completed (scannable)", "duration", duration, "pii_count", piiCount)
-		return nil
+		return &discovery.ScanStats{
+			EntitiesScanned: inventory.TotalEntities,
+			FieldsScanned:   0,
+			PIIDetected:     piiCount,
+			Duration:        duration,
+		}, nil
 	}
 
 	// 6. Process Entities (Standard Loop)
@@ -283,7 +288,7 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 
 		if !exists {
 			if err := s.entityRepo.Create(ctx, &entity); err != nil {
-				return err
+				return nil, err
 			}
 			entityID = entity.ID
 		}
@@ -313,7 +318,7 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 
 			if !fExists {
 				if err := s.fieldRepo.Create(ctx, &field); err != nil {
-					return err
+					return nil, err
 				}
 				fieldID = field.ID
 			}
@@ -371,7 +376,12 @@ func (s *DiscoveryService) ScanDataSource(ctx context.Context, dataSourceID type
 	duration := time.Since(start)
 	s.logger.InfoContext(ctx, "scan completed", "duration", duration, "pii_count", piiCount)
 
-	return nil
+	return &discovery.ScanStats{
+		EntitiesScanned: len(entities),
+		FieldsScanned:   inventory.TotalFields,
+		PIIDetected:     piiCount,
+		Duration:        duration,
+	}, nil
 }
 
 func (s *DiscoveryService) logError(ctx context.Context, dsID types.ID, msg string, err error) {

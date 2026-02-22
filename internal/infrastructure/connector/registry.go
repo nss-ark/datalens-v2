@@ -103,9 +103,12 @@ func (r *ConnectorRegistry) GetConnector(dsType types.DataSourceType) (discovery
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	factory, ok := r.factories[dsType]
+	// Normalize the type before lookup (safety net for pre-existing data with wrong casing)
+	normalized := types.NormalizeDataSourceType(string(dsType))
+
+	factory, ok := r.factories[normalized]
 	if !ok {
-		return nil, fmt.Errorf("unsupported data source type: %s (registered: %v)", dsType, r.SupportedTypes())
+		return nil, fmt.Errorf("unsupported data source type: %s (normalized: %s, registered: %v)", dsType, normalized, r.SupportedTypes())
 	}
 	return factory(), nil
 }

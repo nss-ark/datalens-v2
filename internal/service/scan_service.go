@@ -136,7 +136,7 @@ func (s *ScanService) ProcessScanJob(ctx context.Context, jobID string) error {
 	// This makes progress tracking hard.
 	// BUT, I can update the Status to COMPLETED/FAILED afterwards.
 
-	scanErr := s.discoverySvc.ScanDataSource(ctx, run.DataSourceID)
+	scanStats, scanErr := s.discoverySvc.ScanDataSource(ctx, run.DataSourceID)
 
 	completedAt := time.Now()
 	run.CompletedAt = &completedAt
@@ -149,15 +149,31 @@ func (s *ScanService) ProcessScanJob(ctx context.Context, jobID string) error {
 			slog.String("run_id", run.ID.String()),
 			slog.String("error", scanErr.Error()),
 		)
+
+		// Update data source status to ERROR
+		if ds, err := s.dsRepo.GetByID(ctx, run.DataSourceID); err == nil {
+			ds.Status = discovery.ConnectionStatusError
+			ds.ErrorMessage = types.Ptr(scanErr.Error())
+			_ = s.dsRepo.Update(ctx, ds)
+		}
 	} else {
 		run.Status = discovery.ScanStatusCompleted
 		run.Progress = 100
 
-		// Fetch inventory to populate stats (approximation)
-		// DiscoveryService updates Inventory.
-		// We'll read it back.
-		// TODO: This is a hack because DiscoveryService doesn't return stats.
-		// In a real scenario, I'd return stats from ScanDataSource.
+		// Use real stats returned by DiscoveryService
+		if scanStats != nil {
+			run.Stats = *scanStats
+			run.Stats.Duration = completedAt.Sub(*run.StartedAt)
+		}
+
+		// Update data source: mark CONNECTED and set last_sync_at
+		if ds, err := s.dsRepo.GetByID(ctx, run.DataSourceID); err == nil {
+			ds.Status = discovery.ConnectionStatusConnected
+			now := time.Now()
+			ds.LastSyncAt = &now
+			ds.ErrorMessage = nil
+			_ = s.dsRepo.Update(ctx, ds)
+		}
 	}
 
 	if err := s.scanRunRepo.Update(ctx, run); err != nil {

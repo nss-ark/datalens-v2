@@ -42,7 +42,7 @@ const DataSourceDetail = () => {
         );
     }
 
-    const isM365 = ['onedrive', 'sharepoint', 'outlook', 'm365'].includes(dataSource.type);
+    const isM365 = ['ONEDRIVE', 'OUTLOOK', 'MICROSOFT_365'].includes(dataSource.type);
     const isScanning = scanStatus?.status === 'RUNNING' || scanStatus?.status === 'QUEUED';
 
     // Helper to format date

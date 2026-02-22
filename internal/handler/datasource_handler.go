@@ -356,10 +356,11 @@ func (h *DataSourceHandler) GetScanStatus(w http.ResponseWriter, r *http.Request
 	progress := map[string]interface{}{
 		"status":              latest.Status,
 		"progress_percentage": latest.Progress,
-		// these fields are just placeholders if not in ScanRun
-		"tables_processed": 0,
-		"total_tables":     0,
-		"pii_found":        0,
+		"tables_processed":    latest.Stats.EntitiesScanned,
+		"total_tables":        latest.Stats.EntitiesScanned,
+		"pii_found":           latest.Stats.PIIDetected,
+		"fields_scanned":      latest.Stats.FieldsScanned,
+		"duration":            latest.Stats.Duration.String(),
 	}
 	httputil.JSON(w, http.StatusOK, progress)
 }

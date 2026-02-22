@@ -23,8 +23,8 @@ type DataSource struct {
 	Name         string               `json:"name" db:"name"`
 	Type         types.DataSourceType `json:"type" db:"type"`
 	Description  string               `json:"description" db:"description"`
-	Host         string               `json:"-" db:"host"` // Encrypted at rest
-	Port         int                  `json:"-" db:"port"`
+	Host         string               `json:"host,omitempty" db:"host"`
+	Port         int                  `json:"port,omitempty" db:"port"`
 	Database     string               `json:"database" db:"database"`                     // Database name for relational DBs, bucket for S3
 	Credentials  string               `json:"-" db:"credentials"`                         // Encrypted
 	Config       string               `json:"config" db:"config"`                         // JSON config specific to connector type
