@@ -37,7 +37,7 @@ func (m *MockDSRRepo) GetByID(ctx context.Context, id types.ID) (*compliance.DSR
 	return args.Get(0).(*compliance.DSR), args.Error(1)
 }
 
-func (m *MockDSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus) (*types.PaginatedResult[compliance.DSR], error) {
+func (m *MockDSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
 	args := m.Called(ctx, tenantID, pagination, statusFilter)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

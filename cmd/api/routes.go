@@ -56,6 +56,11 @@ func mountCCRoutes(
 	auditHandler *handler.AuditHandler,
 	dataSubjectHandler *handler.DataSubjectHandler,
 	retentionHandler *handler.RetentionHandler,
+	ropaHandler *handler.RoPAHandler,
+	purposeAssignmentHandler *handler.PurposeAssignmentHandler,
+	departmentHandler *handler.DepartmentHandler,
+	thirdPartyHandler *handler.ThirdPartyHandler,
+	reportHandler *handler.ReportHandler,
 ) {
 	// Protected routes (auth + tenant isolation + rate limiting)
 	r.Group(func(r chi.Router) {
@@ -128,6 +133,21 @@ func mountCCRoutes(
 
 		// Retention Policies
 		r.Mount("/retention", retentionHandler.Routes())
+
+		// RoPA (Record of Processing Activities)
+		r.Mount("/ropa", ropaHandler.Routes())
+
+		// Purpose Assignments (Multi-Level Scope Tagging)
+		r.Mount("/purpose-assignments", purposeAssignmentHandler.Routes())
+
+		// Departments
+		r.Mount("/departments", departmentHandler.Routes())
+
+		// Third Parties
+		r.Mount("/third-parties", thirdPartyHandler.Routes())
+
+		// Reports (Compliance Snapshot + Data Export)
+		r.Mount("/reports", reportHandler.Routes())
 	})
 }
 

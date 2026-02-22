@@ -36,7 +36,13 @@ import DataSubjects from './pages/DataSubjects';
 import AuditLogs from './pages/AuditLogs';
 import PIIInventory from './pages/PIIInventory';
 import Settings from './pages/Settings';
+import Departments from './pages/Departments';
+import ThirdParties from './pages/ThirdParties';
 import RetentionPolicies from './pages/RetentionPolicies';
+import RoPA from './pages/RoPA';
+import Reports from './pages/Reports';
+import Nominations from './pages/Nominations';
+import { Clock } from 'lucide-react';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -47,15 +53,33 @@ const queryClient = new QueryClient({
     },
 });
 
-function PlaceholderPage({ title }: { title: string }) {
+function ComingSoonPage({ title, description }: { title: string; description: string }) {
     return (
-        <div style={{ padding: '2rem' }}>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+        <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            minHeight: '60vh', padding: '2rem', textAlign: 'center',
+        }}>
+            <div style={{
+                width: 80, height: 80, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '24px',
+            }}>
+                <Clock size={36} style={{ color: '#3b82f6' }} />
+            </div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
                 {title}
             </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
-                This page is under construction.
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', maxWidth: 400, lineHeight: 1.6, marginBottom: '20px' }}>
+                {description}
             </p>
+            <span style={{
+                display: 'inline-block', padding: '6px 16px', borderRadius: '9999px',
+                fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.04em',
+                backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe',
+            }}>
+                Coming in Phase 5
+            </span>
         </div>
     );
 }
@@ -84,7 +108,7 @@ function App() {
                         <Route path="/datasources/:id" element={<DataSourceDetail />} />
                         <Route path="/datasources/:id/config" element={<DataSourceConfig />} />
 
-                        <Route path="/agents" element={<PlaceholderPage title="Agents" />} />
+                        <Route path="/agents" element={<ComingSoonPage title="AI Agents" description="Automated compliance scanning agents that monitor your data landscape in real-time." />} />
                         <Route path="/pii/review" element={<PIIDiscovery />} />
                         <Route path="/dsr" element={<DSRList />} />
                         <Route path="/dsr/:id" element={<DSRDetail />} />
@@ -100,7 +124,7 @@ function App() {
                         <Route path="/governance/lineage" element={<DataLineage />} />
                         <Route path="/subjects" element={<DataSubjects />} />
                         <Route path="/consent" element={<ConsentRecords />} />
-                        <Route path="/nominations" element={<PlaceholderPage title="Nominations" />} />
+                        <Route path="/nominations" element={<Nominations />} />
 
                         {/* Governance Routes */}
                         <Route path="/governance/purposes" element={<PurposeMapping />} />
@@ -115,16 +139,16 @@ function App() {
                         <Route path="/compliance/grievances" element={<GrievanceList />} />
                         <Route path="/compliance/grievances/:id" element={<GrievanceDetail />} />
 
-                        {/* Placeholder routes */}
-                        <Route path="/department" element={<PlaceholderPage title="Department" />} />
-                        <Route path="/third-parties" element={<PlaceholderPage title="Third Parties" />} />
+                        {/* Organization / Third-Parties */}
+                        <Route path="/departments" element={<Departments />} />
+                        <Route path="/third-parties" element={<ThirdParties />} />
                         <Route path="/retention" element={<RetentionPolicies />} />
-                        <Route path="/ropa" element={<PlaceholderPage title="RoPA" />} />
-                        <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
+                        <Route path="/ropa" element={<RoPA />} />
+                        <Route path="/reports" element={<Reports />} />
                         <Route path="/audit-logs" element={<AuditLogs />} />
-                        <Route path="/users" element={<PlaceholderPage title="User Management" />} />
+                        <Route path="/users" element={<ComingSoonPage title="User Management" description="Role-based access control and team management for your organization." />} />
                         <Route path="/settings" element={<Settings />} />
-                        <Route path="*" element={<PlaceholderPage title="404 — Page Not Found" />} />
+                        <Route path="*" element={<ComingSoonPage title="404 — Page Not Found" description="The page you're looking for doesn't exist or has been moved." />} />
                     </Route>
                 </Routes>
             </BrowserRouter>

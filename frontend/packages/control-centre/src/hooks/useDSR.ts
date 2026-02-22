@@ -9,7 +9,7 @@ const DSR_KEYS = {
     detail: (id: ID) => [...DSR_KEYS.all, 'detail', id] as const,
 };
 
-export function useDSRs(params?: { page?: number; page_size?: number; status?: string }) {
+export function useDSRs(params?: { page?: number; page_size?: number; status?: string; type?: string }) {
     return useQuery({
         queryKey: DSR_KEYS.list(params as Record<string, unknown>),
         queryFn: () => dsrService.list(params),

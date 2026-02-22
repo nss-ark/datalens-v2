@@ -241,15 +241,7 @@ func (s *DSRService) GetDSRs(ctx context.Context, pagination types.Pagination, s
 	if !ok {
 		return nil, errors.New("tenant id is required")
 	}
-	// TODO: Add requestType filter to repository if needed per prompt,
-	// but currently only status filter is supported by GetByTenant.
-	// For now, we will just use existing repository method and note that type filtering is pending repository update if strictly required.
-	// Actually, let's stick to status filter for now as the prompt asked for "filter by status, type" but the repo only creates status filter.
-	// I will add requestType argument but ignore it for now or implement client-side filtering (bad for pagination).
-	// Given strict "Do not guess", I should probably update the repo to support it, but looking at DSRRepo.GetByTenant it takes statusFilter.
-	// I'll leave it as matches current API.
-
-	return s.dsrRepo.GetByTenant(ctx, tenantID, pagination, status)
+	return s.dsrRepo.GetByTenant(ctx, tenantID, pagination, status, requestType)
 }
 
 // UpdateStatus updates the status of a DSR and syncs with DPR if linked.

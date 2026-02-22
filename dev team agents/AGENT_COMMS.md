@@ -65,7 +65,7 @@
 4. Widget enhancements: Deferred entirely
 5. OCR: Sarvam API + Tesseract, extensible adapter
 6. Department: Ownership + responsibilities + email notifications
-7. Multi-level purpose tagging: column/table/database/server with inheritance
+7. Multi-level purpose tagging: column/table/schema/database/server with inheritance (5 levels)
 8. UI Overhaul: Dedicated Batch 4B, evaluate Oat CSS
 
 ---
@@ -308,3 +308,332 @@ GET /api/v2/retention/logs?page=1&limit=20&policy_id={optional_uuid}
 
 ---
 
+### [2026-02-22] [FROM: Backend] → [TO: ALL]
+**Subject**: Batch 4D-1 + 4D-3 + 4D-5 Complete — RoPA + ThirdParty + Purpose Assignments + Bug Fixes
+**Type**: HANDOFF
+
+**Changes**:
+- `internal/database/migrations/021_ropa.sql` — **[NEW]** third_parties + ropa_versions tables
+- `internal/database/migrations/022_purpose_assignments.sql` — **[NEW]** purpose_assignments table
+- `internal/domain/compliance/ropa.go` — **[NEW]** RoPAVersion, RoPAContent, RoPAStatus domain types + RoPARepository interface
+- `internal/domain/governance/entities.go` — **[MODIFIED]** Added ThirdPartyRepository, PurposeAssignment, ScopeType, ScopeHierarchy, PurposeAssignmentRepository
+- `internal/repository/postgres_third_party.go` — **[NEW]** ThirdParty CRUD with JSONB purpose_ids
+- `internal/repository/postgres_ropa.go` — **[NEW]** RoPA repo with JSONB content serialization
+- `internal/repository/postgres_purpose_assignment.go` — **[NEW]** Purpose assignment CRUD with scope queries
+- `internal/service/ropa_service.go` — **[NEW]** Generate, SaveEdit, Publish, PromoteMajor, GetLatest, GetByVersion, ListVersions
+- `internal/service/purpose_assignment_service.go` — **[NEW]** Assign, Remove, GetByScope, GetEffective (inheritance), GetByPurpose, GetAll
+- `internal/handler/ropa_handler.go` — **[NEW]** 7 endpoints at /ropa
+- `internal/handler/purpose_assignment_handler.go` — **[NEW]** 5 endpoints at /purpose-assignments
+- `cmd/api/main.go` — **[MODIFIED]** Wired repos/services/handlers; fixed duplicate grievanceHandler (L556-557), consolidated duplicate RetentionRepo (L486+568)
+- `cmd/api/routes.go` — **[MODIFIED]** Mounted /ropa and /purpose-assignments in CC routes
+
+**RoPA API Contract**:
+```
+POST   /api/v2/ropa              — Auto-generate new version (returns RoPAVersion)
+GET    /api/v2/ropa              — Get latest version (returns RoPAVersion or null)
+GET    /api/v2/ropa/versions     — Paginated version history (?page=1&page_size=20)
+GET    /api/v2/ropa/versions/{v} — Get specific version (e.g., /versions/1.3)
+PUT    /api/v2/ropa              — User edit → new minor version
+                                    Body: {"content": {...}, "change_summary": "..."}
+POST   /api/v2/ropa/publish      — Publish a version
+                                    Body: {"id": "uuid"}
+POST   /api/v2/ropa/promote      — Major version bump (copies latest content)
+```
+
+**Purpose Assignment API Contract**:
+```
+POST   /api/v2/purpose-assignments       — Assign purpose at scope
+       Body: {"purpose_id": "uuid", "scope_type": "TABLE", "scope_id": "db.schema.users", "scope_name": "Users Table"}
+DELETE /api/v2/purpose-assignments/{id}  — Remove assignment
+GET    /api/v2/purpose-assignments       — Direct assignments at scope
+       Query: ?scope_type=TABLE&scope_id=db.schema.users
+GET    /api/v2/purpose-assignments/effective — Effective (with inheritance)
+       Query: ?scope_type=COLUMN&scope_id=db.schema.users.email
+GET    /api/v2/purpose-assignments/all   — All assignments for tenant
+```
+
+**Scope ID Format Convention**:
+
+| Scope | Format | Example |
+|-------|--------|---------|
+| SERVER | server_name | prod-db-01 |
+| DATABASE | db_name | customers_db |
+| SCHEMA | db.schema | customers_db.public |
+| TABLE | db.schema.table | customers_db.public.users |
+| COLUMN | db.schema.table.col | customers_db.public.users.email |
+
+**Bug Fixes (4D-5)**:
+- Removed duplicate `grievanceHandler` assignment (was at lines 556-557)
+- Consolidated duplicate `RetentionRepo` instantiation (was at lines 486 + 568, now single instance at L486 reused by RetentionService)
+- Test files (`admin_handler_test.go`, `batch19_handler_test.go`) compile without issues — no interface drift
+
+**Verification**: go build ✅ | go vet ✅ | Pre-existing test failures only (translation tests)
+
+**Action Required**:
+- **Frontend**: RoPA and Purpose Assignment pages can now be built against these endpoints
+- **Test**: Run migrations 021 + 022 on staging DB before testing
+
+
+---
+
+### [2026-02-22] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 4D-2 + 4D-4 Complete — RoPA Page + Purpose Assignment UI
+**Type**: HANDOFF
+
+**Changes**:
+- `frontend/packages/shared/src/ui/tabs.tsx` — **[NEW]** Tabs component (Radix UI primitives)
+- `frontend/packages/shared/src/index.ts` — **[MODIFIED]** Added Tabs re-export
+- `frontend/packages/shared/package.json` — **[MODIFIED]** Added `@radix-ui/react-tabs` dependency
+- `frontend/packages/control-centre/src/services/ropaService.ts` — **[NEW]** RoPA API service with full types (RoPAVersion, RoPAContent, etc.) and 7 methods
+- `frontend/packages/control-centre/src/services/purposeAssignmentService.ts` — **[NEW]** Purpose Assignment API service with 5 methods (assign, remove, getByScope, getEffective, getAll)
+- `frontend/packages/control-centre/src/pages/RoPA.tsx` — **[NEW]** Full RoPA page with:
+  - Empty state CTA card ("Generate Your First RoPA")
+  - Collapsible sections: Purposes, Data Sources, Retention Policies, Third Parties, Data Categories
+  - Inline editing (organization name) with dirty tracking
+  - Save Changes dialog with change summary prompt
+  - Publish + New Major Version workflows
+  - Paginated Version History panel
+- `frontend/packages/control-centre/src/pages/Governance/PurposeMapping.tsx` — **[MODIFIED]** Wrapped in Tabs:
+  - Tab 1: AI Suggestions (existing, untouched)
+  - Tab 2: Scope Assignments with scope filter, inherited toggle, add/remove assignment dialogs
+  - 5 scope levels: SERVER, DATABASE, SCHEMA, TABLE, COLUMN
+  - Inherited rows rendered with muted opacity
+- `frontend/packages/control-centre/src/App.tsx` — **[MODIFIED]** Replaced `/ropa` placeholder with real RoPA page
+
+**Verification**: `npm run build -w @datalens/control-centre` ✅ (exit code 0, zero errors)
+
+**Action Required**: None
+
+---
+
+### [2026-02-22] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 4D Complete — All 5 Tasks Verified
+**Type**: STATUS
+
+**Summary**: Batch 4D (RoPA + Multi-Level Purpose Tagging) is fully complete. All backend and frontend tasks verified.
+
+| Task | Agent | Status | Key Files |
+|------|-------|--------|-----------|
+| 4D-1: RoPA Backend | Backend | ✅ | ropa_service.go, ropa_handler.go, postgres_ropa.go, postgres_third_party.go, 021_ropa.sql |
+| 4D-2: RoPA Frontend | Frontend | ✅ | RoPA.tsx, ropaService.ts |
+| 4D-3: Purpose Assignments Backend | Backend | ✅ | purpose_assignment_service.go, purpose_assignment_handler.go, 022_purpose_assignments.sql |
+| 4D-4: Purpose Assignments Frontend | Frontend | ✅ | PurposeMapping.tsx (tabs), purposeAssignmentService.ts |
+| 4D-5: Bug Fixes | Backend | ✅ | main.go (duplicate RetentionRepo + grievanceHandler fixed) |
+
+**New Capabilities**:
+- **RoPA**: Auto-generated from live data (purposes, data sources, retention policies, third parties), strict version control (semver), publish/archive lifecycle, audit trail
+- **ThirdParty CRUD**: New `third_parties` table + repository (was missing persistence layer)
+- **Purpose Assignments**: 5-level scope hierarchy (SERVER → DATABASE → SCHEMA → TABLE → COLUMN) with inheritance resolution via `GetEffective`
+- **Bug Fixes**: Duplicate wiring in main.go resolved
+
+**Verification**: go build ✅ | go vet ✅ | npm run build ✅ | TASK_TRACKER.md updated
+
+**Next**: Batch 4E — Department + Third-Party (dual-mode) + Nominations
+
+---
+
+### [2026-02-22] [FROM: Backend] → [TO: ALL]
+**Subject**: Batch 4E-1 + 4E-2 Complete — Department + Third-Party APIs
+**Type**: HANDOFF
+
+**Changes**:
+- `internal/database/migrations/023_departments.sql` — **[NEW]** departments table with TEXT[] responsibilities, tenant+name uniqueness
+- `internal/database/migrations/024_third_party_dpa.sql` — **[NEW]** ALTER third_parties to add 6 DPA columns
+- `internal/domain/governance/department.go` — **[NEW]** Department entity + DepartmentRepository interface
+- `internal/domain/governance/entities.go` — **[MODIFIED]** Added 6 DPA fields to ThirdParty struct + DPA status constants
+- `internal/repository/postgres_department.go` — **[NEW]** Department CRUD with pgx native TEXT[] scanning
+- `internal/repository/postgres_third_party.go` — **[MODIFIED]** All SQL queries updated for 6 new DPA columns
+- `internal/service/department_service.go` — **[NEW]** CRUD + Notify (SMTP email) + audit logging
+- `internal/service/third_party_service.go` — **[NEW]** Tenant-scoped CRUD + audit logging
+- `internal/handler/department_handler.go` — **[NEW]** 6 endpoints at /departments
+- `internal/handler/third_party_handler.go` — **[NEW]** 5 endpoints at /third-parties
+- `cmd/api/main.go` — **[MODIFIED]** Wired department + third-party repos/services/handlers
+- `cmd/api/routes.go` — **[MODIFIED]** Mounted /departments and /third-parties in CC routes
+
+**Department API Contract**:
+```
+POST   /api/v2/departments         — Create department
+GET    /api/v2/departments         — List (tenant-scoped)
+GET    /api/v2/departments/{id}    — Get by ID
+PUT    /api/v2/departments/{id}    — Update (partial)
+DELETE /api/v2/departments/{id}    — Delete
+POST   /api/v2/departments/{id}/notify — Send email to owner (body: { "subject": "...", "body": "..." })
+```
+
+**Third-Party API Contract**:
+```
+POST   /api/v2/third-parties       — Create (incl. DPA fields)
+GET    /api/v2/third-parties       — List (tenant-scoped)
+GET    /api/v2/third-parties/{id}  — Get by ID
+PUT    /api/v2/third-parties/{id}  — Update (incl. DPA fields)
+DELETE /api/v2/third-parties/{id}  — Delete
+```
+
+**DPA Status Values**: `NONE` | `PENDING` | `SIGNED` | `EXPIRED`
+
+**Verification**: go build ✅ | go vet ✅
+
+---
+
+### [2026-02-22] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 4E-3 Complete — Department + Third-Party Pages
+**Type**: HANDOFF
+
+**Changes**:
+- `frontend/packages/control-centre/src/services/departmentService.ts` — [NEW] Department API service
+- `frontend/packages/control-centre/src/services/thirdPartyService.ts` — [NEW] Third Party API service
+- `frontend/packages/control-centre/src/pages/Departments.tsx` — [NEW] Department CRUD page with email notification support
+- `frontend/packages/control-centre/src/pages/ThirdParties.tsx` — [NEW] Third Party CRUD page with DPA status tracking
+- `frontend/packages/control-centre/src/App.tsx` — [MODIFIED] Added routing for `/departments` and `/third-parties`
+- `frontend/packages/control-centre/src/components/Layout/Sidebar.tsx` — [MODIFIED] Added links under Governance
+
+**Features Enabled**:
+- Department management with ownership mappings and email notifications
+- Third Party mapping with Full DPA/Simple View modes and purpose assignment
+
+**Verification**: `npm run build -w @datalens/control-centre` ✅
+
+**Action Required**:
+- None
+
+---
+
+### [2026-02-22] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 4E Complete — All 3 Tasks Verified
+**Type**: STATUS
+
+**Summary**: Batch 4E (Department + Third-Party + DPA) is fully complete.
+
+| Task | Agent | Status | Key Files |
+|------|-------|--------|-----------|
+| 4E-1: Department Backend | Backend | ✅ | department_service.go, department_handler.go, 023_departments.sql |
+| 4E-2: Third-Party + DPA | Backend | ✅ | third_party_service.go, third_party_handler.go, 024_third_party_dpa.sql |
+| 4E-3: Frontend Pages | Frontend | ✅ | Departments.tsx, ThirdParties.tsx, Sidebar.tsx |
+
+**New Capabilities**:
+- **Departments**: CRUD + email notifications to department owners via SMTP
+- **Third-Party DPA Tracking**: Status lifecycle (NONE→PENDING→SIGNED→EXPIRED), contact info, dates
+- **Frontend**: Both pages with sidebar links under Governance
+
+**Verification**: go build ✅ | go vet ✅ | npm run build ✅ | TASK_TRACKER.md updated
+
+**Next**: Batch 4F — OCR adapters (Sarvam + Tesseract) + Portal polish
+
+---
+
+### [2026-02-19] [FROM: Backend + Frontend] → [TO: ALL]
+**Subject**: SA-1 — SuperAdmin Portal Updates
+**Type**: HANDOFF
+
+**Backend API Changes**:
+- **New SuperAdmin Login**: `POST /api/v2/superadmin/login`
+  - Accepts: `{ email, password }` — Returns: `{ access_token, refresh_token, expires_in }`
+  - Global login (no tenant_id needed)
+- **Me Endpoint**: `GET /api/v2/admin/me` — Returns authenticated user details
+- **Tenant Management**: `GET /api/v2/admin/tenants/{id}`, `PATCH /api/v2/admin/tenants/{id}`
+- **Wiring**: `AdminHandler` uses `AuthService` for login delegation
+
+**Frontend Changes (Admin Package)**:
+- `adminService.ts` rewritten with real API calls (mocks removed)
+- Auth flow: `Login.tsx` → `adminService.login` → `authStore.login` → `/api/v2/admin/me`
+- `AdminRoute.tsx` enforces `isAuthenticated` check
+- "Admin Portal" → "SuperAdmin Portal" naming
+
+---
+
+### [2026-02-22] [FROM: Backend] → [TO: ALL]
+**Subject**: Batch 4F-1 Complete — OCR Adapter Pattern + Sarvam Vision
+**Type**: HANDOFF
+
+**Changes**:
+- `internal/service/ai/ocr_adapter.go` — [NEW] OCRAdapter interface
+- `internal/service/ai/ocr_tesseract.go` — [NEW] Tesseract CLI adapter
+- `internal/service/ai/ocr_sarvam.go` — [NEW] Sarvam Vision REST API adapter
+- `internal/service/ai/parsing_service.go` — [MODIFIED] Adapter-based OCR
+- `.env.example` — [MODIFIED] Added SARVAM_API_KEY + SARVAM_BASE_URL
+
+**OCR Adapter Architecture**:
+- `OCRAdapter` interface: Name, IsAvailable, ExtractText, SupportedFormats
+- Priority: Tesseract CLI → Sarvam Vision (fallback)
+- Config: SARVAM_API_KEY + SARVAM_BASE_URL env vars
+
+**Verification**: go build ✅ | go vet ✅
+
+---
+
+### [2026-02-22] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 4F-2 Complete — Portal Polish + CC Verification
+**Type**: HANDOFF
+
+**Changes**:
+- Portal `.portal-card` CSS unified (16px border-radius, #f3f4f6 border, standardized shadows)
+- `NominationModal.tsx` — DPDPA Section 14 explainer added
+- CC pages (RoPA, Departments, ThirdParties) — container spacing normalized (`py-8`)
+
+**Verification**: portal build ✅ | CC build ✅
+
+---
+
+### [2026-02-22] [FROM: Orchestrator] → [TO: ALL]
+**Subject**: Batch 4F Complete — All 2 Tasks Verified
+**Type**: STATUS
+
+**Summary**: Batch 4F (OCR Adapters + Portal Polish) is fully complete.
+
+| Task | Agent | Status | Key Files |
+|------|-------|--------|-----------|
+| 4F-1: OCR Adapter Pattern | Backend | ✅ | ocr_adapter.go, ocr_tesseract.go, ocr_sarvam.go, parsing_service.go |
+| 4F-2: Portal + CC Polish | Frontend | ✅ | index.css, NominationModal.tsx, Requests.tsx, ConsentManage.tsx |
+
+**New Capabilities**:
+- **OCR Adapter Pattern**: Pluggable `OCRAdapter` interface (Tesseract primary → Sarvam fallback)
+- **Sarvam Vision**: REST API integration ready (set SARVAM_API_KEY to enable)
+- **Portal Polish**: Consistent card styling, DPDPA S14 nomination explainer
+
+**Verification**: go build ✅ | go vet ✅ | portal build ✅ | CC build ✅ | TASK_TRACKER.md updated
+
+**Next**: Batch 4G — Reports + Final QA (LAST BATCH!)
+
+---
+
+### [2026-02-22] [HANDOFF] [FROM: Backend] → [TO: ALL]
+**Subject**: Batch 4G Complete — Compliance Reporting + Nominations Filter ✅
+**Type**: HANDOFF
+
+**Summary**: Batch 4G (FINAL BATCH) is complete. Phase 4 is now fully implemented.
+
+| Task | Status | Key Files |
+|------|--------|-----------|
+| 4G-1: Compliance Reporting Service | ✅ | `report_service.go`, `report_handler.go` |
+| 4G-2: Nominations Filter | ✅ | `dsr.go`, `postgres_dsr.go`, `dsr_service.go` |
+| Wiring | ✅ | `main.go`, `routes.go` |
+
+**New API Endpoints**:
+- `GET /api/v2/reports/compliance-snapshot?from=&to=` — Scored snapshot across 4 DPDPA pillars
+- `GET /api/v2/reports/export/{entity}?format=csv|json` — Download 7 entity types
+- `GET /api/v2/dsr?type=NOMINATION` — Now works end-to-end (was broken)
+
+**Verification**: `go build ./...` ✅ | `go vet ./...` ✅
+
+---
+
+### [2026-02-22] [FROM: Frontend] → [TO: ALL]
+**Subject**: Batch 4G-3 Complete — Reports + Nominations + Final QA
+**Type**: HANDOFF
+
+**Changes**:
+- `frontend/packages/control-centre/src/services/reportService.ts` — **[NEW]** ComplianceSnapshot types + getComplianceSnapshot() + exportEntity() browser download
+- `frontend/packages/control-centre/src/pages/Reports.tsx` — **[NEW]** Compliance scorecard (SVG circular gauge), 4 pillar cards with progress bars, recommendation alerts, 7 entity export cards with CSV/JSON buttons
+- `frontend/packages/control-centre/src/pages/Nominations.tsx` — **[NEW]** Filtered DSR list (type=NOMINATION) with DPDPA Section 14 explainer
+- `frontend/packages/control-centre/src/services/dsr.ts` — **[MODIFIED]** Added `type` param to list()
+- `frontend/packages/control-centre/src/hooks/useDSR.ts` — **[MODIFIED]** Added `type` param to useDSRs()
+- `frontend/packages/control-centre/src/App.tsx` — **[MODIFIED]** Wired /reports, /nominations routes; replaced PlaceholderPage with ComingSoonPage for /agents, /users
+
+**New Pages**:
+- `/reports` — Compliance scorecard (SVG gauge), 4 pillar cards, recommendation alerts, 7 entity export buttons
+- `/nominations` — Filtered DSR list with DPDPA S14 context
+- `/agents` + `/users` — "Coming Soon" treatment (Phase 5 badge)
+
+**QA**: Full sidebar click-through ✅ | CC build ✅ | Portal build ✅
+
+🏁 **Phase 4 Complete!**

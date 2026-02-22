@@ -313,18 +313,18 @@
 /* ——— Card Styles ——— */
 .portal-card {
   background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-xs);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+  transition: box-shadow 0.3s, transform 0.3s;
 }
 
 .portal-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); /* Optional enhancement for hover matching actionCard but primarily just needing the base state correct */
 }
 
 .portal-card-interactive:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);
   transform: translateY(-1px);
 }
 

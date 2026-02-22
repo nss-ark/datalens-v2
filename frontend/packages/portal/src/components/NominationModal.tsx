@@ -44,6 +44,9 @@ export const NominationModal: React.FC<NominationModalProps> = ({ isOpen, onClos
             title="Nomination Request"
         >
             <div style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                <p className="text-sm text-slate-600 mb-4" style={{ marginTop: '-12px' }}>
+                    Under DPDPA Section 14, you have the right to nominate a person who can exercise your data rights on your behalf in case of your death or incapacity.
+                </p>
                 {/* Secure Banner */}
                 <div
                     className="bg-blue-50 border border-blue-100"

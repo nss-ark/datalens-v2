@@ -81,20 +81,20 @@ func TestDSRRepo_CRUD(t *testing.T) {
 
 	// Filter by APPROVED (should find dsr1)
 	statusFilter := compliance.DSRStatusApproved
-	page, err := dsrRepo.GetByTenant(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10}, &statusFilter)
+	page, err := dsrRepo.GetByTenant(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10}, &statusFilter, nil)
 	require.NoError(t, err)
 	assert.Len(t, page.Items, 1)
 	assert.Equal(t, dsr.ID, page.Items[0].ID)
 
 	// Filter by REJECTED (should find dsr2)
 	statusFilter2 := compliance.DSRStatusRejected
-	page2, err := dsrRepo.GetByTenant(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10}, &statusFilter2)
+	page2, err := dsrRepo.GetByTenant(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10}, &statusFilter2, nil)
 	require.NoError(t, err)
 	assert.Len(t, page2.Items, 1)
 	assert.Equal(t, dsr2.ID, page2.Items[0].ID)
 
 	// No filter (should find both)
-	pageAll, err := dsrRepo.GetByTenant(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10}, nil)
+	pageAll, err := dsrRepo.GetByTenant(ctx, tenant.ID, types.Pagination{Page: 1, PageSize: 10}, nil, nil)
 	require.NoError(t, err)
 	assert.Len(t, pageAll.Items, 2)
 }

@@ -46,7 +46,7 @@ func (m *mockDSRRepository) GetByID(_ context.Context, id types.ID) (*compliance
 	return dsr, nil
 }
 
-func (m *mockDSRRepository) GetByTenant(_ context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus) (*types.PaginatedResult[compliance.DSR], error) {
+func (m *mockDSRRepository) GetByTenant(_ context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
 	var items []compliance.DSR
 	for _, dsr := range m.dsrs {
 		if dsr.TenantID == tenantID {

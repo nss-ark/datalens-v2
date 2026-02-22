@@ -57,7 +57,7 @@ const styles = {
     emptyState: {
         backgroundColor: '#ffffff',
         borderRadius: '16px',
-        border: '1px solid #e5e7eb',
+        border: '1px solid #f3f4f6',
         padding: '64px 24px',
         textAlign: 'center' as const,
         display: 'flex',
@@ -96,13 +96,14 @@ const styles = {
         marginTop: '32px',
         backgroundColor: '#ffffff',
         borderRadius: '16px',
-        border: '1px solid #e5e7eb', // slate-200
+        border: '1px solid #f3f4f6',
         padding: '24px',
         display: 'flex',
         flexDirection: 'column' as const, // stacks on mobile
         gap: '24px',
         alignItems: 'flex-start',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+        transition: 'box-shadow 0.3s, transform 0.3s',
     },
     grievanceHeader: {
         display: 'flex',
@@ -263,7 +264,7 @@ const PortalRequests = () => {
                         </div>
                     ) : (
                         /* List View */
-                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div className="portal-card overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm">
                                     <thead>

@@ -44,7 +44,7 @@ func (r *mockDSRRepo) GetAll(ctx context.Context, pagination types.Pagination, s
 func (r *mockDSRRepo) GetByID(ctx context.Context, id types.ID) (*compliance.DSR, error) {
 	return nil, nil
 }
-func (r *mockDSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus) (*types.PaginatedResult[compliance.DSR], error) {
+func (r *mockDSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
 	return nil, nil
 }
 func (r *mockDSRRepo) GetOverdue(ctx context.Context, tenantID types.ID) ([]compliance.DSR, error) {

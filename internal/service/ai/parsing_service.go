@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -26,8 +25,8 @@ type ParsingService interface {
 
 // parsingServiceImpl implements ParsingService.
 type parsingServiceImpl struct {
-	logger       *slog.Logger
-	ocrAvailable bool
+	logger   *slog.Logger
+	adapters []OCRAdapter
 }
 
 // NewParsingService creates a new ParsingService.
@@ -36,13 +35,21 @@ func NewParsingService(logger *slog.Logger) ParsingService {
 		logger: logger.With("service", "parsing_service"),
 	}
 
-	// Check if tesseract binary is available in PATH
-	if _, err := exec.LookPath("tesseract"); err == nil {
-		s.ocrAvailable = true
-		s.logger.Info("OCR available: tesseract binary found")
+	tesseract := NewTesseractAdapter(s.logger)
+	sarvam := NewSarvamAdapter(s.logger)
+
+	if tesseract.IsAvailable() {
+		s.adapters = append(s.adapters, tesseract)
+		s.logger.Info("OCR available: tesseract adapter registered")
 	} else {
 		s.logger.Warn("OCR unavailable: tesseract binary not found in PATH")
-		s.ocrAvailable = false
+	}
+
+	if sarvam.IsAvailable() {
+		s.adapters = append(s.adapters, sarvam)
+		s.logger.Info("OCR available: sarvam adapter registered")
+	} else {
+		s.logger.Warn("OCR unavailable: sarvam API key not found")
 	}
 
 	return s
@@ -50,7 +57,7 @@ func NewParsingService(logger *slog.Logger) ParsingService {
 
 // IsOCRAvailable check.
 func (s *parsingServiceImpl) IsOCRAvailable() bool {
-	return s.ocrAvailable
+	return len(s.adapters) > 0
 }
 
 // Parse implements the parsing logic.
@@ -138,7 +145,7 @@ func (s *parsingServiceImpl) parsePDF(ctx context.Context, filePath string) (str
 
 	// Heuristic: If text is very short relative to pages, it might be a scanned PDF.
 	// Also if text is truly empty.
-	if (len(strings.TrimSpace(text)) < 50) && s.ocrAvailable {
+	if (len(strings.TrimSpace(text)) < 50) && s.IsOCRAvailable() {
 		s.logger.InfoContext(ctx, "pdf native text empty or sparse, attempting OCR", "file", filePath)
 		// Tesseract can handle PDF input if built with PDF support, but usually it expects images.
 		// Standard tesseract CLI might not handle PDF directly without Ghostscript/ImageMagick piping.
@@ -197,26 +204,24 @@ func (s *parsingServiceImpl) parseXlsx(ctx context.Context, filePath string) (st
 }
 
 func (s *parsingServiceImpl) parseImage(ctx context.Context, filePath string) (string, error) {
-	if !s.ocrAvailable {
+	if !s.IsOCRAvailable() {
 		// Just warn and return empty or placeholder
 		s.logger.WarnContext(ctx, "OCR requested but unavailable", "file", filePath)
 		return "[OCR Unavailable - Text could not be extracted]", nil
 	}
 
-	// Execute tesseract CLI
-	// Format: tesseract <image> stdout
-	cmd := exec.CommandContext(ctx, "tesseract", filePath, "stdout")
-
-	// Sanity check filePath to prevent injection (though typically internal)
-	// exec.Command avoids shell injection, but let's be safe.
-	// filePath is from local FS.
-
-	output, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("tesseract execution failed: %w", err)
+	var lastErr error
+	for _, adapter := range s.adapters {
+		s.logger.InfoContext(ctx, "trying OCR adapter", "adapter", adapter.Name(), "file", filePath)
+		text, err := adapter.ExtractText(ctx, filePath, "eng")
+		if err == nil {
+			return text, nil
+		}
+		s.logger.WarnContext(ctx, "OCR adapter failed", "adapter", adapter.Name(), "error", err)
+		lastErr = err
 	}
 
-	return string(output), nil
+	return "", fmt.Errorf("all OCR adapters failed: %w", lastErr)
 }
 
 // Close cleans up resources

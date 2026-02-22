@@ -9,6 +9,7 @@ export * from './ui/input';
 export * from './ui/label';
 export * from './ui/select';
 export * from './ui/table';
+export * from './ui/tabs';
 export * from './ui/textarea';
 
 // Common Components

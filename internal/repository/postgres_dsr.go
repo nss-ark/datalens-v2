@@ -72,7 +72,7 @@ func (r *DSRRepo) GetByID(ctx context.Context, id types.ID) (*compliance.DSR, er
 }
 
 // GetByTenant lists DSRs for a tenant with pagination and optional status filtering.
-func (r *DSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus) (*types.PaginatedResult[compliance.DSR], error) {
+func (r *DSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
 	baseQuery := `FROM dsr_requests WHERE tenant_id = $1`
 	args := []any{tenantID}
 	argIdx := 2
@@ -80,6 +80,12 @@ func (r *DSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination
 	if statusFilter != nil {
 		baseQuery += fmt.Sprintf(` AND status = $%d`, argIdx)
 		args = append(args, *statusFilter)
+		argIdx++
+	}
+
+	if typeFilter != nil {
+		baseQuery += fmt.Sprintf(` AND request_type = $%d`, argIdx)
+		args = append(args, *typeFilter)
 		argIdx++
 	}
 

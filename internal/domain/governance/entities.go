@@ -137,12 +137,18 @@ const (
 // ThirdParty represents an external entity that processes data.
 type ThirdParty struct {
 	types.TenantEntity
-	Name       string         `json:"name" db:"name"`
-	Type       ThirdPartyType `json:"type" db:"type"`
-	Country    string         `json:"country" db:"country"`
-	DPADocPath *string        `json:"dpa_doc_path,omitempty" db:"dpa_doc_path"`
-	IsActive   bool           `json:"is_active" db:"is_active"`
-	PurposeIDs []types.ID     `json:"purpose_ids" db:"purpose_ids"`
+	Name         string         `json:"name" db:"name"`
+	Type         ThirdPartyType `json:"type" db:"type"`
+	Country      string         `json:"country" db:"country"`
+	DPADocPath   *string        `json:"dpa_doc_path,omitempty" db:"dpa_doc_path"`
+	IsActive     bool           `json:"is_active" db:"is_active"`
+	PurposeIDs   []types.ID     `json:"purpose_ids" db:"purpose_ids"`
+	DPAStatus    string         `json:"dpa_status" db:"dpa_status"`
+	DPASignedAt  *time.Time     `json:"dpa_signed_at,omitempty" db:"dpa_signed_at"`
+	DPAExpiresAt *time.Time     `json:"dpa_expires_at,omitempty" db:"dpa_expires_at"`
+	DPANotes     string         `json:"dpa_notes,omitempty" db:"dpa_notes"`
+	ContactName  string         `json:"contact_name,omitempty" db:"contact_name"`
+	ContactEmail string         `json:"contact_email,omitempty" db:"contact_email"`
 }
 
 // ThirdPartyType classifies the third party's role.
@@ -152,6 +158,14 @@ const (
 	ThirdPartyProcessor  ThirdPartyType = "PROCESSOR"
 	ThirdPartyController ThirdPartyType = "CONTROLLER"
 	ThirdPartyVendor     ThirdPartyType = "VENDOR"
+)
+
+// DPA status constants.
+const (
+	DPAStatusNone    = "NONE"
+	DPAStatusPending = "PENDING"
+	DPAStatusSigned  = "SIGNED"
+	DPAStatusExpired = "EXPIRED"
 )
 
 // =============================================================================
@@ -195,6 +209,65 @@ type ViolationRepository interface {
 	GetByPolicy(ctx context.Context, policyID types.ID) ([]Violation, error)
 	GetByDataSource(ctx context.Context, dataSourceID types.ID) ([]Violation, error)
 	UpdateStatus(ctx context.Context, id types.ID, status ViolationStatus, resolvedBy *types.ID, resolution *string) error
+}
+
+// ThirdPartyRepository defines persistence for third-party processors/controllers.
+type ThirdPartyRepository interface {
+	Create(ctx context.Context, tp *ThirdParty) error
+	GetByID(ctx context.Context, id types.ID) (*ThirdParty, error)
+	GetByTenant(ctx context.Context, tenantID types.ID) ([]ThirdParty, error)
+	Update(ctx context.Context, tp *ThirdParty) error
+	Delete(ctx context.Context, id types.ID) error
+}
+
+// =============================================================================
+// Purpose Assignment — Multi-Level Scope Tagging
+// =============================================================================
+
+// ScopeType defines the level at which a purpose is assigned.
+type ScopeType string
+
+const (
+	ScopeTypeServer   ScopeType = "SERVER"
+	ScopeTypeDatabase ScopeType = "DATABASE"
+	ScopeTypeSchema   ScopeType = "SCHEMA"
+	ScopeTypeTable    ScopeType = "TABLE"
+	ScopeTypeColumn   ScopeType = "COLUMN"
+)
+
+// ScopeHierarchy defines the inheritance order (lower number = higher scope).
+var ScopeHierarchy = map[ScopeType]int{
+	ScopeTypeServer:   0,
+	ScopeTypeDatabase: 1,
+	ScopeTypeSchema:   2,
+	ScopeTypeTable:    3,
+	ScopeTypeColumn:   4,
+}
+
+// ValidScopeTypes for validation.
+var ValidScopeTypes = []ScopeType{ScopeTypeServer, ScopeTypeDatabase, ScopeTypeSchema, ScopeTypeTable, ScopeTypeColumn}
+
+// PurposeAssignment represents a purpose assigned at a specific scope level.
+type PurposeAssignment struct {
+	ID           types.ID  `json:"id" db:"id"`
+	TenantID     types.ID  `json:"tenant_id" db:"tenant_id"`
+	PurposeID    types.ID  `json:"purpose_id" db:"purpose_id"`
+	ScopeType    ScopeType `json:"scope_type" db:"scope_type"`
+	ScopeID      string    `json:"scope_id" db:"scope_id"`
+	ScopeName    string    `json:"scope_name,omitempty" db:"scope_name"`
+	Inherited    bool      `json:"inherited" db:"inherited"`
+	OverriddenBy *types.ID `json:"overridden_by,omitempty" db:"overridden_by"`
+	AssignedBy   *types.ID `json:"assigned_by,omitempty" db:"assigned_by"`
+	AssignedAt   time.Time `json:"assigned_at" db:"assigned_at"`
+}
+
+// PurposeAssignmentRepository defines persistence for purpose assignments.
+type PurposeAssignmentRepository interface {
+	Create(ctx context.Context, a *PurposeAssignment) error
+	Delete(ctx context.Context, id types.ID) error
+	GetByScope(ctx context.Context, tenantID types.ID, scopeType ScopeType, scopeID string) ([]PurposeAssignment, error)
+	GetByPurpose(ctx context.Context, tenantID types.ID, purposeID types.ID) ([]PurposeAssignment, error)
+	GetByTenant(ctx context.Context, tenantID types.ID) ([]PurposeAssignment, error)
 }
 
 // =============================================================================

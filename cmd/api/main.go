@@ -238,6 +238,11 @@ func main() {
 	var auditHandler *handler.AuditHandler
 	var dataSubjectHandler *handler.DataSubjectHandler
 	var retentionHandler *handler.RetentionHandler
+	var ropaHandler *handler.RoPAHandler
+	var purposeAssignmentHandler *handler.PurposeAssignmentHandler
+	var departmentHandler *handler.DepartmentHandler
+	var thirdPartyHandler *handler.ThirdPartyHandler
+	var reportHandler *handler.ReportHandler
 	var noticeSvc *service.NoticeService
 	var translationSvc *service.TranslationService
 	var breachSvc *service.BreachService
@@ -554,7 +559,6 @@ func main() {
 		googleHandler = handler.NewGoogleHandler(googleAuthSvc)
 		identityHandler = handler.NewIdentityHandler(identitySvc)
 		grievanceHandler = handler.NewGrievanceHandler(grievanceSvc)
-		grievanceHandler = handler.NewGrievanceHandler(grievanceSvc)
 		notificationHandler = handler.NewNotificationHandler(notificationSvc)
 		dpoHandler = handler.NewDPOHandler(dpoSvc)
 
@@ -564,10 +568,35 @@ func main() {
 		// Data Subject Handler (subjects listing/search)
 		dataSubjectHandler = handler.NewDataSubjectHandler(profileRepo)
 
-		// Retention Service + Handler (retention policy CRUD)
-		ccRetentionRepo := repository.NewRetentionRepo(dbPool)
-		retentionSvc := service.NewRetentionService(ccRetentionRepo, slog.Default())
+		// Retention Service + Handler (retention policy CRUD) — reuses retentionRepo from L486
+		retentionSvc := service.NewRetentionService(retentionRepo, slog.Default())
 		retentionHandler = handler.NewRetentionHandler(retentionSvc)
+
+		// ThirdParty Repository (needed by RoPA auto-gen)
+		thirdPartyRepo := repository.NewThirdPartyRepo(dbPool)
+
+		// RoPA Service + Handler
+		ropaRepo := repository.NewRoPARepo(dbPool)
+		ropaSvc := service.NewRoPAService(ropaRepo, purposeRepo, dsRepo, retentionRepo, thirdPartyRepo, auditSvc, slog.Default())
+		ropaHandler = handler.NewRoPAHandler(ropaSvc)
+
+		// Purpose Assignment Service + Handler
+		purposeAssignmentRepo := repository.NewPurposeAssignmentRepo(dbPool)
+		purposeAssignmentSvc := service.NewPurposeAssignmentService(purposeAssignmentRepo, purposeRepo, auditSvc, slog.Default())
+		purposeAssignmentHandler = handler.NewPurposeAssignmentHandler(purposeAssignmentSvc)
+
+		// Department Service + Handler
+		departmentRepo := repository.NewDepartmentRepo(dbPool)
+		departmentSvc := service.NewDepartmentService(departmentRepo, auditSvc, slog.Default())
+		departmentHandler = handler.NewDepartmentHandler(departmentSvc)
+
+		// ThirdParty Service + Handler (reuses thirdPartyRepo from L573)
+		thirdPartySvc := service.NewThirdPartyService(thirdPartyRepo, auditSvc, slog.Default())
+		thirdPartyHandler = handler.NewThirdPartyHandler(thirdPartySvc)
+
+		// Report Service + Handler (Compliance Snapshot + Data Export)
+		reportSvc := service.NewReportService(dsrSvc, breachSvc, consentSvc, departmentSvc, thirdPartySvc, purposeSvc, auditSvc, retentionSvc, slog.Default())
+		reportHandler = handler.NewReportHandler(reportSvc)
 
 		log.Info("CC services and handlers initialized")
 	}
@@ -749,6 +778,9 @@ func main() {
 				grievanceHandler, notificationHandler, dpoHandler,
 				auditHandler,
 				dataSubjectHandler, retentionHandler,
+				ropaHandler, purposeAssignmentHandler,
+				departmentHandler, thirdPartyHandler,
+				reportHandler,
 			)
 		}
 

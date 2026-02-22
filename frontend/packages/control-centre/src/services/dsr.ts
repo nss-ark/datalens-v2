@@ -3,7 +3,7 @@ import type { DSR, DSRWithTasks, DSRListResponse, CreateDSRInput } from '../type
 import type { ID, ApiResponse } from '@datalens/shared';
 
 export const dsrService = {
-    async list(params?: { page?: number; page_size?: number; status?: string }): Promise<DSRListResponse> {
+    async list(params?: { page?: number; page_size?: number; status?: string; type?: string }): Promise<DSRListResponse> {
         const res = await api.get<ApiResponse<DSRListResponse>>('/dsr', { params });
         return res.data.data;
     },

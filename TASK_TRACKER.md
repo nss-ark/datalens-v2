@@ -618,6 +618,79 @@
 - [x] 4C-5: Frontend — Data Subjects Page (`/subjects`) with debounced search
 - [x] 4C-6: Frontend — Retention Policies Page (`/retention`) with CRUD modals
 
+### Phase 4D: RoPA + Multi-Level Purpose Tagging (Feb 22, 2026) ✅
+- [x] 4D-1: Backend — RoPA Domain + Auto-Generation + Version Control API (7 endpoints at `/ropa`)
+  - [x] `021_ropa.sql` — `third_parties` + `ropa_versions` tables
+  - [x] `ropa.go` — RoPAVersion, RoPAContent, RoPAStatus domain types + RoPARepository
+  - [x] `postgres_third_party.go` — ThirdParty CRUD with JSONB `purpose_ids`
+  - [x] `postgres_ropa.go` — RoPA CRUD with JSONB content serialization
+  - [x] `ropa_service.go` — Generate, SaveEdit, Publish, PromoteMajor + version parsing
+  - [x] `ropa_handler.go` — 7 endpoints (POST generate, GET latest, GET versions, GET by version, PUT edit, POST publish, POST promote)
+- [x] 4D-2: Frontend — RoPA Page (`/ropa`) with version-controlled UI
+  - [x] `ropaService.ts` — 7 API methods with full TypeScript types
+  - [x] `RoPA.tsx` — 612-line page: empty CTA, collapsible sections, inline editing, version history, publish/promote workflow
+  - [x] Replaced placeholder in `App.tsx`
+- [x] 4D-3: Backend — Multi-Level Purpose Assignment (5 endpoints at `/purpose-assignments`)
+  - [x] `022_purpose_assignments.sql` — `purpose_assignments` table with 5-level scope
+  - [x] `PurposeAssignment`, `ScopeType`, `ScopeHierarchy` added to `governance/entities.go`
+  - [x] `postgres_purpose_assignment.go` — CRUD + scope queries
+  - [x] `purpose_assignment_service.go` — Assign, Remove, GetEffective (inheritance resolution)
+  - [x] `purpose_assignment_handler.go` — 5 endpoints
+  - [x] 5-level scope hierarchy: SERVER → DATABASE → SCHEMA → TABLE → COLUMN
+- [x] 4D-4: Frontend — Scope Assignments UI on Purpose Mapping page
+  - [x] `purposeAssignmentService.ts` — 5 API methods
+  - [x] `PurposeMapping.tsx` enhanced with Tabs (AI Suggestions + Scope Assignments)
+  - [x] Scope search, inherited toggle, add/remove dialogs, muted inherited rows
+- [x] 4D-5: Backend — Bug Fixes
+  - [x] Removed duplicate `grievanceHandler` assignment in `main.go`
+  - [x] Consolidated duplicate `RetentionRepo` instantiation in `main.go`
+  - [x] Handler tests compile without interface drift
+
+### Phase 4E: Department + Third-Party + DPA Tracking (Feb 22, 2026) ✅
+- [x] 4E-1: Backend — Department Ownership + Email Notifications (6 endpoints at `/departments`)
+  - [x] `023_departments.sql` — `departments` table with TEXT[] responsibilities
+  - [x] `department.go` — Department entity + DepartmentRepository interface
+  - [x] `postgres_department.go` — CRUD with pgx native TEXT[] scanning
+  - [x] `department_service.go` — CRUD + Notify (SMTP) + audit logging
+  - [x] `department_handler.go` — 6 endpoints (CRUD + notify)
+- [x] 4E-2: Backend — Third-Party Service + Handler + DPA Tracking (5 endpoints at `/third-parties`)
+  - [x] `024_third_party_dpa.sql` — ALTER: +6 DPA columns on `third_parties`
+  - [x] `entities.go` extended with DPA fields + status constants (NONE/PENDING/SIGNED/EXPIRED)
+  - [x] `postgres_third_party.go` updated for new columns
+  - [x] `third_party_service.go` — tenant-scoped CRUD + audit
+  - [x] `third_party_handler.go` — 5 endpoints
+- [x] 4E-3: Frontend — Department + Third-Party Pages
+  - [x] `departmentService.ts` + `Departments.tsx` — CRUD + notify
+  - [x] `thirdPartyService.ts` + `ThirdParties.tsx` — CRUD + DPA status badges + dual view mode
+  - [x] `App.tsx` updated with routes, `Sidebar.tsx` updated with links
+
+### Phase 4F: OCR Adapters + Portal Polish (Feb 22, 2026) ✅
+- [x] 4F-1: Backend — OCR Adapter Pattern + Sarvam Vision Integration
+  - [x] `ocr_adapter.go` — `OCRAdapter` interface (Name, IsAvailable, ExtractText, SupportedFormats)
+  - [x] `ocr_tesseract.go` — Tesseract CLI adapter (extracted from parseImage)
+  - [x] `ocr_sarvam.go` — Sarvam Vision REST API adapter (Bearer auth, multipart upload)
+  - [x] `parsing_service.go` refactored: `ocrAvailable` → `adapters []OCRAdapter` (Tesseract → Sarvam priority)
+  - [x] `.env.example` updated with SARVAM_API_KEY + SARVAM_BASE_URL
+- [x] 4F-2: Frontend — Portal Polish + CC Quick Check
+  - [x] Portal `.portal-card` CSS unified (16px radius, #f3f4f6 border, standardized shadows)
+  - [x] `NominationModal.tsx` — DPDPA Section 14 explainer added
+  - [x] CC pages (RoPA, Departments, ThirdParties) — spacing normalized
+
+### Phase 4G: Compliance Reporting + Nominations Filter (Feb 22, 2026) ✅
+- [x] 4G-1: Backend — Compliance Reporting Service + Export API
+  - [x] `report_service.go` — `GenerateComplianceSnapshot()` (4 DPDPA pillars: Consent 25%, DSR 30%, Breach 20%, Governance 25%)
+  - [x] `report_service.go` — `ExportEntity()` (CSV/JSON for 7 entity types)
+  - [x] `report_handler.go` — `GET /compliance-snapshot`, `GET /export/{entity}`
+  - [x] `main.go` + `routes.go` — wired into CC protected routes
+- [x] 4G-2: Backend — DSR Nominations Type Filter
+  - [x] `DSRRepository.GetByTenant` updated with `typeFilter *DSRRequestType` parameter
+  - [x] `dsr.go`, `postgres_dsr.go`, `dsr_service.go` + 5 test mocks updated
+- [x] 4G-3: Frontend — Reports + Nominations Pages
+  - [x] `reportService.ts` — ComplianceSnapshot types + API client
+  - [x] `Reports.tsx` — SVG gauge scorecard, 4 pillar cards, 7 export buttons
+  - [x] `Nominations.tsx` — DSR list filtered by type=NOMINATION, DPDPA S14 explainer
+  - [x] `App.tsx` — `/reports`, `/nominations` routes + ComingSoonPage for `/agents`, `/users`
+
 ### System Administration → **Deferred (SuperAdmin Portal, Batch 17+)**
 - [ ] RBAC / User Role Management → Modular selection from SuperAdmin portal
 - [ ] Data Retention Policy Configuration
@@ -658,4 +731,5 @@
 | `[x]` | Completed |
 | `[!]` | Blocked |
 
-> **Last Updated**: February 21, 2026 — Phase 4 Batches 4A (Foundation), 4B (UI Overhaul), 4C (Core Compliance Pages — 6 tasks) COMPLETE. Next: Batch 4D (RoPA + Multi-Level Purpose Tagging)
+> **Last Updated**: February 22, 2026 — **Phase 4 COMPLETE** (7/7 batches: 4A–4G). Ready for Phase 5 planning.
+

@@ -1400,7 +1400,7 @@ func (r *mockDSRRepo) GetByID(ctx context.Context, id types.ID) (*compliance.DSR
 	return dsr, nil
 }
 
-func (r *mockDSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus) (*types.PaginatedResult[compliance.DSR], error) {
+func (r *mockDSRRepo) GetByTenant(ctx context.Context, tenantID types.ID, pagination types.Pagination, statusFilter *compliance.DSRStatus, typeFilter *compliance.DSRRequestType) (*types.PaginatedResult[compliance.DSR], error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var items []compliance.DSR
