@@ -81,11 +81,11 @@ func mountCCRoutes(
 		r.Mount("/auth/m365", m365Handler.Routes())
 		r.Mount("/auth/google", googleHandler.Routes())
 
-		// Discovery (inventories, entities, fields)
-		r.Mount("/discovery", discoveryHandler.Routes())
-
 		// Detection Feedback (verify/correct/reject PII classifications)
 		r.Mount("/discovery/feedback", feedbackHandler.Routes())
+
+		// Discovery (inventories, entities, fields)
+		r.Mount("/discovery", discoveryHandler.Routes())
 
 		// PII Classifications
 		// r.Route("/classifications", func(r chi.Router) {

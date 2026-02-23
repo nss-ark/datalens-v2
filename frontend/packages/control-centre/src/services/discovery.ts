@@ -55,13 +55,13 @@ export const discoveryService = {
 
     /** Submit feedback (verify, correct, reject) */
     async submitFeedback(input: SubmitFeedbackInput): Promise<FeedbackResponse> {
-        const res = await api.post<FeedbackResponse>('/discovery/feedback', input);
-        return res.data;
+        const res = await api.post<ApiResponse<FeedbackResponse>>('/discovery/feedback', input);
+        return res.data.data as FeedbackResponse;
     },
 
     /** Get accuracy stats for a detection method */
     async getAccuracyStats(method: DetectionMethod): Promise<AccuracyStats> {
-        const res = await api.get<AccuracyStats>(`/discovery/feedback/accuracy/${method}`);
-        return res.data;
+        const res = await api.get<ApiResponse<AccuracyStats>>(`/discovery/feedback/accuracy/${method}`);
+        return res.data.data as AccuracyStats;
     },
 };

@@ -376,7 +376,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		fallbackChain := []string{cfg.AI.DefaultProvider, "openai", "anthropic", "local"}
+		fallbackChain := []string{cfg.AI.DefaultProvider, "huggingface", "openai", "anthropic", "local"}
 		aiSelector := ai.NewSelector(aiRegistry, fallbackChain, slog.Default())
 
 		var aiGateway ai.Gateway = ai.NewDefaultGateway(aiSelector, slog.Default())

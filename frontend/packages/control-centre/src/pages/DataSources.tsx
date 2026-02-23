@@ -1,13 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2, Globe, Trash2, FileUp, X, UploadCloud } from 'lucide-react';
-import { Button, Headline01, MotionList01 } from '@datalens/shared';
-import { DataTable, type Column } from '@datalens/shared';
-import { StatusBadge } from '@datalens/shared';
+import { Plus, Play, Database as DatabaseIcon, RefreshCw, History, Loader2, Globe, Trash2, FileUp, X, UploadCloud, Search, MoreHorizontal, CheckCircle2, Activity, Link as LinkIcon, Server, HardDrive, FileText, Cloud } from 'lucide-react';
+import { Button } from '@datalens/shared';
 import { Modal } from '@datalens/shared';
 import { ScanHistoryModal } from '../components/DataSources/ScanHistoryModal';
-import { ErrorBoundary as SafeBoundary } from '@datalens/shared';
-import { SectionErrorFallback } from '@datalens/shared';
 import { useDataSources, useCreateDataSource, useScanDataSource, useScanStatus } from '../hooks/useDataSources';
 import { toast } from '@datalens/shared';
 import { dataSourceService } from '../services/datasource';
@@ -25,19 +21,34 @@ const DS_TYPE_OPTIONS: { value: DataSourceType; label: string }[] = [
     { value: 'FILE_UPLOAD', label: 'File Upload' },
 ];
 
-const INITIAL_FORM = {
-    name: '', type: 'POSTGRESQL' as DataSourceType, description: '',
-    host: '', port: 5432, database: '', username: '', password: '', credentials: '',
+const getDsIcon = (type: string) => {
+    switch (type) {
+        case 'POSTGRESQL':
+        case 'MYSQL':
+        case 'SQLSERVER': return <DatabaseIcon className="text-blue-600" size={24} />;
+        case 'MONGODB': return <Server className="text-green-600" size={24} />;
+        case 'S3':
+        case 'AZURE_BLOB': return <Cloud className="text-blue-600" size={24} />;
+        case 'MICROSOFT_365':
+        case 'GOOGLE_WORKSPACE': return <Globe className="text-indigo-600" size={24} />;
+        case 'FILE_UPLOAD': return <FileText className="text-orange-600" size={24} />;
+        default: return <HardDrive className="text-gray-600" size={24} />;
+    }
 };
 
-// Component for the Scan Action button with polling
-const ScanAction = ({ dataSource }: { dataSource: DataSource }) => {
-    const { mutate: scanMutate, isPending: isStarting } = useScanDataSource();
+const getDsColor = (type: string) => {
+    switch (type) {
+        case 'POSTGRESQL': return 'bg-indigo-500';
+        case 'MYSQL': return 'bg-blue-500';
+        case 'MONGODB': return 'bg-green-500';
+        default: return 'bg-gray-500';
+    }
+};
 
-    // Scan status polling is enabled for this data source
+const DataSourceCard = ({ dataSource, onHistory, onDelete }: { dataSource: DataSource, onHistory: () => void, onDelete: () => void }) => {
+    const { mutate: scanMutate, isPending: isStarting } = useScanDataSource();
     const { data: scanStatus } = useScanStatus(dataSource.id, true);
 
-    // Derived state
     const isScanning = scanStatus?.status === 'RUNNING' || scanStatus?.status === 'QUEUED';
 
     const handleScan = (e: React.MouseEvent) => {
@@ -48,26 +59,139 @@ const ScanAction = ({ dataSource }: { dataSource: DataSource }) => {
         });
     };
 
-    if (isStarting || isScanning) {
-        return (
-            <div className="flex items-center gap-2 text-sm text-indigo-600 font-medium bg-indigo-50 px-3 py-1.5 rounded-md">
-                <Loader2 size={14} className="animate-spin" />
-                {scanStatus?.progress_percentage ? `${scanStatus.progress_percentage}% ` : 'Scanning...'}
-            </div>
-        );
-    }
+    const typeLabel = DS_TYPE_OPTIONS.find(o => o.value === dataSource.type)?.label || dataSource.type;
 
     return (
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={handleScan}
-            icon={<Play size={14} />}
+        <div
+            className="group relative overflow-hidden flex flex-col h-full transition-all duration-300"
+            style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '1rem',
+                border: isScanning ? '1px solid rgba(59,130,246,0.3)' : '1px solid #e5e7eb',
+                padding: '1.5rem',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02)',
+            }}
         >
-            Scan
-        </Button>
+            {/* More menu */}
+            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-gray-400 cursor-pointer"><MoreHorizontal size={20} /></span>
+            </div>
+
+            {/* Header: icon + name */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: isScanning ? '1rem' : '1.5rem' }}>
+                <div style={{
+                    width: '3rem', height: '3rem', borderRadius: '0.75rem',
+                    backgroundColor: isScanning ? 'rgba(219,234,254,0.5)' : '#eff6ff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                    {getDsIcon(dataSource.type)}
+                </div>
+                <div>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', lineHeight: 1.3 }}>{dataSource.name}</h3>
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>{dataSource.description || 'No description'}</p>
+                </div>
+            </div>
+
+            {/* Scan progress bar (when scanning) */}
+            {isScanning && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2563eb' }} className="animate-pulse">Scanning Data...</span>
+                        <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#6b7280' }}>{scanStatus?.progress_percentage || 0}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '6px', backgroundColor: '#f3f4f6', borderRadius: '9999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${scanStatus?.progress_percentage || 5}%`, backgroundColor: '#3b82f6', borderRadius: '9999px', transition: 'width 0.5s' }}></div>
+                    </div>
+                </div>
+            )}
+
+            {/* Data rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+                    <span style={{ color: '#6b7280' }}>Type</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontWeight: 500, color: '#374151' }}>
+                        <span className={`w-2 h-2 rounded-full ${getDsColor(dataSource.type)}`}></span>
+                        {typeLabel}
+                    </div>
+                </div>
+                {!isScanning && (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+                            <span style={{ color: '#6b7280' }}>Status</span>
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center',
+                                padding: '0.125rem 0.625rem', borderRadius: '9999px',
+                                fontSize: '0.75rem', fontWeight: 500,
+                                backgroundColor: dataSource.status === 'CONNECTED' ? '#dcfce7' : dataSource.status === 'ERROR' ? '#fee2e2' : '#fef9c3',
+                                color: dataSource.status === 'CONNECTED' ? '#166534' : dataSource.status === 'ERROR' ? '#991b1b' : '#854d0e',
+                            }}>
+                                {dataSource.status === 'CONNECTED' ? 'Connected' : dataSource.status}
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+                            <span style={{ color: '#6b7280' }}>Last Scanned</span>
+                            <span style={{ color: '#374151', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                                {dataSource.last_sync_at ? new Date(dataSource.last_sync_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never'}
+                            </span>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Footer buttons */}
+            <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {isScanning ? (
+                    <div
+                        onClick={(e) => { e.stopPropagation(); }}
+                        style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '0.5rem', color: 'rgba(239,68,68,0.8)', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center' }}
+                    >
+                        Cancel Scan
+                    </div>
+                ) : (
+                    <div
+                        onClick={(e) => { e.stopPropagation(); handleScan(e); }}
+                        style={{
+                            flex: 1, padding: '0.5rem 0.75rem', borderRadius: '0.5rem',
+                            backgroundColor: '#f3f4f6', color: '#374151',
+                            fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                        }}
+                    >
+                        {isStarting ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                        Scan
+                    </div>
+                )}
+
+                <div
+                    onClick={(e) => { e.stopPropagation(); onHistory(); }}
+                    style={{
+                        flex: 1, padding: '0.5rem 0.75rem', borderRadius: '0.5rem',
+                        border: '1px solid #e5e7eb', color: '#4b5563',
+                        fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    }}
+                >
+                    <History size={16} />
+                    History
+                </div>
+                <div
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    style={{
+                        padding: '0.5rem', borderRadius: '0.5rem', color: '#ef4444', cursor: 'pointer',
+                    }}
+                >
+                    <Trash2 size={18} />
+                </div>
+            </div>
+        </div>
     );
 };
+
+const INITIAL_FORM = {
+    name: '', type: 'POSTGRESQL' as DataSourceType, description: '',
+    host: '', port: 5432, database: '', username: '', password: '', credentials: '',
+};
+
 
 const DataSources = () => {
     const navigate = useNavigate();
@@ -81,6 +205,24 @@ const DataSources = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [form, setForm] = useState(INITIAL_FORM);
     const [isOAuthPending, setIsOAuthPending] = useState(false);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [typeFilter, setTypeFilter] = useState('All Types');
+
+    const filteredDataSources = dataSources.filter(ds => {
+        const matchesSearch = ds.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (ds.description && ds.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        let matchesType = true;
+        if (typeFilter !== 'All Types') {
+            const typeObj = DS_TYPE_OPTIONS.find(o => o.label === typeFilter);
+            if (typeObj) matchesType = ds.type === typeObj.value;
+        }
+
+        return matchesSearch && matchesType;
+    });
+
+    const activeConnections = dataSources.filter(ds => ds.status === 'CONNECTED').length;
 
     // File Upload State
     const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -217,129 +359,151 @@ const DataSources = () => {
         setForm((prev) => ({ ...prev, [field]: field === 'port' ? Number(e.target.value) : e.target.value }));
     };
 
-    const columns: Column<DataSource>[] = [
-        {
-            key: 'name',
-            header: 'Name',
-            sortable: true,
-            render: (row) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{
-                        width: '36px', height: '36px', borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--primary-50)', color: 'var(--primary-600)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    }}>
-                        <DatabaseIcon size={18} />
-                    </div>
-                    <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{row.name}</div>
-                        {row.description && (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                {row.description}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            key: 'type',
-            header: 'Type',
-            sortable: true,
-            width: '120px',
-            render: (row) => (
-                <span style={{
-                    textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 600,
-                    color: 'var(--text-secondary)', letterSpacing: '0.04em',
-                }}>
-                    {row.type}
-                </span>
-            ),
-        },
-        {
-            key: 'status',
-            header: 'Status',
-            sortable: true,
-            width: '140px',
-            render: (row) => <StatusBadge label={row.status} />,
-        },
-        {
-            key: 'last_sync_at',
-            header: 'Last Scanned',
-            sortable: true,
-            width: '160px',
-            render: (row) => (
-                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    {row.last_sync_at
-                        ? new Date(row.last_sync_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                        : 'Never'}
-                </span>
-            ),
-        },
-        {
-            key: 'actions',
-            header: '',
-            width: '180px',
-            render: (row) => (
-                <div className="flex items-center gap-2 justify-end">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setHistoryId(row.id);
-                        }}
-                        icon={<History size={14} />}
-                        title="View History"
-                    />
-                    <ScanAction dataSource={row} />
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteId(row.id);
-                        }}
-                        icon={<Trash2 size={14} className="text-red-500" />}
-                        title="Delete"
-                    />
-                </div>
-            ),
-        },
-    ];
-
     return (
-        <div>
+        <div style={{ width: '100%', paddingBottom: '2rem' }}>
             {/* Page Header */}
-            <div className="flex justify-between items-center mb-6">
-                <Headline01
-                    title="Data Sources"
-                    subtitle="Manage your connected databases and storage systems"
-                />
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <Button variant="outline" onClick={() => refetch()} icon={<RefreshCw size={16} />}>
+            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.875rem', fontWeight: 600, letterSpacing: '-0.025em', color: '#111827', marginBottom: '0.5rem' }}>Data Sources</h1>
+                    <p style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 500 }}>Manage your connected databases and storage systems securely.</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div
+                        onClick={() => refetch()}
+                        style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                            padding: '0.625rem 1rem', backgroundColor: '#ffffff', border: '1px solid #e5e7eb',
+                            borderRadius: '0.75rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                            color: '#374151', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
+                        }}
+                    >
+                        <RefreshCw size={18} style={{ color: '#9ca3af' }} />
                         Refresh
-                    </Button>
-                    <Button icon={<Plus size={16} />} onClick={() => setShowModal(true)}>
+                    </div>
+                    <div
+                        onClick={() => setShowModal(true)}
+                        style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                            padding: '0.625rem 1.25rem', backgroundColor: '#2563eb', color: '#ffffff',
+                            borderRadius: '0.75rem', boxShadow: '0 4px 6px rgba(37,99,235,0.25)',
+                            fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
+                        }}
+                    >
+                        <Plus size={18} />
                         Add Data Source
-                    </Button>
+                    </div>
+                </div>
+            </header>
+
+            {/* Status Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div style={{ backgroundColor: '#fff', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <div style={{ padding: '0.5rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem' }}>
+                            <CheckCircle2 style={{ color: '#16a34a' }} size={24} />
+                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: '#9ca3af', letterSpacing: '0.05em' }}>Status</span>
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>All Systems Normal</div>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{activeConnections} active connections monitored</p>
+                </div>
+
+                <div style={{ backgroundColor: '#fff', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <div style={{ padding: '0.5rem', backgroundColor: '#eff6ff', borderRadius: '0.5rem' }}>
+                            <Activity style={{ color: '#2563eb' }} size={24} />
+                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: '#3b82f6', letterSpacing: '0.05em' }}>Active Scan</span>
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>Ready</div>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>System idle and ready for scans</p>
+                </div>
+
+                <div
+                    onClick={() => setShowModal(true)}
+                    style={{
+                        backgroundColor: '#fff', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #f3f4f6',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column',
+                        justifyContent: 'center', alignItems: 'center', textAlign: 'center', cursor: 'pointer',
+                    }}
+                >
+                    <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '9999px', marginBottom: '0.75rem' }}>
+                        <LinkIcon style={{ color: '#2563eb' }} size={24} />
+                    </div>
+                    <h3 style={{ fontWeight: 500, color: '#111827' }}>Connect New Source</h3>
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Integrate DBs, S3 buckets, or APIs</p>
                 </div>
             </div>
 
-            {/* Table */}
-            <SafeBoundary FallbackComponent={SectionErrorFallback}>
-                <MotionList01>
-                    <DataTable
-                        columns={columns}
-                        data={dataSources}
-                        isLoading={isLoading}
-                        keyExtractor={(row) => row.id}
-                        onRowClick={(row) => navigate(`/datasources/${row.id}`)}
-                        emptyTitle="No data sources yet"
-                        emptyDescription="Connect your first database or storage system to start discovering PII."
+            {/* Search & Filter */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                    <Search size={20} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                    <input
+                        style={{
+                            width: '100%', paddingLeft: '2.5rem', paddingRight: '1rem', paddingTop: '0.625rem', paddingBottom: '0.625rem',
+                            borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff',
+                            fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box',
+                        }}
+                        placeholder="Search databases..."
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                </MotionList01>
-            </SafeBoundary>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <select
+                        style={{
+                            paddingLeft: '0.75rem', paddingRight: '2rem', paddingTop: '0.625rem', paddingBottom: '0.625rem',
+                            borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff',
+                            fontSize: '0.875rem', color: '#374151', outline: 'none',
+                        }}
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                    >
+                        <option>All Types</option>
+                        {DS_TYPE_OPTIONS.map(opt => <option key={opt.value} value={opt.label}>{opt.label}</option>)}
+                    </select>
+                </div>
+            </div>
+
+            {/* Data Source Cards Grid */}
+            {isLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem 0' }}>
+                    <Loader2 className="animate-spin" size={40} style={{ color: '#3b82f6' }} />
+                </div>
+            ) : filteredDataSources.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '5rem 0', backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e5e7eb' }}>
+                    <DatabaseIcon size={48} style={{ margin: '0 auto 1rem', color: '#9ca3af' }} />
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 500, color: '#111827', marginBottom: '0.5rem' }}>No data sources found</h3>
+                    <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>Get started by connecting your first database or storage system.</p>
+                    <Button onClick={() => setShowModal(true)} icon={<Plus size={16} />}>Connect Data Source</Button>
+                </div>
+            ) : (
+                <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                        {filteredDataSources.map(ds => (
+                            <div key={ds.id} onClick={() => navigate(`/datasources/${ds.id}`)} style={{ cursor: 'pointer', height: '100%' }}>
+                                <DataSourceCard
+                                    dataSource={ds}
+                                    onHistory={() => setHistoryId(ds.id)}
+                                    onDelete={() => setDeleteId(ds.id)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
+                        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                            Showing <span style={{ fontWeight: 500, color: '#111827' }}>1</span> to <span style={{ fontWeight: 500, color: '#111827' }}>{filteredDataSources.length}</span> of <span style={{ fontWeight: 500, color: '#111827' }}>{filteredDataSources.length}</span> results
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#6b7280', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '0.5rem', opacity: 0.5 }}>Previous</span>
+                            <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#6b7280', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '0.5rem', opacity: 0.5 }}>Next</span>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* Add Data Source Modal */}
             <Modal
@@ -436,7 +600,7 @@ const DataSources = () => {
                                         value={form.credentials === '{}' ? '' : form.credentials}
                                         onChange={updateField('credentials')}
                                         style={{ ...inputStyle, height: '120px', padding: '0.75rem', resize: 'vertical', fontFamily: 'monospace', fontSize: '12px' }}
-                                        placeholder='{ "type": "service_account", ... }'
+                                        placeholder='{"type":"service_account", ... }'
                                         required
                                     />
                                     <div className="mt-4 flex justify-end">
